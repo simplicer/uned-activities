@@ -1,0 +1,1074 @@
+openapi: 3.1.0
+info:
+  title: UNED Activities Finder API
+  version: 1.0.0
+  description: |
+    REST API for querying UNED extension activities with filtering, faceting, and notifications.
+
+    ## Rate Limiting
+
+    All public endpoints are rate-limited. Exceeding limits returns `429 Too Many Requests`.
+
+    ## Authentication
+
+    Public endpoints require a web session token. User endpoints require Supabase JWT.
+
+    ## Errors
+
+    All errors follow RFC7807 Problem Details for HTTP APIs with Zalando extensions.
+
+  contact:
+    name: UNED Activities Finder
+    url: https://github.com/your-org/anvius-uned-extension-finder
+
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:8080
+    description: Local development
+  - url: https://api.example.com
+    description: Production
+
+tags:
+  - name: Meta
+    description: System health and version information
+  - name: Activities
+    description: Public catalog operations
+  - name: Users
+    description: User profile and preferences management
+  - name: Saved Searches
+    description: User saved search operations
+  - name: Notifications
+    description: User notification operations
+
+paths:
+  /status:
+    get:
+      tags: [Meta]
+      summary: Check API health status
+      description: |
+        Returns the current health status of the API and its dependencies.
+        Use this for health checks and monitoring.
+      operationId: getStatus
+      security: []
+      responses:
+        '200':
+          description: API is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Status'
+              example:
+                status: ok
+                timestamp: '2025-01-15T10:30:00Z'
+                checks:
+                  database: ok
+                  cache: ok
+        '503':
+          description: Service unavailable
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+
+  /version:
+    get:
+      tags: [Meta]
+      summary: Get API version information
+      description: |
+        Returns version information about the API, including SemVer version
+        and build metadata.
+      operationId: getVersion
+      security: []
+      responses:
+        '200':
+          description: Version information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Version'
+              example:
+                version: 1.0.0
+                commit: abc123def
+                buildDate: '2025-01-15T10:30:00Z'
+
+  /v1/activities:
+    get:
+      tags: [Activities]
+      summary: List activities
+      description: |
+        Returns a paginated list of activities with optional filtering.
+        Results are sorted by relevance or specified field.
+      operationId: listActivities
+      security:
+        - WebToken: []
+      parameters:
+        - name: q
+          in: query
+          description: Full-text search query
+          schema:
+            type: string
+            example: photography course
+        - name: from
+          in: query
+          description: Filter by start date (ISO 8601)
+          schema:
+            type: string
+            format: date
+            example: '2025-02-01'
+        - name: to
+          in: query
+          description: Filter by end date (ISO 8601)
+          schema:
+            type: string
+            format: date
+            example: '2025-06-30'
+        - name: modality
+          in: query
+          description: Filter by modality
+          schema:
+            $ref: '#/components/schemas/Modality'
+        - name: price-min
+          in: query
+          description: Minimum price in EUR
+          schema:
+            type: number
+            format: double
+            minimum: 0
+            example: 50
+        - name: price-max
+          in: query
+          description: Maximum price in EUR
+          schema:
+            type: number
+            format: double
+            minimum: 0
+            example: 200
+        - name: center
+          in: query
+          description: Filter by center
+          schema:
+            type: string
+            example: 'Madrid'
+        - name: area
+          in: query
+          description: Filter by knowledge area
+          schema:
+            type: string
+            example: 'Arts'
+        - name: typology
+          in: query
+          description: Filter by typology
+          schema:
+            type: string
+            example: 'Course'
+        - name: limit
+          in: query
+          description: Number of items per page (max 100)
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: offset
+          in: query
+          description: Number of items to skip
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: sort
+          in: query
+          description: Sort field and direction
+          schema:
+            type: string
+            enum: [start-date, -start-date, price, -price, relevance]
+            default: relevance
+      responses:
+        '200':
+          description: List of activities
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActivityList'
+        '400':
+          description: Invalid query parameters
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '401':
+          description: Missing or invalid web token
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '429':
+          description: Rate limit exceeded
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+
+  /v1/activities/{activityId}:
+    get:
+      tags: [Activities]
+      summary: Get activity details
+      description: Returns detailed information about a specific activity.
+      operationId: getActivity
+      security:
+        - WebToken: []
+      parameters:
+        - name: activityId
+          in: path
+          required: true
+          description: Activity UUID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Activity details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Activity'
+        '404':
+          description: Activity not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+
+  /v1/activities/{activityId}/price-snapshots:
+    get:
+      tags: [Activities]
+      summary: Get activity price history
+      description: Returns historical pricing data for an activity.
+      operationId: getActivityPriceSnapshots
+      security:
+        - WebToken: []
+      parameters:
+        - name: activityId
+          in: path
+          required: true
+          description: Activity UUID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Price history
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PriceSnapshotList'
+
+  /v1/activities/{activityId}/changes:
+    get:
+      tags: [Activities]
+      summary: Get activity change history
+      description: Returns historical changes for an activity.
+      operationId: getActivityChanges
+      security:
+        - WebToken: []
+      parameters:
+        - name: activityId
+          in: path
+          required: true
+          description: Activity UUID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Change history
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActivityChangeList'
+
+  /v1/activities/facets:
+    get:
+      tags: [Activities]
+      summary: Get activity facets
+      description: |
+        Returns aggregate information (facets) for available filter values.
+        Use this to build filter UIs.
+      operationId: getActivityFacets
+      security:
+        - WebToken: []
+      responses:
+        '200':
+          description: Facet data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActivityFacets'
+
+  # User endpoints (authenticated)
+  /v1/users/{userId}/profiles/{profileId}:
+    get:
+      tags: [Users]
+      summary: Get user profile
+      description: Returns the user's profile preferences.
+      operationId: getUserProfile
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          description: User UUID (must match authenticated user)
+          schema:
+            type: string
+            format: uuid
+        - name: profileId
+          in: path
+          required: true
+          description: Profile UUID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+        '403':
+          description: Access denied (not your profile)
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '404':
+          description: Profile not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+
+    put:
+      tags: [Users]
+      summary: Create or update user profile
+      description: |
+        Creates a new profile or updates an existing one using idempotent PUT semantics.
+        The client provides the profile UUID.
+      operationId: putUserProfile
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          description: User UUID (must match authenticated user)
+          schema:
+            type: string
+            format: uuid
+        - name: profileId
+          in: path
+          required: true
+          description: Profile UUID (client-generated)
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserProfilePut'
+      responses:
+        '200':
+          description: Profile updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+        '201':
+          description: Profile created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+        '400':
+          description: Invalid request
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '403':
+          description: Access denied
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+
+    patch:
+      tags: [Users]
+      summary: Partially update user profile
+      description: Updates specified fields in the user profile.
+      operationId: patchUserProfile
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: profileId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserProfilePatch'
+      responses:
+        '200':
+          description: Profile updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+
+  # Saved searches
+  /v1/users/{userId}/saved-searches:
+    get:
+      tags: [Saved Searches]
+      summary: List saved searches
+      description: Returns all saved searches for the authenticated user.
+      operationId: listSavedSearches
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: List of saved searches
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SavedSearchList'
+
+  /v1/users/{userId}/saved-searches/{savedSearchId}:
+    put:
+      tags: [Saved Searches]
+      summary: Create or update saved search
+      description: Creates a new saved search or updates an existing one.
+      operationId: putSavedSearch
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: savedSearchId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SavedSearchPut'
+      responses:
+        '200':
+          description: Saved search updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SavedSearch'
+        '201':
+          description: Saved search created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SavedSearch'
+
+    patch:
+      tags: [Saved Searches]
+      summary: Partially update saved search
+      description: Updates specified fields in a saved search.
+      operationId: patchSavedSearch
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: savedSearchId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SavedSearchPatch'
+      responses:
+        '200':
+          description: Saved search updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SavedSearch'
+
+    delete:
+      tags: [Saved Searches]
+      summary: Delete saved search
+      description: Removes a saved search.
+      operationId: deleteSavedSearch
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: savedSearchId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Saved search deleted
+        '404':
+          description: Saved search not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+
+  # Notifications
+  /v1/users/{userId}/notifications:
+    get:
+      tags: [Notifications]
+      summary: List user notifications
+      description: Returns notifications for the authenticated user.
+      operationId: listNotifications
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: unread-only
+          in: query
+          description: Filter to only unread notifications
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: List of notifications
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationList'
+
+  /v1/users/{userId}/notifications/mark-read:
+    post:
+      tags: [Notifications]
+      summary: Mark notifications as read
+      description: Marks specified notifications as read.
+      operationId: markNotificationsRead
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [notificationIds]
+              properties:
+                notificationIds:
+                  type: array
+                  items:
+                    type: string
+                    format: uuid
+      responses:
+        '200':
+          description: Notifications marked as read
+        '400':
+          description: Invalid request
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+
+components:
+  securitySchemes:
+    WebToken:
+      type: apiKey
+      in: header
+      name: Authorization
+      description: Web session token (Bearer {token})
+    BearerAuth:
+      type: http
+      scheme: bearer
+      description: Supabase JWT (Bearer {jwt})
+
+  schemas:
+    # Common schemas
+    Problem:
+      type: object
+      description: RFC7807 Problem Details with Zalando extensions
+      required:
+        - type
+        - title
+        - status
+        - detail
+      properties:
+        type:
+          type: string
+          format: uri
+          description: A URI reference to the problem type
+          example: 'https://api.example.com/problems/invalid-request'
+        title:
+          type: string
+          description: A short, human-readable summary of the problem
+          example: Invalid Request
+        status:
+          type: integer
+          description: The HTTP status code
+          example: 400
+        detail:
+          type: string
+          description: A human-readable explanation of the problem
+          example: The request could not be processed due to validation errors
+        instance:
+          type: string
+          format: uri
+          description: A URI reference to the specific occurrence of the problem
+        errors:
+          type: array
+          description: Detailed validation errors
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+              message:
+                type: string
+
+    # Meta schemas
+    Status:
+      type: object
+      required:
+        - status
+        - timestamp
+      properties:
+        status:
+          type: string
+          enum: [ok, degraded, error]
+        timestamp:
+          type: string
+          format: date-time
+        checks:
+          type: object
+          additionalProperties:
+            type: string
+            enum: [ok, error, timeout]
+
+    Version:
+      type: object
+      required:
+        - version
+      properties:
+        version:
+          type: string
+          description: SemVer version
+          pattern: '^\d+\.\d+\.\d+(-[a-zA-Z0-9.]+)?$'
+          example: 1.0.0
+        commit:
+          type: string
+          description: Git commit SHA
+          example: abc123def
+        buildDate:
+          type: string
+          format: date-time
+
+    # Activity schemas
+    Modality:
+      type: string
+      enum: [online, in-person, hybrid]
+
+    Money:
+      type: object
+      required:
+        - amount
+        - currency
+      properties:
+        amount:
+          type: integer
+          description: Amount in cents
+          example: 15000
+        currency:
+          type: string
+          description: ISO 4217 currency code
+          example: EUR
+        display:
+          type: string
+          description: Formatted display string
+          example: '€150.00'
+
+    Activity:
+      type: object
+      required:
+        - id
+        - title
+        - url
+        - modality
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        description:
+          type: string
+          nullable: true
+        url:
+          type: string
+          format: uri
+        startDate:
+          type: string
+          format: date
+          nullable: true
+        endDate:
+          type: string
+          format: date
+          nullable: true
+        modality:
+          $ref: '#/components/schemas/Modality'
+        center:
+          type: string
+          nullable: true
+        typology:
+          type: string
+          nullable: true
+        area:
+          type: string
+          nullable: true
+        price:
+          $ref: '#/components/schemas/Money'
+        enrollmentOpen:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    ActivityList:
+      type: object
+      required:
+        - items
+        - total
+        - limit
+        - offset
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Activity'
+        total:
+          type: integer
+        limit:
+          type: integer
+        offset:
+          type: integer
+
+    PriceSnapshot:
+      type: object
+      required:
+        - capturedAt
+        - price
+      properties:
+        capturedAt:
+          type: string
+          format: date-time
+        price:
+          $ref: '#/components/schemas/Money'
+
+    PriceSnapshotList:
+      type: object
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/PriceSnapshot'
+
+    ActivityChange:
+      type: object
+      required:
+        - capturedAt
+        - changeType
+      properties:
+        capturedAt:
+          type: string
+          format: date-time
+        changeType:
+          type: string
+          enum: [created, updated, price-changed, archived]
+
+    ActivityChangeList:
+      type: object
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ActivityChange'
+
+    ActivityFacets:
+      type: object
+      properties:
+        modalities:
+          type: object
+          additionalProperties:
+            type: integer
+        centers:
+          type: object
+          additionalProperties:
+            type: integer
+        areas:
+          type: object
+          additionalProperties:
+            type: integer
+        typologies:
+          type: object
+          additionalProperties:
+            type: integer
+
+    # User schemas
+    Language:
+      type: string
+      enum: [es, en, ca, val, eu, gl]
+
+    UserProfile:
+      type: object
+      required:
+        - id
+        - userId
+        - preferredLanguage
+      properties:
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        preferredLanguage:
+          $ref: '#/components/schemas/Language'
+        emailNotificationsEnabled:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    UserProfilePut:
+      type: object
+      properties:
+        preferredLanguage:
+          $ref: '#/components/schemas/Language'
+        emailNotificationsEnabled:
+          type: boolean
+
+    UserProfilePatch:
+      type: object
+      properties:
+        preferredLanguage:
+          $ref: '#/components/schemas/Language'
+        emailNotificationsEnabled:
+          type: boolean
+
+    # Saved search schemas
+    SavedSearch:
+      type: object
+      required:
+        - id
+        - userId
+        - name
+        - filters
+      properties:
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        filters:
+          $ref: '#/components/schemas/ActivityFilter'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    ActivityFilter:
+      type: object
+      properties:
+        query:
+          type: string
+        dateRange:
+          type: object
+          properties:
+            from:
+              type: string
+              format: date
+            to:
+              type: string
+              format: date
+        modality:
+          $ref: '#/components/schemas/Modality'
+        priceRange:
+          type: object
+          properties:
+            min:
+              type: number
+            max:
+              type: number
+        centers:
+          type: array
+          items:
+            type: string
+        areas:
+          type: array
+          items:
+            type: string
+        typologies:
+          type: array
+          items:
+            type: string
+
+    SavedSearchPut:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+        filters:
+          $ref: '#/components/schemas/ActivityFilter'
+
+    SavedSearchPatch:
+      type: object
+      properties:
+        name:
+          type: string
+        filters:
+          $ref: '#/components/schemas/ActivityFilter'
+
+    SavedSearchList:
+      type: object
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/SavedSearch'
+
+    # Notification schemas
+    Notification:
+      type: object
+      required:
+        - id
+        - userId
+        - title
+        - message
+        - createdAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        savedSearchId:
+          type: string
+          format: uuid
+          nullable: true
+        title:
+          type: string
+        message:
+          type: string
+        activityIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+        readAt:
+          type: string
+          format: date-time
+          nullable: true
+        deliveredAt:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+
+    NotificationList:
+      type: object
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Notification'

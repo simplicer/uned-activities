@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/11.0/phpunit.xsd"
+         bootstrap="vendor/autoload.php"
+         colors="true"
+         failOnRisky="true"
+         failOnWarning="true"
+         cacheDirectory=".phpunit.cache"
+         executionOrder="depends,defects"
+         beStrictAboutOutputDuringTests="true"
+         beStrictAboutTodoAnnotatedTests="true"
+         displayDetailsOnTestsThatTriggerDeprecations="true"
+         displayDetailsOnTestsThatTriggerErrors="true"
+         displayDetailsOnTestsThatTriggerNotices="true"
+         displayDetailsOnTestsThatTriggerWarnings="true">
+    <php>
+        <env name="APP_ENV" value="test"/>
+        <env name="DB_DSN" value="sqlite::memory:"/>
+        <env name="JWT_SECRET" value="test-secret-key-for-jwt-validation"/>
+    </php>
+    <testsuites>
+        <testsuite name="Unit">
+            <directory>tests/unit</directory>
+        </testsuite>
+        <testsuite name="Integration">
+            <directory>tests/integration</directory>
+        </testsuite>
+        <testsuite name="Acceptance">
+            <directory>tests/acceptance</directory>
+        </testsuite>
+    </testsuites>
+    <source>
+        <include>
+            <directory>src</directory>
+            <directory>apps</directory>
+        </include>
+        <exclude>
+            <directory>src/*/Infrastructure/Persistence/Doctrine/Migrations</directory>
+        </exclude>
+    </source>
+</phpunit>

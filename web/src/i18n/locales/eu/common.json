@@ -1,0 +1,19 @@
+{
+  "welcome": {
+    "title": "Ongi etorri UNED Jardueren Bilatzailea",
+    "description": "Aurkitu eta jarraitu UNEDeko luzapen ikastaroak eta jarduerak."
+  },
+  "common": {
+    "comingSoon": "Ezaugarri gehiago laster...",
+    "loading": "Kargatzen...",
+    "error": "Errore bat gertatu da",
+    "retry": "Saiatu berriro",
+    "search": "Bilatu",
+    "filter": "Iragazi",
+    "sort": "Ordenatu",
+    "save": "Gorde",
+    "cancel": "Utzi",
+    "delete": "Ezabatu",
+    "edit": "Editatu"
+  }
+}

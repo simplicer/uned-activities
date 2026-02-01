@@ -1,0 +1,150 @@
+# Docker Compose for UNED Activities Finder
+# Includes Supabase self-hosted services, backend, and frontend
+# No reverse proxy included (Dokploy provides Traefik + SSL)
+
+services:
+  # PostgreSQL (Supabase database)
+  postgres:
+    image: supabase/postgres:15.8.1.006
+    container_name: uned-postgres
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: uned_activities
+      POSTGRES_USER: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - uned_network
+
+  # Supabase GoTrue (Auth)
+  gotrue:
+    image: supabase/gotrue:v2.158.2
+    container_name: uned-gotrue
+    environment:
+      GOTRUE_API_HOST: 0.0.0.0
+      GOTRUE_API_PORT: 9999
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/uned_activities
+      GOTRUE_DB_DRIVER: postgres
+      GOTRUE_SITE_URL: http://localhost:3000
+      GOTRUE_URI_ALLOW_LIST: "*"
+      GOTRUE_JWT_SECRET: see-dokploy-panel
+      GOTRUE_JWT_EXP: 3600
+      GOTRUE_JWT_DEFAULT_GROUP_NAME: authenticated
+      GOTRUE_EXTERNAL_EMAIL_ENABLED: "true"
+      GOTRUE_EXTERNAL_ANONYMOUS_USERS_ENABLED: "true"
+    ports:
+      - "9999:9999"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - uned_network
+
+  # Supabase Realtime (optional for future features)
+  realtime:
+    image: supabase/realtime:v2.29.15
+    container_name: uned-realtime
+    environment:
+      PORT: 4000
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_NAME: uned_activities
+      SLOT_NAME: realtime
+      IP_V4: 0.0.0.0
+    ports:
+      - "4000:4000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - uned_network
+
+  # Supabase Studio (Admin UI - development only)
+  studio:
+    image: supabase/studio:20240306-1185633
+    container_name: uned-studio
+    environment:
+      STUDIO_PG_META_URL: http://meta:8080
+      POSTGRES_PASSWORD: postgres
+      DEFAULT_ORGANIZATION_NAME: UNED Activities
+      DEFAULT_PROJECT_NAME: Development
+    ports:
+      - "3001:3000"
+    depends_on:
+      - meta
+    networks:
+      - uned_network
+
+  # Supabase Meta (database introspection for Studio)
+  meta:
+    image: supabase/postgres-meta:v0.79.3
+    container_name: uned-meta
+    environment:
+      PG_META_PORT: 8080
+      PG_META_DB_HOST: postgres
+      PG_META_DB_PORT: 5432
+      PG_META_DB_NAME: uned_activities
+      PG_META_DB_USER: postgres
+      PG_META_DB_PASSWORD: postgres
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - uned_network
+
+  # Backend API (PHP)
+  backend:
+    build:
+      context: ..
+      dockerfile: container/backend.Containerfile
+    container_name: uned-backend
+    environment:
+      APP_ENV: local
+      DB_DSN: postgres://postgres:postgres@postgres:5432/uned_activities
+      GOTRUE_URL: http://gotrue:9999
+      JWT_SECRET: see-dokploy-panel
+      LOG_LEVEL: debug
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      gotrue:
+        condition: service_started
+    networks:
+      - uned_network
+    volumes:
+      - ../src:/app/src:ro
+      - ../apps:/app/apps:ro
+
+  # Frontend (React + Vite)
+  frontend:
+    build:
+      context: ..
+      dockerfile: container/frontend.Containerfile
+    container_name: uned-frontend
+    environment:
+      VITE_API_URL: http://localhost:8080
+      VITE_GOTRUE_URL: http://localhost:9999
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    networks:
+      - uned_network
+
+volumes:
+  postgres_data:
+
+networks:
+  uned_network:
+    driver: bridge

@@ -1,0 +1,19 @@
+{
+  "welcome": {
+    "title": "Benvingut al Cercador d'Activitats de la UNED",
+    "description": "Troba i segueix cursos i activitats d'extensió de la UNED."
+  },
+  "common": {
+    "comingSoon": "Més funcionalitats properament...",
+    "loading": "Carregant...",
+    "error": "S'ha produït un error",
+    "retry": "Reintentar",
+    "search": "Cercar",
+    "filter": "Filtrar",
+    "sort": "Ordenar",
+    "save": "Guardart",
+    "cancel": "Cancel·lar",
+    "delete": "Eliminar",
+    "edit": "Editar"
+  }
+}

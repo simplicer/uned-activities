@@ -1,0 +1,19 @@
+{
+  "welcome": {
+    "title": "Bienvenido al Buscador de Actividades de la UNED",
+    "description": "Encuentra y sigue cursos y actividades de extensión de la UNED."
+  },
+  "common": {
+    "comingSoon": "Más funcionalidades próximamente...",
+    "loading": "Cargando...",
+    "error": "Ha ocurrido un error",
+    "retry": "Reintentar",
+    "search": "Buscar",
+    "filter": "Filtrar",
+    "sort": "Ordenar",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "delete": "Eliminar",
+    "edit": "Editar"
+  }
+}

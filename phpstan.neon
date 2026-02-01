@@ -1,0 +1,16 @@
+parameters:
+    level: 8
+    paths:
+        - src
+        - apps
+    excludePaths:
+        - %currentWorkingDirectory%/vendor/*
+    checkMissingIterableValueType: false
+    checkGenericClassInNonGenericObjectType: false
+    reportUnmatchedIgnoredErrors: false
+    ignoreErrors:
+        # Allow Doctrine repository patterns
+        - '#Doctrine\\Persistence\\ObjectRepository#'
+
+    includes:
+        - vendor/phpstan/phpstan-strict-rules/rules.neon

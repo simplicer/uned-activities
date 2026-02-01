@@ -1,0 +1,19 @@
+{
+  "welcome": {
+    "title": "Welcome to UNED Activities Finder",
+    "description": "Find and track UNED extension courses and activities."
+  },
+  "common": {
+    "comingSoon": "More features coming soon...",
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "retry": "Retry",
+    "search": "Search",
+    "filter": "Filter",
+    "sort": "Sort",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit"
+  }
+}
