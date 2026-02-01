@@ -1,0 +1,80 @@
+<?php
+
+declare(strict_types=1);
+
+namespace CatalogHarvest\Infrastructure\Persistence;
+
+use CatalogHarvest\Domain\Entity\Activity;
+use CatalogHarvest\Domain\Port\ActivityRepository;
+use CatalogHarvest\Domain\ValueObject\ActivityId;
+
+/**
+ * In-memory activity repository for testing.
+ *
+ * NOT thread-safe. For testing only.
+ */
+final class InMemoryActivityRepository implements ActivityRepository
+{
+    /**
+     * @var array<string, Activity>
+     */
+    private array $activities = [];
+    private array $byUnedId = [];
+    private array $byUrl = [];
+
+    public function save(Activity $activity): void
+    {
+        $id = $activity->id->toString();
+        $this->activities[$id] = $activity;
+        $this->byUnedId[$activity->unedId] = $activity;
+        $this->byUrl[$activity->url] = $activity;
+    }
+
+    public function findByUnedId(string $unedId): ?Activity
+    {
+        return $this->byUnedId[$unedId] ?? null;
+    }
+
+    public function findByUrl(string $url): ?Activity
+    {
+        return $this->byUrl[$url] ?? null;
+    }
+
+    public function existsByUnedId(string $unedId): bool
+    {
+        return isset($this->byUnedId[$unedId]);
+    }
+
+    public function existsByUrl(string $url): bool
+    {
+        return isset($this->byUrl[$url]);
+    }
+
+    public function findAll(): array
+    {
+        return array_values($this->activities);
+    }
+
+    public function findById(ActivityId $id): ?Activity
+    {
+        return $this->activities[$id->toString()] ?? null;
+    }
+
+    /**
+     * Clear all stored activities (for testing).
+     */
+    public function clear(): void
+    {
+        $this->activities = [];
+        $this->byUnedId = [];
+        $this->byUrl = [];
+    }
+
+    /**
+     * Get count of stored activities.
+     */
+    public function count(): int
+    {
+        return count($this->activities);
+    }
+}

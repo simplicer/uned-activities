@@ -134,7 +134,11 @@ db-reset: ## Reset database (local only)
 
 ##@ Jobs
 
-harvest: ## Run harvest job
+discover: ## Run discovery job (find activities from UNED)
+	@echo "$(BLUE)Running activity discovery...$(NC)"
+	php apps/CliJobs/bin/discover.php
+
+harvest: ## Run harvest job (full refresh)
 	@echo "$(BLUE)Running harvest job...$(NC)"
 	php apps/CliJobs/bin/harvest.php
 
