@@ -227,4 +227,44 @@ final class PdoActivityRepository implements ActivityRepository
     {
         return $dt?->format('Y-m-d H:i:s') ?: null;
     }
+
+    public function findByFilters(array $filters, int $page = 1, int $perPage = 20): array
+    {
+        $offset = ($page - 1) * $perPage;
+        $sql = 'SELECT * FROM ' . self::TABLE;
+        $params = [];
+        $where = (new ActivityFilterBuilder())->build($filters, $params);
+
+        if ($where) {
+            $sql .= ' WHERE ' . $where;
+        }
+
+        $sql .= ' ORDER BY start_date ASC, created_at DESC LIMIT ' . $perPage . ' OFFSET ' . $offset;
+
+        $stmt = $this->connection->prepare($sql);
+        $stmt->execute($params);
+
+        $activities = [];
+        while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
+            $activities[] = $this->mapToEntity($row);
+        }
+
+        return $activities;
+    }
+
+    public function countByFilters(array $filters): int
+    {
+        $sql = 'SELECT COUNT(*) FROM ' . self::TABLE;
+        $params = [];
+        $where = (new ActivityFilterBuilder())->build($filters, $params);
+
+        if ($where) {
+            $sql .= ' WHERE ' . $where;
+        }
+
+        $stmt = $this->connection->prepare($sql);
+        $stmt->execute($params);
+
+        return (int) $stmt->fetchColumn();
+    }
 }

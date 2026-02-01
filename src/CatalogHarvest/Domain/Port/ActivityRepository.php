@@ -66,4 +66,22 @@ interface ActivityRepository
      * @return Activity|null The activity or null if not found
      */
     public function findById(ActivityId $id): ?Activity;
+
+    /**
+     * Find activities with filters and pagination.
+     *
+     * @param array<string, mixed> $filters
+     * @param int $page Page number (1-indexed)
+     * @param int $perPage Items per page
+     * @return array<Activity>
+     */
+    public function findByFilters(array $filters, int $page = 1, int $perPage = 20): array;
+
+    /**
+     * Count activities matching filters.
+     *
+     * @param array<string, mixed> $filters
+     * @return int
+     */
+    public function countByFilters(array $filters): int;
 }
