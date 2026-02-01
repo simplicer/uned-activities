@@ -15,6 +15,11 @@ use Shared\Infrastructure\Middleware\WebTokenGateMiddleware;
 use Shared\Infrastructure\Routing\ActivityRoutes;
 use Shared\Infrastructure\Routing\MetaRoutes;
 use Slim\App;
+use UserProfile\Domain\Port\SavedSearchRepository;
+use UserProfile\Domain\Port\UserRepository;
+use UserProfile\Infrastructure\Http\ProfileRoutes;
+use UserProfile\Infrastructure\Persistence\PdoSavedSearchRepository;
+use UserProfile\Infrastructure\Persistence\PdoUserRepository;
 
 require_once __DIR__ . '/../../../vendor/autoload.php';
 
@@ -64,6 +69,8 @@ $container = new \DI\Container();
 $container->set(PDO::class, $pdo);
 $container->set(ActivityRepository::class, \DI\autowire(PdoActivityRepository::class));
 $container->set(PriceSnapshotRepository::class, \DI\autowire(PdoPriceSnapshotRepository::class));
+$container->set(UserRepository::class, \DI\autowire(PdoUserRepository::class));
+$container->set(SavedSearchRepository::class, \DI\autowire(PdoSavedSearchRepository::class));
 
 $app = Slim\Factory\AppFactory::createFromContainer($container);
 
@@ -88,6 +95,11 @@ $errorMiddleware = $app->addErrorMiddleware(
 // Register activity routes
 $activityController = $container->get(ActivityController::class);
 (new ActivityRoutes())($app, $activityController);
+
+// Register profile routes
+$userRepository = $container->get(UserRepository::class);
+$savedSearchRepository = $container->get(SavedSearchRepository::class);
+(new ProfileRoutes())($app, $userRepository, $savedSearchRepository);
 
 // Run the application
 $app->run();
