@@ -61,7 +61,7 @@ final class DiscoverActivitiesTest extends TestCase
             }));
 
         // Act
-        $result = $this->useCase->discover('https://www.uned.es/cursos/ext/index');
+        $result = $this->useCase->discover('https://www.uned.es/cursos/ext/index', maxPages: 1);
 
         // Assert
         $this->assertCount(3, $result->discovered);
@@ -95,7 +95,7 @@ final class DiscoverActivitiesTest extends TestCase
             ->method('save');
 
         // Act
-        $result = $this->useCase->discover('https://www.uned.es/cursos/ext/index');
+        $result = $this->useCase->discover('https://www.uned.es/cursos/ext/index', maxPages: 1);
 
         // Assert
         $this->assertCount(3, $result->discovered);
@@ -146,8 +146,8 @@ final class DiscoverActivitiesTest extends TestCase
                 return true;
             }));
 
-        // Act
-        $this->useCase->discover('https://www.uned.es/cursos/ext/index');
+        // Act - limit to 1 page to avoid pagination
+        $this->useCase->discover('https://www.uned.es/cursos/ext/index', maxPages: 1);
 
         // Assert
         $this->assertCount(3, $discovered);

@@ -138,6 +138,10 @@ discover: ## Run discovery job (find activities from UNED)
 	@echo "$(BLUE)Running activity discovery...$(NC)"
 	php apps/CliJobs/bin/discover.php
 
+refresh: ## Refresh activity details from UNED
+	@echo "$(BLUE)Refreshing activity details...$(NC)"
+	php apps/CliJobs/bin/refresh.php
+
 harvest: ## Run harvest job (full refresh)
 	@echo "$(BLUE)Running harvest job...$(NC)"
 	php apps/CliJobs/bin/harvest.php
