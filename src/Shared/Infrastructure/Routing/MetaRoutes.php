@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace HttpApi\Routes;
+namespace Shared\Infrastructure\Routing;
 
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;

@@ -111,15 +111,15 @@ infra-restart: infra-down infra-up ## Restart Docker services
 
 migrate: ## Run database migrations
 	@echo "$(BLUE)Running database migrations...$(NC)"
-	php apps/CliJobs/bin/migrate.php migrations:migrate --no-interaction
+	php infra/scripts/migrate.php up
 
 migrate-status: ## Show migration status
-	@echo "$(BLUE)Checking migration status...$(NC)"
-	php apps/CliJobs/bin/migrate.php migrations:status
+	@echo "$(BLUE)Current migration version:$(NC)"
+	@cat infra/.migration-version 2>/dev/null || echo "No migrations applied"
 
 migrate-rollback: ## Rollback last migration
 	@echo "$(BLUE)Rolling back last migration...$(NC)"
-	php apps/CliJobs/bin/migrate.php migrations:migrate --down --no-interaction
+	php infra/scripts/migrate.php down
 
 db-reset: ## Reset database (local only)
 	@echo "$(YELLOW)WARNING: This will delete all data!$(NC)"
@@ -129,7 +129,7 @@ db-reset: ## Reset database (local only)
 		cd infra && docker compose down -v; \
 		docker compose up -d; \
 		sleep 3; \
-		php apps/CliJobs/bin/migrate.php migrations:migrate --no-interaction; \
+		php infra/scripts/migrate.php up; \
 	fi
 
 ##@ Jobs
