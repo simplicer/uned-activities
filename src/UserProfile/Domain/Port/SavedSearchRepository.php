@@ -16,4 +16,5 @@ interface SavedSearchRepository
     public function findById(string $id): ?SavedSearch;
     public function findByUserId(UserId $userId): array;
     public function delete(string $id): void;
+    public function findAllWithNotifications(): array;
 }

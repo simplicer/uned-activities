@@ -72,6 +72,22 @@ final class PdoSavedSearchRepository implements SavedSearchRepository
         $stmt->execute(['id' => $id]);
     }
 
+    public function findAllWithNotifications(): array
+    {
+        $stmt = $this->connection->prepare(
+            'SELECT * FROM ' . self::TABLE . ' WHERE notify_on_new = true'
+        );
+
+        $stmt->execute();
+
+        $searches = [];
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $searches[] = $this->mapToEntity($row);
+        }
+
+        return $searches;
+    }
+
     private function existsById(string $id): bool
     {
         $stmt = $this->connection->prepare(
