@@ -13,6 +13,7 @@
         "ramsey/uuid": "^4.7",
         "symfony/uid": "^7.0",
         "doctrine/dbal": "^4.0",
+        "doctrine/migrations": "^3.7",
         "firebase/php-jwt": "^6.10",
         "monolog/monolog": "^3.5",
         "vlucas/phpdotenv": "^5.6"

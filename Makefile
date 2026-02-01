@@ -107,6 +107,31 @@ infra-logs: ## Show Docker logs
 
 infra-restart: infra-down infra-up ## Restart Docker services
 
+##@ Database
+
+migrate: ## Run database migrations
+	@echo "$(BLUE)Running database migrations...$(NC)"
+	php apps/CliJobs/bin/migrate.php migrations:migrate --no-interaction
+
+migrate-status: ## Show migration status
+	@echo "$(BLUE)Checking migration status...$(NC)"
+	php apps/CliJobs/bin/migrate.php migrations:status
+
+migrate-rollback: ## Rollback last migration
+	@echo "$(BLUE)Rolling back last migration...$(NC)"
+	php apps/CliJobs/bin/migrate.php migrations:migrate --down --no-interaction
+
+db-reset: ## Reset database (local only)
+	@echo "$(YELLOW)WARNING: This will delete all data!$(NC)"
+	@read -p "Are you sure? [y/N] " -n 1 -r; \
+	echo; \
+	if [[ $$REPLY =~ ^[Yy]$$ ]]; then \
+		cd infra && docker compose down -v; \
+		docker compose up -d; \
+		sleep 3; \
+		php apps/CliJobs/bin/migrate.php migrations:migrate --no-interaction; \
+	fi
+
 ##@ Jobs
 
 harvest: ## Run harvest job
