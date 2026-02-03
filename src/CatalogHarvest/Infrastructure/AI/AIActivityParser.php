@@ -64,6 +64,7 @@ final readonly class AIActivityParser
         $startDate = $data['dates']['start'] ?? null;
         $endDate = $data['dates']['end'] ?? null;
         $enrollmentOpen = $data['enrollment']['open'] ?? null;
+        $enrollmentLink = $data['enrollment']['link'] ?? null;
 
         // Extract extended data
         $pricingTable = $this->extractPricingTable($data);
@@ -88,6 +89,7 @@ final readonly class AIActivityParser
             'priceCurrency' => $data['price']['currency'] ?? $data['pricing']['currency'] ?? 'EUR',
             'isFree' => $isFree,
             'enrollmentOpen' => $enrollmentOpen,
+            'enrollmentLink' => $enrollmentLink,
             'enrollmentStartDate' => null,
             'enrollmentEndDate' => null,
             'credits' => $credits,

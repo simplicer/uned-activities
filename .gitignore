@@ -15,6 +15,14 @@ dist-ssr/
 .env.local
 .env.*.local
 infra/env/*.local
+infra/env/local.env
+
+# Local data / tooling
+infra/volumes/
+.claude/
+AI_INTEGRATION_PLAN.md
+contexto.txt
+test_parser.php
 
 # IDE
 .idea/

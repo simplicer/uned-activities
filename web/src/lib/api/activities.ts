@@ -2,7 +2,7 @@
  * Activity API methods.
  */
 
-import { apiFetchWithMeta, type ApiResponse } from '../api';
+import { apiFetch, apiFetchWithMeta, type ApiResponse } from '../api';
 
 export interface Activity {
   id: string;
@@ -19,9 +19,13 @@ export interface Activity {
   priceAmount: number | null;
   priceCurrency: string | null;
   priceDisplay: string | null;
+  pricingTable?: PricingTable[] | null;
+  credits?: number | null;
+  imageUrl?: string | null;
   enrollmentOpen: boolean | null;
   enrollmentStartDate: string | null;
   enrollmentEndDate: string | null;
+  enrollmentLink?: string | null;
   status: string;
   createdAt: string;
   updatedAt: string;
@@ -40,11 +44,17 @@ export interface Staff {
 }
 
 export interface PricingTable {
-  modality: string;
+  modality: string | null;
+  modalityLabel?: string | null;
   studentType: string;
   amount: number;
   currency: string;
   display: string;
+}
+
+export interface CenterOption {
+  name: string;
+  count: number;
 }
 
 export interface LocationDetails {
@@ -146,4 +156,11 @@ export async function getActivity(id: string): Promise<ApiResponse<ActivityDetai
  */
 export async function getSimilarActivities(id: string, limit = 5): Promise<ApiResponse<SimilarActivity[]>> {
   return apiFetchWithMeta<SimilarActivity[]>(`/activities/${id}/similar?limit=${limit}`);
+}
+
+/**
+ * Get centers with activity counts.
+ */
+export async function getCenters(): Promise<ApiResponse<CenterOption[]>> {
+  return apiFetch<ApiResponse<CenterOption[]>>('/centers');
 }

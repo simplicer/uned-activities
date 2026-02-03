@@ -74,6 +74,8 @@ final readonly class RefreshActivity
         $requirements = $data['requirements'] ?? null;
         $locationDetails = $data['locationDetails'] ?? null;
         $scheduleDetails = $data['scheduleDetails'] ?? null;
+        $imageUrl = $data['imageUrl'] ?? null;
+        $enrollmentLink = $data['enrollmentLink'] ?? null;
 
         // Update activity with refresh data
         $updatedActivity = $activity->withRefreshData(
@@ -91,6 +93,7 @@ final readonly class RefreshActivity
             enrollmentOpen: $data['enrollmentOpen'],
             enrollmentStartDate: $data['enrollmentStartDate'],
             enrollmentEndDate: $data['enrollmentEndDate'],
+            enrollmentLink: $enrollmentLink,
             newHash: $newHash,
             credits: $credits,
             hasLive: $hasLive,
@@ -102,6 +105,7 @@ final readonly class RefreshActivity
             requirements: $requirements,
             locationDetails: $locationDetails,
             scheduleDetails: $scheduleDetails,
+            imageUrl: $imageUrl,
         );
 
         $this->activityRepository->save($updatedActivity);

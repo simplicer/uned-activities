@@ -44,6 +44,8 @@ services:
       context: ..
       dockerfile: infra/Dockerfile.backend
     restart: unless-stopped
+    env_file:
+      - ./env/local.env
     environment:
       - APP_ENV=local
       - APP_DEBUG=true
@@ -56,8 +58,6 @@ services:
       - REDIS_PORT=6379
       - RATE_LIMIT=100
       - RATE_WINDOW=60
-      - GEMINI_API_KEY=${GEMINI_API_KEY}
-      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
     networks:
       - uned_qa_network
 

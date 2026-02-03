@@ -14,6 +14,8 @@ use CatalogHarvest\Infrastructure\Persistence\PdoActivitySnapshotRepository;
 use CatalogHarvest\Infrastructure\Persistence\PdoPriceSnapshotRepository;
 use CatalogHarvest\Infrastructure\Persistence\PdoActivityEmbeddingRepository;
 use Shared\Infrastructure\AI\AIExtractor;
+use Shared\Infrastructure\AI\FallbackEmbeddingClient;
+use Shared\Infrastructure\AI\GeminiEmbeddingClient;
 use Shared\Infrastructure\AI\OpenRouterEmbeddingClient;
 use Shared\Infrastructure\Logging\LoggerFactory;
 use Symfony\Component\Console\Application;
@@ -25,8 +27,14 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 
 require_once __DIR__ . '/../../../vendor/autoload.php';
 
-if (file_exists(__DIR__ . '/../../../.env')) {
-    $dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/../../../');
+$envRoot = __DIR__ . '/../../../';
+$infraEnv = $envRoot . 'infra/env/local.env';
+
+if (file_exists($infraEnv)) {
+    $dotenv = Dotenv\Dotenv::createImmutable($envRoot . 'infra/env', 'local.env');
+    $dotenv->load();
+} elseif (file_exists($envRoot . '.env')) {
+    $dotenv = Dotenv\Dotenv::createImmutable($envRoot);
     $dotenv->load();
 }
 
@@ -90,12 +98,36 @@ final class HarvestCommand extends Command
 
         $embeddingService = null;
         $embeddingsEnabled = filter_var($_ENV['EMBEDDINGS_ENABLED'] ?? 'true', FILTER_VALIDATE_BOOLEAN);
-        $embeddingModel = $_ENV['OPENROUTER_EMBEDDING_MODEL'] ?? 'nomic-ai/nomic-embed-text-v1.5';
+        $geminiEmbeddingModel = $_ENV['GEMINI_EMBEDDING_MODEL'] ?? 'gemini-embedding-001';
+        $openRouterEmbeddingModel = $_ENV['OPENROUTER_EMBEDDING_MODEL'] ?? '';
 
-        if ($openRouterKey && $embeddingsEnabled) {
-            $embeddingClient = new OpenRouterEmbeddingClient($openRouterKey, $embeddingModel);
-            $embeddingRepo = new PdoActivityEmbeddingRepository($pdo);
-            $embeddingService = new GenerateActivityEmbedding($embeddingRepo, $embeddingClient, $embeddingModel, true);
+        if ($embeddingsEnabled) {
+            $embeddingClient = null;
+            $geminiClient = null;
+            $openRouterClient = null;
+
+            if ($geminiKey) {
+                $geminiClient = new GeminiEmbeddingClient($geminiKey, $geminiEmbeddingModel);
+            }
+
+            if ($openRouterKey && $openRouterEmbeddingModel !== '') {
+                $openRouterClient = new OpenRouterEmbeddingClient($openRouterKey, $openRouterEmbeddingModel);
+            }
+
+            if ($geminiClient instanceof GeminiEmbeddingClient && $openRouterClient instanceof OpenRouterEmbeddingClient) {
+                $embeddingClient = new FallbackEmbeddingClient($geminiClient, $openRouterClient);
+            } elseif ($geminiClient instanceof GeminiEmbeddingClient) {
+                $embeddingClient = $geminiClient;
+            } elseif ($openRouterClient instanceof OpenRouterEmbeddingClient) {
+                $embeddingClient = $openRouterClient;
+            }
+
+            if ($embeddingClient !== null) {
+                $embeddingRepo = new PdoActivityEmbeddingRepository($pdo);
+                $embeddingService = new GenerateActivityEmbedding($embeddingRepo, $embeddingClient, true);
+            } else {
+                $io->warning('Embeddings enabled, but no embedding provider is configured.');
+            }
         }
 
         $refresh = new RefreshActivity(

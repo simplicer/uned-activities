@@ -24,8 +24,8 @@ final class ActivityJsonSerializer
             'url' => $activity->url,
             'title' => $activity->title,
             'description' => $activity->description,
-            'startDate' => $activity->startDate?->format('Y-m-d'),
-            'endDate' => $activity->endDate?->format('Y-m-d'),
+            'startDate' => $activity->startDate?->format(\DateTimeInterface::ATOM),
+            'endDate' => $activity->endDate?->format(\DateTimeInterface::ATOM),
             'modality' => $activity->modality,
             'center' => $activity->center,
             'typology' => $activity->typology,
@@ -35,11 +35,12 @@ final class ActivityJsonSerializer
             'priceDisplay' => $this->formatPrice($activity->priceAmount, $activity->priceCurrency),
             'isFree' => $activity->isFree,
             'enrollmentOpen' => $activity->enrollmentOpen,
-            'enrollmentStartDate' => $activity->enrollmentStartDate?->format('Y-m-d'),
-            'enrollmentEndDate' => $activity->enrollmentEndDate?->format('Y-m-d'),
+            'enrollmentStartDate' => $activity->enrollmentStartDate?->format(\DateTimeInterface::ATOM),
+            'enrollmentEndDate' => $activity->enrollmentEndDate?->format(\DateTimeInterface::ATOM),
+            'enrollmentLink' => $activity->enrollmentLink,
             'status' => $activity->status,
-            'createdAt' => $activity->createdAt->format('Y-m-d H:i:s'),
-            'updatedAt' => $activity->updatedAt->format('Y-m-d H:i:s'),
+            'createdAt' => $activity->createdAt->format(\DateTimeInterface::ATOM),
+            'updatedAt' => $activity->updatedAt->format(\DateTimeInterface::ATOM),
             'hash' => $activity->hash,
             'credits' => $activity->credits,
             // Extended fields
@@ -52,6 +53,7 @@ final class ActivityJsonSerializer
             'requirements' => $activity->requirements,
             'locationDetails' => $activity->locationDetails,
             'scheduleDetails' => $activity->scheduleDetails,
+            'imageUrl' => $activity->imageUrl,
         ];
     }
 

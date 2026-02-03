@@ -19,14 +19,15 @@ use RuntimeException;
 final readonly class AIExtractor
 {
     private const array GEMINI_MODELS = [
-        'gemini-2.5-flash',                  // Gemini 2.5 Flash (latest, supports 1M tokens)
-        'gemini-2.0-flash',                  // Gemini 2.0 Flash (fast)
+        'gemini-3-flash-preview',
+        'gemini-2.5-flash',
     ];
 
     private const array OPENROUTER_MODELS = [
-        'google/gemma-3-27b-it:free',        // Gemma 3 27B - Google's free model
-        'meta-llama/llama-3-8b-instruct:free', // Llama 3 8B - Meta's free model
-        'mistralai/mistral-7b-instruct:free', // Mistral 7B - free model
+        'arcee-ai/trinity-large-preview:free',
+        'arcee-ai/trinity-mini:free',
+        'nvidia/nemotron-3-nano-30b-a3b:free',
+        'openai/gpt-oss-20b:free',
     ];
 
     public function __construct(
@@ -46,9 +47,12 @@ final readonly class AIExtractor
     public function extract(string $html, string $activityUrl): array
     {
         $lastError = null;
+        $geminiModels = $this->readModelEnv('GEMINI_MODELS', self::GEMINI_MODELS);
+        $openRouterModels = $this->readModelEnv('OPENROUTER_MODELS', self::OPENROUTER_MODELS);
+
         $allModels = array_merge(
-            array_map(fn($m) => ['gemini', $m], self::GEMINI_MODELS),
-            array_map(fn($m) => ['openrouter', $m], self::OPENROUTER_MODELS),
+            array_map(fn($m) => ['gemini', $m], $geminiModels),
+            array_map(fn($m) => ['openrouter', $m], $openRouterModels),
         );
 
         foreach ($allModels as $index => [$service, $model]) {
@@ -74,6 +78,21 @@ final readonly class AIExtractor
             0,
             $lastError ?? new RuntimeException('AI extraction failed')
         );
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function readModelEnv(string $key, array $fallback): array
+    {
+        $raw = $_ENV[$key] ?? '';
+        if (!is_string($raw) || trim($raw) === '') {
+            return $fallback;
+        }
+
+        $parts = array_filter(array_map('trim', explode(',', $raw)), static fn ($value) => $value !== '');
+
+        return $parts === [] ? $fallback : array_values($parts);
     }
 
     /**

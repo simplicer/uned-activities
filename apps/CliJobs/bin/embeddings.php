@@ -6,6 +6,8 @@ declare(strict_types=1);
 use CatalogHarvest\Application\Embeddings\GenerateActivityEmbedding;
 use CatalogHarvest\Infrastructure\Persistence\PdoActivityEmbeddingRepository;
 use CatalogHarvest\Infrastructure\Persistence\PdoActivityRepository;
+use Shared\Infrastructure\AI\FallbackEmbeddingClient;
+use Shared\Infrastructure\AI\GeminiEmbeddingClient;
 use Shared\Infrastructure\AI\OpenRouterEmbeddingClient;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Command\Command;
@@ -17,8 +19,14 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 
 require_once __DIR__ . '/../../../vendor/autoload.php';
 
-if (file_exists(__DIR__ . '/../../../.env')) {
-    $dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/../../../');
+$envRoot = __DIR__ . '/../../../';
+$infraEnv = $envRoot . 'infra/env/local.env';
+
+if (file_exists($infraEnv)) {
+    $dotenv = Dotenv\Dotenv::createImmutable($envRoot . 'infra/env', 'local.env');
+    $dotenv->load();
+} elseif (file_exists($envRoot . '.env')) {
+    $dotenv = Dotenv\Dotenv::createImmutable($envRoot);
     $dotenv->load();
 }
 
@@ -42,8 +50,10 @@ final class EmbeddingsCommand extends Command
         $activityId = (string) $input->getArgument('activity-id');
         $limit = (int) $input->getOption('limit');
 
+        $geminiKey = $_ENV['GEMINI_API_KEY'] ?? '';
         $openRouterKey = $_ENV['OPENROUTER_API_KEY'] ?? '';
-        $embeddingModel = $_ENV['OPENROUTER_EMBEDDING_MODEL'] ?? 'nomic-ai/nomic-embed-text-v1.5';
+        $geminiEmbeddingModel = $_ENV['GEMINI_EMBEDDING_MODEL'] ?? 'gemini-embedding-001';
+        $openRouterEmbeddingModel = $_ENV['OPENROUTER_EMBEDDING_MODEL'] ?? '';
         $enabled = filter_var($_ENV['EMBEDDINGS_ENABLED'] ?? 'true', FILTER_VALIDATE_BOOLEAN);
 
         if (!$enabled) {
@@ -51,16 +61,37 @@ final class EmbeddingsCommand extends Command
             return Command::SUCCESS;
         }
 
-        if ($openRouterKey === '') {
-            $io->error('OPENROUTER_API_KEY not configured.');
+        if ($geminiKey === '' && $openRouterKey === '') {
+            $io->error('No embedding provider configured (GEMINI_API_KEY / OPENROUTER_API_KEY).');
             return Command::FAILURE;
         }
 
         $pdo = $this->createPdo();
         $activityRepo = new PdoActivityRepository($pdo);
         $embeddingRepo = new PdoActivityEmbeddingRepository($pdo);
-        $embeddingClient = new OpenRouterEmbeddingClient($openRouterKey, $embeddingModel);
-        $embeddingService = new GenerateActivityEmbedding($embeddingRepo, $embeddingClient, $embeddingModel, true);
+        $geminiClient = null;
+        $openRouterClient = null;
+
+        if ($geminiKey !== '') {
+            $geminiClient = new GeminiEmbeddingClient($geminiKey, $geminiEmbeddingModel);
+        }
+
+        if ($openRouterKey !== '' && $openRouterEmbeddingModel !== '') {
+            $openRouterClient = new OpenRouterEmbeddingClient($openRouterKey, $openRouterEmbeddingModel);
+        }
+
+        if ($geminiClient instanceof GeminiEmbeddingClient && $openRouterClient instanceof OpenRouterEmbeddingClient) {
+            $embeddingClient = new FallbackEmbeddingClient($geminiClient, $openRouterClient);
+        } elseif ($geminiClient instanceof GeminiEmbeddingClient) {
+            $embeddingClient = $geminiClient;
+        } elseif ($openRouterClient instanceof OpenRouterEmbeddingClient) {
+            $embeddingClient = $openRouterClient;
+        } else {
+            $io->error('Embedding providers configured, but embedding model missing.');
+            return Command::FAILURE;
+        }
+
+        $embeddingService = new GenerateActivityEmbedding($embeddingRepo, $embeddingClient, true);
 
         if ($activityId !== 'all') {
             $activity = $activityRepo->findById(\CatalogHarvest\Domain\ValueObject\ActivityId::fromString($activityId));

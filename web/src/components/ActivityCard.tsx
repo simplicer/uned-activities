@@ -4,7 +4,7 @@
 
 import { Activity } from '@/lib/api/activities';
 import { Link } from 'react-router-dom';
-import { MapPin, Calendar, ArrowRight } from 'lucide-react';
+import { MapPin, Calendar } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 interface ActivityCardProps {
@@ -12,7 +12,43 @@ interface ActivityCardProps {
 }
 
 export function ActivityCard({ activity }: ActivityCardProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+
+  const localeCode =
+    i18n.language.startsWith('en') ? 'en-US' :
+    i18n.language.startsWith('ca') || i18n.language.startsWith('val') ? 'ca-ES' :
+    i18n.language.startsWith('eu') ? 'eu-ES' :
+    i18n.language.startsWith('gl') ? 'gl-ES' :
+    'es-ES';
+
+  const formatPrice = (amount: number, currency?: string | null) => {
+    if (!Number.isFinite(amount)) {
+      return '—';
+    }
+    const value = amount / 100;
+    const symbol = currency === 'USD' ? '$' : currency === 'GBP' ? '£' : '€';
+    return `${value.toLocaleString(localeCode, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}${symbol}`;
+  };
+
+  const formatCredits = (credits: number) => {
+    if (!Number.isFinite(credits)) {
+      return '—';
+    }
+    const value = credits / 100;
+    const decimals = value % 1 === 0 ? 0 : value % 0.1 === 0 ? 1 : 2;
+    return value.toLocaleString(localeCode, { minimumFractionDigits: decimals, maximumFractionDigits: 2 });
+  };
+
+  const renderText = (value: unknown): string => {
+    if (value === null || value === undefined) return '';
+    if (typeof value === 'string') return value;
+    if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+    try {
+      return JSON.stringify(value);
+    } catch {
+      return String(value);
+    }
+  };
 
   const modalityLabels: Record<string, string> = {
     'online': t('filters.modalityOnline'),
@@ -31,22 +67,39 @@ export function ActivityCard({ activity }: ActivityCardProps) {
       <article className="card hover-lift group-hover:shadow-card-hover transition-all duration-300">
         {/* Card Header */}
         <div className="card-header pb-3">
-          <div className="flex items-start justify-between gap-2 mb-3">
-            <h3 className="card-title line-clamp-2 group-hover:text-primary transition-colors">
-              {activity.title || t('activity.noTitle')}
-            </h3>
+          <div className="flex items-start gap-4 mb-3">
+            {activity.imageUrl && (
+              <div className="flex-shrink-0 rounded-lg overflow-hidden border border-border w-28 h-20">
+                <img
+                  src={activity.imageUrl}
+                  alt={activity.title || t('activity.noTitle')}
+                  className="w-full h-full object-cover"
+                  loading="lazy"
+                />
+              </div>
+            )}
+            <div className="flex-1 min-w-0">
+              <h3 className="card-title line-clamp-2 group-hover:text-primary transition-colors">
+                {activity.title ? renderText(activity.title) : t('activity.noTitle')}
+              </h3>
+            </div>
           </div>
 
           {/* Badges */}
           <div className="flex flex-wrap gap-2">
             {activity.modality && (
               <span className={`badge border ${modalityColors[activity.modality] || 'bg-primary/10 text-primary border-primary/20'}`}>
-                {modalityLabels[activity.modality] || activity.modality}
+                {modalityLabels[activity.modality] || renderText(activity.modality)}
               </span>
             )}
             {activity.typology && (
-              <span className="badge bg-secondary/50 text-secondary-foreground border border-secondary-200">
-                {activity.typology}
+              <span className="badge bg-secondary/60 text-secondary-foreground border border-secondary/60">
+                {renderText(activity.typology)}
+              </span>
+            )}
+            {activity.credits !== null && activity.credits !== undefined && (
+              <span className="badge bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800">
+                🎓 {formatCredits(activity.credits)} ECTS
               </span>
             )}
           </div>
@@ -57,7 +110,7 @@ export function ActivityCard({ activity }: ActivityCardProps) {
           {/* Description */}
           {activity.description && (
             <p className="text-sm text-muted-foreground line-clamp-2">
-              {activity.description}
+              {renderText(activity.description)}
             </p>
           )}
 
@@ -66,13 +119,19 @@ export function ActivityCard({ activity }: ActivityCardProps) {
             {activity.center && (
               <div className="flex items-center gap-2 text-muted-foreground">
                 <MapPin className="w-4 h-4 flex-shrink-0" />
-                <span className="truncate">{activity.center}</span>
+                <span className="truncate">{renderText(activity.center)}</span>
               </div>
             )}
             {activity.startDate && (
               <div className="flex items-center gap-2 text-muted-foreground">
                 <Calendar className="w-4 h-4 flex-shrink-0" />
-                <span>{new Date(activity.startDate).toLocaleDateString(t('filters.modalityOnline') === 'Online' ? 'en-US' : 'es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                <span>
+                  {(() => {
+                    const date = new Date(activity.startDate ?? '');
+                    if (Number.isNaN(date.getTime())) return renderText(activity.startDate);
+                    return new Intl.DateTimeFormat(localeCode, { dateStyle: 'medium' }).format(date);
+                  })()}
+                </span>
               </div>
             )}
           </div>
@@ -82,11 +141,13 @@ export function ActivityCard({ activity }: ActivityCardProps) {
         <div className="card-footer pt-4 border-t">
           <div className="flex items-center justify-between w-full">
             {/* Price */}
-            {activity.priceDisplay !== null ? (
+            {activity.priceAmount !== null || activity.priceDisplay !== null ? (
               <div className="flex flex-col">
                 <span className="text-xs text-muted-foreground">{t('activity.price')}</span>
                 <span className="text-lg font-bold text-primary">
-                  {activity.priceDisplay}
+                  {activity.priceAmount !== null
+                    ? formatPrice(activity.priceAmount, activity.priceCurrency)
+                    : renderText(activity.priceDisplay)}
                 </span>
               </div>
             ) : (
@@ -113,10 +174,6 @@ export function ActivityCard({ activity }: ActivityCardProps) {
             )}
           </div>
 
-          {/* CTA Arrow */}
-          <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
-            <ArrowRight className="w-5 h-5 text-primary" />
-          </div>
         </div>
       </article>
     </Link>

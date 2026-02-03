@@ -47,6 +47,7 @@ final class ActivityDetailParser
             'priceCurrency' => 'EUR',
             'isFree' => $pricingInfo['amount'] === 0 || $pricingInfo['amount'] === null,
             'enrollmentOpen' => $this->extractEnrollmentOpen($xpath),
+            'enrollmentLink' => $this->extractEnrollmentLink($xpath),
             'enrollmentStartDate' => null,
             'enrollmentEndDate' => null,
             'credits' => $this->extractCredits($xpath),
@@ -57,11 +58,79 @@ final class ActivityDetailParser
             'staff' => $this->extractStaff($xpath),
             'sessions' => $this->extractSessions($xpath),
             'targetAudience' => $this->extractTargetAudience($xpath),
-            'requirements' => null, // Would need more complex parsing
+            'requirements' => $this->extractExtraSections($xpath),
             'locationDetails' => $this->extractLocationDetails($xpath),
             'scheduleDetails' => $this->extractScheduleDetails($xpath),
             'imageUrl' => $this->extractImageUrl($xpath),
         ];
+    }
+
+    private function extractSectionText(DOMXPath $xpath, string $label): ?string
+    {
+        $nodes = $xpath->query("//dt[contains(., '{$label}')]/following-sibling::dd[1]");
+        if ($nodes === false || $nodes->length === 0) {
+            return null;
+        }
+
+        $node = $nodes->item(0);
+        if (!$node) {
+            return null;
+        }
+
+        $text = trim(preg_replace('/\s+/', ' ', $node->textContent ?? ''));
+        $text = html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+
+        return $text !== '' ? $text : null;
+    }
+
+    private function extractExtraSections(DOMXPath $xpath): ?array
+    {
+        $sections = [];
+
+        $sections['qualification'] = $this->extractSectionText($xpath, 'Titulación requerida');
+        $sections['objectives'] = $this->extractSectionText($xpath, 'Objetivos');
+        $sections['methodology'] = $this->extractSectionText($xpath, 'Metodología');
+        $sections['assistance'] = $this->extractSectionText($xpath, 'Asistencia');
+        $sections['virtualAssistance'] = $this->extractSectionText($xpath, 'Asistencia virtual');
+
+        // Contact / More info
+        $moreInfo = $this->extractSectionText($xpath, 'Más información');
+        if ($moreInfo) {
+            $contact = ['text' => $moreInfo];
+            if (preg_match('/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i', $moreInfo, $matches)) {
+                $contact['email'] = $matches[0];
+            }
+            if (preg_match('/(?:\\+?\\d[\\d\\s\\-\\/\\.]{6,})/', $moreInfo, $matches)) {
+                $contact['phone'] = trim($matches[0]);
+            }
+            $sections['contact'] = $contact;
+        }
+
+        // Collaborators
+        $collabNodes = $xpath->query("//dt[contains(., 'Colaboradores')]/following-sibling::dd[1]");
+        if ($collabNodes !== false && $collabNodes->length > 0) {
+            $raw = trim($collabNodes->item(0)->textContent ?? '');
+            $raw = html_entity_decode($raw, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+            if ($raw !== '') {
+                $sections['collaborators'] = $raw;
+            }
+        }
+
+        // Calendar link
+        $calendarNodes = $xpath->query("//a[contains(., 'Ver calendario') or contains(@href, 'calendar')]");
+        if ($calendarNodes !== false && $calendarNodes->length > 0) {
+            $href = $calendarNodes->item(0)->getAttribute('href');
+            if ($href !== '') {
+                if (!str_starts_with($href, 'http')) {
+                    $href = 'https://extension.uned.es' . (str_starts_with($href, '/') ? '' : '/') . $href;
+                }
+                $sections['calendarUrl'] = $href;
+            }
+        }
+
+        $sections = array_filter($sections, static fn ($value) => $value !== null && $value !== '' && $value !== []);
+
+        return $sections !== [] ? $sections : null;
     }
 
     private function extractTitle(DOMXPath $xpath): ?string
@@ -434,22 +503,54 @@ final class ActivityDetailParser
 
     private function extractPricingInfo(DOMXPath $xpath): array
     {
-        // Find the pricing table
-        $nodes = $xpath->query("//table[@class='tabla_precios']//td[@itemprop='price']");
+        $parseAmount = static function (string $value): ?int {
+            $valueLower = strtolower($value);
+            if (preg_match('/(\d+(?:,\d+)?)\s*€/', $value, $matches)) {
+                return (int) ((float) str_replace(',', '.', $matches[1]) * 100);
+            }
+            if (str_contains($valueLower, 'gratis') || str_contains($valueLower, 'gratuita')) {
+                return 0;
+            }
+
+            return null;
+        };
+
+        $normalizeModality = static function (string $label): ?string {
+            $value = strtolower($label);
+            $isOnline = str_contains($value, 'online')
+                || str_contains($value, 'on line')
+                || str_contains($value, 'en línea')
+                || str_contains($value, 'a distancia');
+
+            if ($isOnline) {
+                if (str_contains($value, 'diferido') || str_contains($value, 'grabado')) {
+                    return 'online_diferido';
+                }
+                if (str_contains($value, 'directo') || str_contains($value, 'en vivo')) {
+                    return 'online_directo';
+                }
+                return 'online';
+            }
+
+            if (str_contains($value, 'presencial')) {
+                return 'in-person';
+            }
+            if (str_contains($value, 'hibrid') || str_contains($value, 'semipresencial')) {
+                return 'hybrid';
+            }
+            return null;
+        };
 
         $priceAmount = null;
         $pricingTable = [];
 
+        $nodes = $xpath->query("//table[@class='tabla_precios']//td[@itemprop='price']");
         if ($nodes !== false && $nodes->length > 0) {
             foreach ($nodes as $node) {
                 $text = trim($node->textContent);
-
-                // Parse price like "45 €" or "Gratuita"
-                if (preg_match('/(\d+(?:,\d+)?)\s*€/', $text, $matches)) {
-                    $price = (float) str_replace(',', '.', $matches[1]);
-                    $priceAmount = (int) ($price * 100); // Convert to cents
-                } elseif (str_contains(strtolower($text), 'gratis') || str_contains(strtolower($text), 'gratuita')) {
-                    $priceAmount = 0;
+                $amount = $parseAmount($text);
+                if ($amount !== null) {
+                    $priceAmount = $amount;
                 }
             }
         }
@@ -458,78 +559,118 @@ final class ActivityDetailParser
             $nodes = $xpath->query("//span[contains(@class, 'price')]");
             if ($nodes !== false && $nodes->length > 0) {
                 $text = trim($nodes->item(0)->textContent);
-                if (preg_match('/(\d+(?:[\\.,]\\d+)?)\\s*€/', $text, $matches)) {
-                    $price = (float) str_replace(',', '.', $matches[1]);
-                    $priceAmount = (int) ($price * 100);
-                } elseif (str_contains(strtolower($text), 'gratis') || str_contains(strtolower($text), 'gratuita')) {
-                    $priceAmount = 0;
+                $amount = $parseAmount($text);
+                if ($amount !== null) {
+                    $priceAmount = $amount;
                 }
             }
         }
 
-        // Build pricing table from all rows
         $tableRows = $xpath->query("//table[@class='tabla_precios']//tr");
+        if ($tableRows === false) {
+            return [
+                'amount' => $priceAmount,
+                'table' => null,
+            ];
+        }
 
-        if ($tableRows !== false) {
-            $headers = [];
-            $isHeaderRow = true;
+        $rows = [];
+        foreach ($tableRows as $row) {
+            $cells = [];
+            $cellNodes = $xpath->query('.//th|.//td', $row);
+            if ($cellNodes === false) {
+                continue;
+            }
+            foreach ($cellNodes as $cell) {
+                $cells[] = trim(preg_replace('/\s+/', ' ', $cell->textContent));
+            }
+            if ($cells !== []) {
+                $rows[] = $cells;
+            }
+        }
 
-            foreach ($tableRows as $row) {
-                if ($isHeaderRow) {
-                    // Extract headers (th elements)
-                    $thNodes = $xpath->query('.//th', $row);
-                    foreach ($thNodes as $th) {
-                        $headers[] = trim($th->textContent);
-                    }
-                    $isHeaderRow = false;
+        if ($rows === []) {
+            return [
+                'amount' => $priceAmount,
+                'table' => null,
+            ];
+        }
+
+        $sectionHeader = null;
+        $headerRow = $rows[0];
+        $dataRows = array_slice($rows, 1);
+
+        if (count($headerRow) == 1 && $dataRows !== []) {
+            $sectionHeader = $headerRow[0];
+        } elseif (count($headerRow) == 1 && $dataRows === []) {
+            $headerRow = [];
+        }
+
+        $hasHeaderRow = count($headerRow) > 1 && $dataRows !== [];
+        $columnHeaders = $hasHeaderRow ? $headerRow : [];
+
+        if (!$hasHeaderRow && $sectionHeader === null) {
+            $dataRows = $rows;
+        }
+
+        foreach ($dataRows as $row) {
+            if (count($row) < 2) {
+                continue;
+            }
+            $rowLabel = $row[0] ?? '';
+            $rowLabelLower = strtolower($rowLabel);
+            $rowModality = $normalizeModality($rowLabel);
+
+            for ($i = 1; $i < count($row); $i++) {
+                $cell = $row[$i] ?? '';
+                $amount = $parseAmount($cell);
+                if ($amount === null) {
                     continue;
                 }
 
-                // Extract data row
-                $tdNodes = $xpath->query('.//td', $row);
-                $rowData = [];
+                $columnLabel = $columnHeaders[$i] ?? $sectionHeader ?? null;
+                $columnModality = $columnLabel ? $normalizeModality($columnLabel) : null;
 
-                foreach ($tdNodes as $index => $td) {
-                    if (isset($headers[$index])) {
-                        $rowData[$headers[$index]] = trim($td->textContent);
-                    }
+                $modality = $rowModality ?? $columnModality;
+                $modalityLabel = $rowLabel !== '' ? $rowLabel : ($columnLabel !== null ? $columnLabel : null);
+                $studentType = $columnLabel ?? ($rowLabel !== '' ? $rowLabel : 'General');
+
+                if (str_contains($rowLabelLower, 'precio') && $columnLabel !== null) {
+                    $modalityLabel = null;
+                    $studentType = $columnLabel;
                 }
 
-                if (!empty($rowData)) {
-                    // Parse the row data
-                    $modality = 'presencial'; // Default
-                    $studentType = 'General';
-                    $amount = null;
-
-                    // Try to determine student type from first column (if not "Precio")
-                    if (isset($rowData[0]) && $rowData[0] !== 'Precio') {
-                        $studentType = $rowData[0];
-                    }
-
-                    // Try to find price in the row
-                    foreach ($rowData as $value) {
-                        if (preg_match('/(\d+(?:,\d+)?)\s*€/', $value, $matches)) {
-                            $amount = (int) ((float) str_replace(',', '.', $matches[1]) * 100);
-                            break;
-                        }
-                    }
-
-                    if ($amount !== null) {
-                        $pricingTable[] = [
-                            'modality' => $modality,
-                            'studentType' => $studentType,
-                            'amount' => $amount,
-                            'currency' => 'EUR',
-                            'display' => implode(' | ', $rowData),
-                        ];
-                    }
-                }
+                $pricingTable[] = [
+                    'modality' => $modality,
+                    'modalityLabel' => $modalityLabel,
+                    'studentType' => $studentType,
+                    'amount' => $amount,
+                    'currency' => 'EUR',
+                    'display' => $cell,
+                ];
             }
+        }
+
+        if ($pricingTable !== [] && $priceAmount === null) {
+            $min = null;
+            foreach ($pricingTable as $row) {
+                $min = $min === null ? $row['amount'] : min($min, $row['amount']);
+            }
+            $priceAmount = $min;
+        }
+
+        if ($pricingTable !== []) {
+            $unique = [];
+            foreach ($pricingTable as $row) {
+                $key = strtolower(($row['modalityLabel'] ?? '') . '|' . ($row['studentType'] ?? '') . '|' . ($row['amount'] ?? ''));
+                $unique[$key] = $row;
+            }
+            $pricingTable = array_values($unique);
         }
 
         return [
             'amount' => $priceAmount,
-            'table' => empty($pricingTable) ? null : $pricingTable,
+            'table' => $pricingTable !== [] ? $pricingTable : null,
         ];
     }
 
@@ -565,22 +706,60 @@ final class ActivityDetailParser
         return null; // Unknown
     }
 
-    private function extractCredits(DOMXPath $xpath): ?int
+    private function extractEnrollmentLink(DOMXPath $xpath): ?string
     {
-        // Credits might be mentioned in the activity details
-        // Format: "X crédito ECTS" or "X créditos ECTS"
-        $nodes = $xpath->query("//dd[contains(., 'crédito') or contains(., 'credito')]");
+        $nodes = $xpath->query("//a[@class='matricula' or contains(@href, 'inscripcion') or contains(@href, 'matricula') or contains(., 'Matrícula') or contains(., 'Matricula') or contains(., 'Inscripción') or contains(., 'Inscripcion')]");
 
         if ($nodes !== false && $nodes->length > 0) {
-            $text = strtolower(trim($nodes->item(0)->textContent));
-
-            if (preg_match('/(\d+(?:,\d+)?)\s*créditos?\s*ects/i', $text, $matches)) {
-                $credits = (float) str_replace(',', '.', $matches[1]);
-                return (int) ($credits * 100); // Store as integer (e.g., 6.0 = 600)
+            $href = $nodes->item(0)?->getAttribute('href');
+            if ($href !== null && $href !== '') {
+                if (str_starts_with($href, '/')) {
+                    return 'https://extension.uned.es' . $href;
+                }
+                return $href;
             }
         }
 
         return null;
+    }
+
+    private function extractCredits(DOMXPath $xpath): ?int
+    {
+        $candidates = [];
+
+        $extract = static function (string $text) use (&$candidates): void {
+            if (preg_match_all('/(\d+(?:[\\.,]\\d+)?)\\s*créditos?\\s*ects/i', $text, $matches)) {
+                foreach ($matches[1] as $match) {
+                    $credits = (float) str_replace(',', '.', $match);
+                    if ($credits > 0) {
+                        $candidates[] = $credits;
+                    }
+                }
+            }
+        };
+
+        // Prefer explicit "Créditos" field if present
+        $nodes = $xpath->query("//dt[contains(., 'Créditos') or contains(., 'créditos')]/following-sibling::dd[1]");
+        if ($nodes !== false) {
+            foreach ($nodes as $node) {
+                $extract(trim($node->textContent));
+            }
+        }
+
+        // Fallback: any node containing ECTS
+        $nodes = $xpath->query("//*[contains(., 'ECTS') or contains(., 'ects')]");
+        if ($nodes !== false) {
+            foreach ($nodes as $node) {
+                $extract(trim($node->textContent));
+            }
+        }
+
+        if ($candidates === []) {
+            return null;
+        }
+
+        $value = min($candidates);
+        return (int) round($value * 100);
     }
 
     private function extractHasLive(DOMXPath $xpath): bool
@@ -638,9 +817,147 @@ final class ActivityDetailParser
 
     private function extractSessions(DOMXPath $xpath): ?array
     {
-        // Sessions would be in a "Programa" or "Horario" section
-        // For now, return null as parsing would be complex
-        return null;
+        $sessions = [];
+
+        $parseDate = function (string $text): ?string {
+            if (preg_match('/(\d{1,2})[\\/\\.-](\d{1,2})[\\/\\.-](\d{4})/', $text, $matches)) {
+                return sprintf('%s-%02d-%02d', $matches[3], (int) $matches[2], (int) $matches[1]);
+            }
+
+            if (preg_match('/(\d{1,2})\\s+de\\s+([a-záéíóúñ]+)\\s+de\\s+(\\d{4})/i', $text, $matches)) {
+                $month = $this->spanishMonthToNumber($matches[2]);
+                return sprintf('%s-%02d-%02d', $matches[3], $month, (int) $matches[1]);
+            }
+
+            return null;
+        };
+
+        $parseTime = function (string $text): array {
+            if (preg_match('/(\\d{1,2}:\\d{2})\\s*(?:a|–|-)\\s*(\\d{1,2}:\\d{2})/i', $text, $matches)) {
+                return [$matches[1], $matches[2]];
+            }
+
+            if (preg_match('/(\\d{1,2}:\\d{2})/i', $text, $matches)) {
+                return [$matches[1], null];
+            }
+
+            return [null, null];
+        };
+
+        $tableSelectors = [
+            "//div[@id='programa']//table//tr",
+            "//div[contains(@class, 'programa')]//table//tr",
+            "//table[contains(@class, 'programa')]//tr",
+            "//table[contains(@class, 'horario')]//tr",
+            "//h2[contains(., 'Programa') or contains(., 'Horario')]/following::table[1]//tr",
+        ];
+
+        foreach ($tableSelectors as $selector) {
+            $rows = $xpath->query($selector);
+            if ($rows === false || $rows->length === 0) {
+                continue;
+            }
+
+            foreach ($rows as $row) {
+                $cells = $xpath->query('.//th|.//td', $row);
+                if ($cells === false || $cells->length === 0) {
+                    continue;
+                }
+
+                $values = [];
+                foreach ($cells as $cell) {
+                    $values[] = trim(preg_replace('/\\s+/', ' ', $cell->textContent));
+                }
+
+                $joined = strtolower(implode(' ', $values));
+                if (str_contains($joined, 'fecha') && str_contains($joined, 'hora')) {
+                    continue;
+                }
+
+                $raw = implode(' ', $values);
+                $date = $parseDate($raw);
+                [$timeStart, $timeEnd] = $parseTime($raw);
+
+                $title = null;
+                $description = null;
+
+                if (count($values) >= 3) {
+                    $title = $values[2] ?? null;
+                    if (count($values) > 3) {
+                        $description = implode(' | ', array_slice($values, 3));
+                    }
+                } elseif (count($values) === 2) {
+                    $title = $values[1];
+                } elseif (count($values) === 1) {
+                    $title = $values[0];
+                }
+
+                if ($date !== null || $timeStart !== null || $title !== null) {
+                    $sessions[] = array_filter([
+                        'date' => $date,
+                        'timeStart' => $timeStart,
+                        'timeEnd' => $timeEnd,
+                        'title' => $title,
+                        'description' => $description,
+                    ], static fn ($value) => $value !== null && $value !== '');
+                }
+            }
+        }
+
+        $listNodes = $xpath->query("//div[@id='programa']//li|//div[contains(@class, 'programa')]//li");
+        if ($listNodes !== false && $listNodes->length > 0) {
+            foreach ($listNodes as $node) {
+                $text = trim(preg_replace('/\\s+/', ' ', $node->textContent));
+                if ($text === '') {
+                    continue;
+                }
+
+                $date = $parseDate($text);
+                [$timeStart, $timeEnd] = $parseTime($text);
+
+                $sessions[] = array_filter([
+                    'date' => $date,
+                    'timeStart' => $timeStart,
+                    'timeEnd' => $timeEnd,
+                    'title' => $text,
+                ], static fn ($value) => $value !== null && $value !== '');
+            }
+        }
+
+        $programNodes = $xpath->query("//ul[@id='programa']/li");
+        if ($programNodes !== false && $programNodes->length > 0) {
+            foreach ($programNodes as $programNode) {
+                $dateNode = $xpath->query(".//span[contains(@class, 'fechas_programa')]", $programNode);
+                $dateText = null;
+                if ($dateNode !== false && $dateNode->length > 0) {
+                    $dateText = trim(preg_replace('/\\s+/', ' ', $dateNode->item(0)->textContent));
+                }
+
+                $sessionItems = $xpath->query(".//ul//li", $programNode);
+                if ($sessionItems === false || $sessionItems->length === 0) {
+                    continue;
+                }
+
+                foreach ($sessionItems as $sessionItem) {
+                    $timeNode = $xpath->query(".//span[contains(@class, 'h')]", $sessionItem);
+                    $titleNode = $xpath->query(".//span[contains(@class, 't')]", $sessionItem);
+
+                    $timeText = $timeNode !== false && $timeNode->length > 0 ? trim($timeNode->item(0)->textContent) : '';
+                    [$timeStart, $timeEnd] = $parseTime($timeText);
+
+                    $title = $titleNode !== false && $titleNode->length > 0 ? trim(preg_replace('/\\s+/', ' ', $titleNode->item(0)->textContent)) : null;
+
+                    $sessions[] = array_filter([
+                        'date' => $dateText ?? $parseDate($timeText),
+                        'timeStart' => $timeStart,
+                        'timeEnd' => $timeEnd,
+                        'title' => $title,
+                    ], static fn ($value) => $value !== null && $value !== '');
+                }
+            }
+        }
+
+        return $sessions === [] ? null : $sessions;
     }
 
     private function extractTargetAudience(DOMXPath $xpath): ?string
@@ -729,9 +1046,11 @@ final class ActivityDetailParser
     {
         // Main activity image
         $selectors = [
-            "//img[@itemprop='image']/@src",
             "//meta[@property='og:image']/@content",
+            "//meta[@name='twitter:image:src']/@content",
+            "//link[@rel='image_src']/@href",
             "//div[@id='imagen_banner']//img/@src",
+            "//img[@itemprop='image']/@src",
         ];
 
         foreach ($selectors as $selector) {

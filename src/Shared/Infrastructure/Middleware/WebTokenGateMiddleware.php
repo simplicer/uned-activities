@@ -26,6 +26,7 @@ final class WebTokenGateMiddleware
         '/v1/version',
         '/v1/health',
         '/v1/activities',
+        '/v1/centers',
         '/v1/auth/request',
         '/v1/auth/verify',
     ];

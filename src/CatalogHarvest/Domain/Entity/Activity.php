@@ -37,6 +37,7 @@ final readonly class Activity
         public ?bool $enrollmentOpen,
         public ?\DateTimeImmutable $enrollmentStartDate,
         public ?\DateTimeImmutable $enrollmentEndDate,
+        public ?string $enrollmentLink,
         public ?int $credits,          // ECTS credits stored as integer (e.g., 600 = 6.00)
         public ?bool $hasLive,         // has live option
         public ?bool $hasRecorded,     // has recorded/delayed option
@@ -49,6 +50,7 @@ final readonly class Activity
         public ?array $requirements,   // Requirements: {prerequisites[], methodology, evaluation}
         public ?array $locationDetails,// Location details: {venue, address, city, timezone}
         public ?array $scheduleDetails,// Schedule details: {timeStart, timeEnd, timezone}
+        public ?string $imageUrl,      // Header image URL
     ) {
     }
 
@@ -86,6 +88,7 @@ final readonly class Activity
             enrollmentOpen: null,
             enrollmentStartDate: null,
             enrollmentEndDate: null,
+            enrollmentLink: null,
             credits: null,
             hasLive: null,
             hasRecorded: null,
@@ -96,6 +99,7 @@ final readonly class Activity
             requirements: null,
             locationDetails: null,
             scheduleDetails: null,
+            imageUrl: null,
         );
     }
 
@@ -124,6 +128,7 @@ final readonly class Activity
         ?bool $enrollmentOpen = null,
         ?\DateTimeImmutable $enrollmentStartDate = null,
         ?\DateTimeImmutable $enrollmentEndDate = null,
+        ?string $enrollmentLink = null,
         ?int $credits = null,
         ?bool $hasLive = null,
         ?bool $hasRecorded = null,
@@ -134,6 +139,7 @@ final readonly class Activity
         ?array $requirements = null,
         ?array $locationDetails = null,
         ?array $scheduleDetails = null,
+        ?string $imageUrl = null,
     ): self {
         return new self(
             id: $id,
@@ -157,6 +163,7 @@ final readonly class Activity
             enrollmentOpen: $enrollmentOpen,
             enrollmentStartDate: $enrollmentStartDate,
             enrollmentEndDate: $enrollmentEndDate,
+            enrollmentLink: $enrollmentLink,
             credits: $credits,
             hasLive: $hasLive,
             hasRecorded: $hasRecorded,
@@ -167,6 +174,7 @@ final readonly class Activity
             requirements: $requirements,
             locationDetails: $locationDetails,
             scheduleDetails: $scheduleDetails,
+            imageUrl: $imageUrl,
         );
     }
 
@@ -188,6 +196,7 @@ final readonly class Activity
         ?bool $enrollmentOpen,
         ?\DateTimeImmutable $enrollmentStartDate,
         ?\DateTimeImmutable $enrollmentEndDate,
+        ?string $enrollmentLink,
         ?string $newHash,
         ?int $credits = null,
         ?bool $hasLive = null,
@@ -199,6 +208,7 @@ final readonly class Activity
         ?array $requirements = null,
         ?array $locationDetails = null,
         ?array $scheduleDetails = null,
+        ?string $imageUrl = null,
     ): self {
         return new self(
             id: $this->id,
@@ -222,6 +232,7 @@ final readonly class Activity
             enrollmentOpen: $enrollmentOpen ?? $this->enrollmentOpen,
             enrollmentStartDate: $enrollmentStartDate ?? $this->enrollmentStartDate,
             enrollmentEndDate: $enrollmentEndDate ?? $this->enrollmentEndDate,
+            enrollmentLink: $enrollmentLink ?? $this->enrollmentLink,
             credits: $credits ?? $this->credits,
             hasLive: $hasLive ?? $this->hasLive,
             hasRecorded: $hasRecorded ?? $this->hasRecorded,
@@ -232,6 +243,7 @@ final readonly class Activity
             requirements: $requirements ?? $this->requirements,
             locationDetails: $locationDetails ?? $this->locationDetails,
             scheduleDetails: $scheduleDetails ?? $this->scheduleDetails,
+            imageUrl: $imageUrl ?? $this->imageUrl,
         );
     }
 
@@ -264,6 +276,8 @@ final readonly class Activity
             $this->enrollmentOpen,
             $this->enrollmentStartDate?->format('Y-m-d'),
             $this->enrollmentEndDate?->format('Y-m-d'),
+            $this->enrollmentLink,
+            $this->imageUrl,
         ];
 
         return hash('sha256', json_encode($data, JSON_THROW_ON_ERROR));

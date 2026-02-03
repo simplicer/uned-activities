@@ -90,4 +90,11 @@ interface ActivityRepository
      * @param array<string, mixed> $filters
      */
     public function countByFilters(array $filters): int;
+
+    /**
+     * List distinct centers with activity counts.
+     *
+     * @return array<int, array{name: string, count: int}>
+     */
+    public function listCenters(): array;
 }

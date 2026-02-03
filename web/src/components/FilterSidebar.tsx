@@ -2,9 +2,11 @@
  * Filter Sidebar component.
  */
 
-import { type ActivityFilters } from '@/lib/api/activities';
+import { type ActivityFilters, getCenters, type CenterOption } from '@/lib/api/activities';
+import { centerCommunityMap, communityOrder } from '@/data/centerCommunities';
 import { X, Filter, SlidersHorizontal, ChevronDown, ChevronUp, Search, MapPin, Video, GraduationCap, Gift } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 
 interface FilterSidebarProps {
@@ -42,27 +44,102 @@ export function FilterSidebar({ filters, onFiltersChange, isOpen, onToggle }: Fi
   const { t } = useTranslation();
   const [localFilters, setLocalFilters] = useState<ActivityFilters>(filters);
 
-  const modalityOptions = [
-    { value: '', label: t('filters.modalityAll'), icon: '🌐' },
-    { value: 'online', label: t('filters.modalityOnline'), icon: '💻' },
-    { value: 'in-person', label: t('filters.modalityInPerson'), icon: '🏛️' },
-    { value: 'hybrid', label: t('filters.modalityHybrid') || 'Híbrida', icon: '🔄' },
-  ];
+  const { data: centersData } = useQuery({
+    queryKey: ['centers'],
+    queryFn: getCenters,
+  });
 
-  const deliveryModeOptions = [
-    { value: 'live', label: t('filters.deliveryLive'), icon: '📡' },
-    { value: 'recorded', label: t('filters.deliveryRecorded'), icon: '📼' },
-  ];
+  const centers = centersData?.data ?? [];
+
+  const modalityOnlineChecked =
+    localFilters.modality === 'online' || localFilters.modality === 'hybrid';
+  const modalityInPersonChecked =
+    localFilters.modality === 'in-person' || localFilters.modality === 'hybrid';
+
+  const groupedCenters = useMemo(() => {
+    const groups = new Map<string, CenterOption[]>();
+    const fallback = t('filters.centerOther');
+
+    centers.forEach((center) => {
+      const community = centerCommunityMap[center.name] || fallback;
+      if (!groups.has(community)) {
+        groups.set(community, []);
+      }
+      groups.get(community)!.push(center);
+    });
+
+    for (const [, group] of groups) {
+      group.sort((a, b) => a.name.localeCompare(b.name, 'es'));
+    }
+
+    const ordered: Array<[string, CenterOption[]]> = [];
+    communityOrder.forEach((community) => {
+      const group = groups.get(community);
+      if (group) {
+        ordered.push([community, group]);
+        groups.delete(community);
+      }
+    });
+
+    const remaining = Array.from(groups.entries()).sort((a, b) => a[0].localeCompare(b[0], 'es'));
+    return ordered.concat(remaining);
+  }, [centers, t]);
 
   const handleChange = (key: keyof ActivityFilters, value: string | number | boolean | undefined) => {
-    setLocalFilters((prev) => ({
-      ...prev,
-      [key]: value || undefined,
-    }));
+    let nextFilters: ActivityFilters | null = null;
+
+    setLocalFilters((prev) => {
+      const nextValue = value || undefined;
+      const next = { ...prev, [key]: nextValue };
+
+      if (key === 'deliveryMode' && (nextValue === undefined || nextValue === '')) {
+        next.deliveryMode = undefined;
+      }
+
+      nextFilters = next;
+      return next;
+    });
+
+    if (key !== 'search' && nextFilters) {
+      onFiltersChange(nextFilters);
+    }
   };
 
-  const handleApply = () => {
-    onFiltersChange(localFilters);
+  const handleSearchApply = () => {
+    onFiltersChange({ ...filters, search: localFilters.search || undefined });
+  };
+
+  const handleModalityToggle = (key: 'online' | 'in-person') => {
+    let nextFilters: ActivityFilters | null = null;
+
+    setLocalFilters((prev) => {
+      const isOnline = prev.modality === 'online' || prev.modality === 'hybrid';
+      const isInPerson = prev.modality === 'in-person' || prev.modality === 'hybrid';
+
+      const nextOnline = key === 'online' ? !isOnline : isOnline;
+      const nextInPerson = key === 'in-person' ? !isInPerson : isInPerson;
+
+      let nextModality: ActivityFilters['modality'] = undefined;
+      if (nextOnline && nextInPerson) {
+        nextModality = 'hybrid';
+      } else if (nextOnline) {
+        nextModality = 'online';
+      } else if (nextInPerson) {
+        nextModality = 'in-person';
+      }
+
+      const next = { ...prev, modality: nextModality };
+      if (!nextOnline && next.deliveryMode) {
+        next.deliveryMode = undefined;
+      }
+
+      nextFilters = next;
+      return next;
+    });
+
+    if (nextFilters) {
+      onFiltersChange(nextFilters);
+    }
   };
 
   const handleClear = () => {
@@ -80,7 +157,6 @@ export function FilterSidebar({ filters, onFiltersChange, isOpen, onToggle }: Fi
       ['center', filters.center],
       ['typology', filters.typology],
       ['area', filters.area],
-      ['modality', filters.modality],
       ['freeOnly', filters.freeOnly],
       ['deliveryMode', filters.deliveryMode],
       ['withCredits', filters.withCredits],
@@ -166,53 +242,86 @@ export function FilterSidebar({ filters, onFiltersChange, isOpen, onToggle }: Fi
                   type="text"
                   value={localFilters.search || ''}
                   onChange={(e) => handleChange('search', e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      handleSearchApply();
+                    }
+                  }}
                   placeholder={t('filters.searchPlaceholder')}
                   className="input pl-10"
                 />
               </div>
-            </FilterSection>
-
-            {/* Center */}
-            <FilterSection title={t('filters.center')} icon={<MapPin className="w-4 h-4 text-muted-foreground" />}>
-              <div className="relative">
-                <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <input
-                  type="text"
-                  value={localFilters.center || ''}
-                  onChange={(e) => handleChange('center', e.target.value)}
-                  placeholder={t('filters.centerPlaceholder')}
-                  className="input pl-10"
-                />
-              </div>
+              <button
+                onClick={handleSearchApply}
+                className="mt-2 w-full btn-primary"
+              >
+                {t('filters.searchApply')}
+              </button>
             </FilterSection>
 
             {/* Modality */}
             <FilterSection title={t('filters.modality')} icon={<SlidersHorizontal className="w-4 h-4 text-muted-foreground" />}>
               <div className="space-y-2">
-                {modalityOptions.map((option) => (
-                  <label
-                    key={option.value}
-                    className={`
-                      flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all
-                      ${localFilters.modality === option.value
-                        ? 'border-primary bg-primary/5'
-                        : 'border-border hover:border-primary/30 hover:bg-muted/30'
-                      }
-                    `}
-                  >
-                    <input
-                      type="radio"
-                      name="modality"
-                      value={option.value}
-                      checked={localFilters.modality === option.value}
-                      onChange={(e) => handleChange('modality', e.target.value === '' ? undefined : e.target.value)}
-                      className="w-4 h-4 text-primary focus:ring-primary focus:ring-offset-0"
-                    />
-                    <span className="text-lg">{option.icon}</span>
-                    <span className="text-sm font-medium">{option.label}</span>
-                  </label>
-                ))}
+                <label
+                  className={`
+                    flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all
+                    ${modalityOnlineChecked
+                      ? 'border-primary bg-primary/5'
+                      : 'border-border hover:border-primary/30 hover:bg-muted/30'
+                    }
+                  `}
+                >
+                  <input
+                    type="checkbox"
+                    checked={modalityOnlineChecked}
+                    onChange={() => handleModalityToggle('online')}
+                    className="w-5 h-5 text-primary focus:ring-primary focus:ring-offset-0 rounded"
+                  />
+                  <span className="text-lg">💻</span>
+                  <span className="text-sm font-medium">{t('filters.modalityOnline')}</span>
+                </label>
+                <label
+                  className={`
+                    flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all
+                    ${modalityInPersonChecked
+                      ? 'border-primary bg-primary/5'
+                      : 'border-border hover:border-primary/30 hover:bg-muted/30'
+                    }
+                  `}
+                >
+                  <input
+                    type="checkbox"
+                    checked={modalityInPersonChecked}
+                    onChange={() => handleModalityToggle('in-person')}
+                    className="w-5 h-5 text-primary focus:ring-primary focus:ring-offset-0 rounded"
+                  />
+                  <span className="text-lg">🏛️</span>
+                  <span className="text-sm font-medium">{t('filters.modalityInPerson')}</span>
+                </label>
               </div>
+              <p className="mt-2 text-xs text-muted-foreground">
+                {t('filters.modalityHint')}
+              </p>
+            </FilterSection>
+
+            {/* Center */}
+            <FilterSection title={t('filters.center')} icon={<MapPin className="w-4 h-4 text-muted-foreground" />}>
+              <select
+                value={localFilters.center || ''}
+                onChange={(e) => handleChange('center', e.target.value || undefined)}
+                className="input"
+              >
+                <option value="">{t('filters.centerAll')}</option>
+                {groupedCenters.map(([community, options]) => (
+                  <optgroup key={community} label={community}>
+                    {options.map((center) => (
+                      <option key={center.name} value={center.name}>
+                        {center.name} ({center.count})
+                      </option>
+                    ))}
+                  </optgroup>
+                ))}
+              </select>
             </FilterSection>
 
             {/* Price - Free only checkbox */}
@@ -228,34 +337,19 @@ export function FilterSidebar({ filters, onFiltersChange, isOpen, onToggle }: Fi
               </label>
             </FilterSection>
 
-            {/* Delivery mode - Directo / Diferido - Only show for online/hybrid */}
-            {localFilters.modality === 'online' || localFilters.modality === 'hybrid' ? (
+            {/* Delivery mode - Diferido */}
+            {modalityOnlineChecked ? (
               <FilterSection title={t('filters.deliveryMode')} icon={<Video className="w-4 h-4 text-muted-foreground" />}>
-                <div className="space-y-2">
-                  {deliveryModeOptions.map((option) => (
-                    <label
-                      key={option.value}
-                      className={`
-                        flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all
-                        ${localFilters.deliveryMode === option.value
-                          ? 'border-primary bg-primary/5'
-                          : 'border-border hover:border-primary/30 hover:bg-muted/30'
-                        }
-                      `}
-                    >
-                      <input
-                        type="radio"
-                        name="deliveryMode"
-                        value={option.value}
-                        checked={localFilters.deliveryMode === option.value}
-                        onChange={(e) => handleChange('deliveryMode', e.target.value)}
-                        className="w-4 h-4 text-primary focus:ring-primary focus:ring-offset-0"
-                      />
-                      <span className="text-lg">{option.icon}</span>
-                      <span className="text-sm font-medium">{option.label}</span>
-                    </label>
-                  ))}
-                </div>
+                <label className="flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all hover:bg-muted/30">
+                  <input
+                    type="checkbox"
+                    checked={localFilters.deliveryMode === 'recorded'}
+                    onChange={(e) => handleChange('deliveryMode', e.target.checked ? 'recorded' : undefined)}
+                    className="w-5 h-5 text-primary focus:ring-primary focus:ring-offset-0 rounded"
+                  />
+                  <span className="text-lg">📼</span>
+                  <span className="text-sm font-medium">{t('filters.deliveryRecorded')}</span>
+                </label>
               </FilterSection>
             ) : null}
 
@@ -273,23 +367,7 @@ export function FilterSidebar({ filters, onFiltersChange, isOpen, onToggle }: Fi
             </FilterSection>
           </div>
 
-          {/* Apply button for mobile */}
-          <div className="hidden lg:flex lg:pt-4 border-t border-border">
-            <button
-              onClick={handleApply}
-              className="w-full btn-primary"
-            >
-              {t('filters.apply')}
-            </button>
-          </div>
-
-          {/* Mobile apply button */}
-          <button
-            onClick={handleApply}
-            className="lg:hidden w-full btn-primary sticky bottom-0"
-          >
-            {t('filters.apply')}
-          </button>
+          <div className="h-2" />
         </div>
       </aside>
 

@@ -133,19 +133,19 @@ final readonly class PdoActivityRepository implements ActivityRepository
             'INSERT INTO ' . self::TABLE . ' (
                 id, uned_id, url, title, description, start_date, end_date,
                 modality, center, typology, area, price_amount, price_currency, is_free,
-                enrollment_open, enrollment_start_date, enrollment_end_date,
+                enrollment_open, enrollment_start_date, enrollment_end_date, enrollment_link,
                 created_at, updated_at, hash, status,
                 credits, has_live, has_recorded,
                 pricing_table, staff, sessions, target_audience, requirements,
-                location_details, schedule_details
+                location_details, schedule_details, image_url
             ) VALUES (
                 :id, :uned_id, :url, :title, :description, :start_date, :end_date,
                 :modality, :center, :typology, :area, :price_amount, :price_currency, :is_free,
-                :enrollment_open, :enrollment_start_date, :enrollment_end_date,
+                :enrollment_open, :enrollment_start_date, :enrollment_end_date, :enrollment_link,
                 :created_at, :updated_at, :hash, :status,
                 :credits, :has_live, :has_recorded,
                 :pricing_table, :staff, :sessions, :target_audience, :requirements,
-                :location_details, :schedule_details
+                :location_details, :schedule_details, :image_url
             )'
         );
 
@@ -167,6 +167,7 @@ final readonly class PdoActivityRepository implements ActivityRepository
             'enrollment_open' => $activity->enrollmentOpen === true ? '1' : '0',
             'enrollment_start_date' => $this->formatDateTime($activity->enrollmentStartDate),
             'enrollment_end_date' => $this->formatDateTime($activity->enrollmentEndDate),
+            'enrollment_link' => $activity->enrollmentLink,
             'created_at' => $activity->createdAt->format('Y-m-d H:i:s'),
             'updated_at' => $activity->updatedAt->format('Y-m-d H:i:s'),
             'hash' => $activity->hash,
@@ -181,6 +182,7 @@ final readonly class PdoActivityRepository implements ActivityRepository
             'requirements' => $activity->requirements !== null ? json_encode($activity->requirements, JSON_THROW_ON_ERROR) : null,
             'location_details' => $activity->locationDetails !== null ? json_encode($activity->locationDetails, JSON_THROW_ON_ERROR) : null,
             'schedule_details' => $activity->scheduleDetails !== null ? json_encode($activity->scheduleDetails, JSON_THROW_ON_ERROR) : null,
+            'image_url' => $activity->imageUrl,
         ]);
     }
 
@@ -202,6 +204,7 @@ final readonly class PdoActivityRepository implements ActivityRepository
                 enrollment_open = :enrollment_open,
                 enrollment_start_date = :enrollment_start_date,
                 enrollment_end_date = :enrollment_end_date,
+                enrollment_link = :enrollment_link,
                 updated_at = :updated_at,
                 hash = :hash,
                 credits = :credits,
@@ -213,7 +216,8 @@ final readonly class PdoActivityRepository implements ActivityRepository
                 target_audience = :target_audience,
                 requirements = :requirements,
                 location_details = :location_details,
-                schedule_details = :schedule_details
+                schedule_details = :schedule_details,
+                image_url = :image_url
             WHERE id = :id'
         );
 
@@ -232,6 +236,7 @@ final readonly class PdoActivityRepository implements ActivityRepository
             'enrollment_open' => $activity->enrollmentOpen === true ? '1' : '0',
             'enrollment_start_date' => $this->formatDateTime($activity->enrollmentStartDate),
             'enrollment_end_date' => $this->formatDateTime($activity->enrollmentEndDate),
+            'enrollment_link' => $activity->enrollmentLink,
             'updated_at' => (new \DateTimeImmutable())->format('Y-m-d H:i:s'),
             'hash' => $activity->hash,
             'credits' => $activity->credits,
@@ -244,6 +249,7 @@ final readonly class PdoActivityRepository implements ActivityRepository
             'requirements' => $activity->requirements !== null ? json_encode($activity->requirements, JSON_THROW_ON_ERROR) : null,
             'location_details' => $activity->locationDetails !== null ? json_encode($activity->locationDetails, JSON_THROW_ON_ERROR) : null,
             'schedule_details' => $activity->scheduleDetails !== null ? json_encode($activity->scheduleDetails, JSON_THROW_ON_ERROR) : null,
+            'image_url' => $activity->imageUrl,
             'id' => $activity->id->toString(),
         ]);
     }
@@ -272,6 +278,7 @@ final readonly class PdoActivityRepository implements ActivityRepository
             $row['enrollment_open'] !== null ? ($row['enrollment_open'] === '1' || $row['enrollment_open'] === 't' || $row['enrollment_open'] === true) : null,
             $row['enrollment_start_date'] !== null ? new \DateTimeImmutable($row['enrollment_start_date']) : null,
             $row['enrollment_end_date'] !== null ? new \DateTimeImmutable($row['enrollment_end_date']) : null,
+            $row['enrollment_link'] !== '' ? $row['enrollment_link'] : null,
             isset($row['credits']) ? (int) $row['credits'] : null,
             isset($row['has_live']) ? ($row['has_live'] === '1' || $row['has_live'] === true || $row['has_live'] === 't') : null,
             isset($row['has_recorded']) ? ($row['has_recorded'] === '1' || $row['has_recorded'] === true || $row['has_recorded'] === 't') : null,
@@ -283,6 +290,7 @@ final readonly class PdoActivityRepository implements ActivityRepository
             isset($row['requirements']) && $row['requirements'] !== null ? json_decode($row['requirements'], true) : null,
             isset($row['location_details']) && $row['location_details'] !== null ? json_decode($row['location_details'], true) : null,
             isset($row['schedule_details']) && $row['schedule_details'] !== null ? json_decode($row['schedule_details'], true) : null,
+            $row['image_url'] ?? null,
         );
     }
 
@@ -371,5 +379,30 @@ final readonly class PdoActivityRepository implements ActivityRepository
         $stmt->execute($params);
 
         return (int) $stmt->fetchColumn();
+    }
+
+    #[\Override]
+    public function listCenters(): array
+    {
+        $stmt = $this->connection->prepare(
+            'SELECT center, COUNT(*) AS count
+             FROM ' . self::TABLE . '
+             WHERE center IS NOT NULL
+               AND TRIM(center) <> \'\'
+               AND status = :status
+             GROUP BY center
+             ORDER BY center'
+        );
+
+        $stmt->execute(['status' => 'active']);
+        $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [];
+
+        return array_map(
+            static fn (array $row): array => [
+                'name' => $row['center'],
+                'count' => (int) $row['count'],
+            ],
+            $rows
+        );
     }
 }

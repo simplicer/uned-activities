@@ -7,6 +7,7 @@ namespace HttpApi\Controller;
 use CatalogQuery\Application\Dto\ActivityFilters;
 use CatalogQuery\Application\FindSimilarActivities\FindSimilarActivities;
 use CatalogQuery\Application\GetActivityDetail\GetActivityDetail;
+use CatalogQuery\Application\ListCenters\ListCenters;
 use CatalogQuery\Application\ListActivities\ListActivities;
 use CatalogQuery\Application\Serialize\ActivityJsonSerializer;
 use CatalogHarvest\Domain\ValueObject\ActivityId;
@@ -22,6 +23,7 @@ final readonly class ActivityController
         private ListActivities $listActivities,
         private GetActivityDetail $getActivityDetail,
         private FindSimilarActivities $findSimilarActivities,
+        private ListCenters $listCenters,
         private ActivityJsonSerializer $serializer,
     ) {
     }
@@ -60,7 +62,7 @@ final readonly class ActivityController
             fn ($snap): array => [
                 'priceAmount' => $snap->priceAmount,
                 'priceCurrency' => $snap->priceCurrency,
-                'capturedAt' => $snap->capturedAt->format('Y-m-d H:i:s'),
+                'capturedAt' => $snap->capturedAt->format(\DateTimeInterface::ATOM),
             ],
             $result->priceHistory
         );
@@ -91,6 +93,18 @@ final readonly class ActivityController
             $payload['similarity'] = $item['similarity'];
             return $payload;
         }, $results);
+
+        $response->getBody()->write(json_encode(['data' => $data], JSON_THROW_ON_ERROR));
+
+        return $response->withHeader('Content-Type', 'application/json');
+    }
+
+    /**
+     * GET /centers - List distinct centers with counts.
+     */
+    public function centers(Request $request, Response $response): Response
+    {
+        $data = $this->listCenters->list();
 
         $response->getBody()->write(json_encode(['data' => $data], JSON_THROW_ON_ERROR));
 

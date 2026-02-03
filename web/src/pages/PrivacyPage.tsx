@@ -19,25 +19,26 @@ export function PrivacyPage() {
         </div>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-border p-8 space-y-8 prose prose-slate max-w-none">
+      <div className="bg-card rounded-xl shadow-sm border border-border p-8 space-y-8 prose prose-slate dark:prose-invert max-w-none">
         <section>
-          <h2 className="text-2xl font-bold text-foreground mb-4">1. Responsable del Tratamiento</h2>
+          <h2 className="text-2xl font-bold text-foreground mb-4">1. Responsable</h2>
           <p className="text-muted-foreground">
-            El responsable del tratamiento de los datos personales es <strong>Simplicer SL</strong>, con sitio web en <a href="https://simplicer.com" className="text-primary hover:underline">simplicer.com</a>.
+            Responsable del tratamiento: <strong>Antonio Villamarin</strong>. Contacto a través de los canales públicos del
+            repositorio en Codeberg.
           </p>
         </section>
 
         <section>
-          <h2 className="text-2xl font-bold text-foreground mb-4">2. Datos que Recopilamos</h2>
+          <h2 className="text-2xl font-bold text-foreground mb-4">2. Datos que recopilamos</h2>
 
           <h3 className="text-xl font-semibold text-foreground mt-6 mb-3">2.1 Datos de navegación</h3>
           <p className="text-muted-foreground">
             Recopilamos datos técnicos como la dirección IP, tipo de navegador, idioma, y páginas visitadas para mejorar el servicio.
           </p>
 
-          <h3 className="text-xl font-semibold text-foreground mt-6 mb-3">2.2 Datos de registro</h3>
+          <h3 className="text-xl font-semibold text-foreground mt-6 mb-3">2.2 Datos de cuenta</h3>
           <p className="text-muted-foreground">
-            Si te registras, recopilamos tu dirección de correo electrónico y preferencias de notificación.
+            Si te registras, tratamos tu correo electrónico y tus preferencias de notificación.
           </p>
 
           <h3 className="text-xl font-semibold text-foreground mt-6 mb-3">2.3 Cookies</h3>
@@ -47,7 +48,7 @@ export function PrivacyPage() {
         </section>
 
         <section>
-          <h2 className="text-2xl font-bold text-foreground mb-4">3. Finalidad del Tratamiento</h2>
+          <h2 className="text-2xl font-bold text-foreground mb-4">3. Finalidad del tratamiento</h2>
           <ul className="list-disc list-inside text-muted-foreground space-y-2">
             <li>Prestar el servicio de búsqueda de actividades</li>
             <li>Gestionar las preferencias del usuario</li>
@@ -57,7 +58,7 @@ export function PrivacyPage() {
         </section>
 
         <section>
-          <h2 className="text-2xl font-bold text-foreground mb-4">4. Base Legal</h2>
+          <h2 className="text-2xl font-bold text-foreground mb-4">4. Base legal</h2>
           <p className="text-muted-foreground">
             El tratamiento de tus datos se basa en:
           </p>
@@ -71,7 +72,7 @@ export function PrivacyPage() {
         <section>
           <h2 className="text-2xl font-bold text-foreground mb-4">5. Destinatarios</h2>
           <p className="text-muted-foreground">
-            Tus datos no se ceden a terceros, salvo obligación legal. Los datos están alojados en servidores seguros dentro de la Unión Europea.
+            No cedemos datos a terceros, salvo obligación legal. Los datos se alojan en infraestructura bajo medidas de seguridad adecuadas.
           </p>
         </section>
 
@@ -89,14 +90,14 @@ export function PrivacyPage() {
             <li>Retirar el consentimiento en cualquier momento</li>
           </ul>
           <p className="text-muted-foreground mt-4">
-            Para ejercer estos derechos, contacta con Simplicer SL a través de su web.
+            Para ejercer estos derechos, contacta a través de los canales públicos del repositorio.
           </p>
         </section>
 
         <section>
           <h2 className="text-2xl font-bold text-foreground mb-4">7. Conservación de Datos</h2>
           <p className="text-muted-foreground">
-            Los datos se conservarán mientras exista una relación contractual o durante el tiempo necesario para cumplir con las obligaciones legales.
+            Los datos se conservarán mientras exista una cuenta activa o durante el tiempo necesario para cumplir con obligaciones legales.
           </p>
         </section>
 
@@ -110,7 +111,7 @@ export function PrivacyPage() {
         <section>
           <h2 className="text-2xl font-bold text-foreground mb-4">9. Cambios en esta Política</h2>
           <p className="text-muted-foreground">
-            Cualquier cambio en esta política de privacidad será notificado a los usuarios registrados por correo electrónico y publicado en esta página.
+            Los cambios se publicarán en esta página y, si corresponde, se informará a los usuarios registrados.
           </p>
         </section>
       </div>

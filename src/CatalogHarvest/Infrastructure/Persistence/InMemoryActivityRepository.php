@@ -112,4 +112,32 @@ final class InMemoryActivityRepository implements ActivityRepository
     {
         return \count($this->activities);
     }
+
+    #[\Override]
+    public function listCenters(): array
+    {
+        $counts = [];
+
+        foreach ($this->activities as $activity) {
+            $center = $activity->center;
+            if ($center === null || trim($center) === '') {
+                continue;
+            }
+
+            if (!isset($counts[$center])) {
+                $counts[$center] = 0;
+            }
+
+            $counts[$center]++;
+        }
+
+        ksort($counts);
+
+        $result = [];
+        foreach ($counts as $center => $count) {
+            $result[] = ['name' => $center, 'count' => $count];
+        }
+
+        return $result;
+    }
 }

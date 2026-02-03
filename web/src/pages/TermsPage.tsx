@@ -19,71 +19,68 @@ export function TermsPage() {
         </div>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-border p-8 space-y-8 prose prose-slate max-w-none">
+      <div className="bg-card rounded-xl shadow-sm border border-border p-8 space-y-8 prose prose-slate dark:prose-invert max-w-none">
         <section>
-          <h2 className="text-2xl font-bold text-foreground mb-4">1. Aceptación de los Términos</h2>
+          <h2 className="text-2xl font-bold text-foreground mb-4">1. Aceptación</h2>
           <p className="text-muted-foreground">
-            Al acceder y utilizar este servicio de búsqueda de actividades de la UNED, aceptas estos términos de uso.
-            Si no estás de acuerdo con estos términos, por favor no utilices este servicio.
+            Al acceder y utilizar este servicio aceptas estos Términos de Uso. Si no estás de acuerdo, no utilices el servicio.
           </p>
         </section>
 
         <section>
-          <h2 className="text-2xl font-bold text-foreground mb-4">2. Descripción del Servicio</h2>
+          <h2 className="text-2xl font-bold text-foreground mb-4">2. Descripción del servicio</h2>
           <p className="text-muted-foreground">
-            Este servicio permite buscar y consultar actividades de extensión universitaria de la Universidad Nacional de Educación a Distancia (UNED).
-            La información se obtiene de fuentes públicas y se ofrece tal cual, sin garantías de exactitud o actualización.
+            Este sitio es un buscador independiente de actividades de extensión de la UNED. La información se obtiene de fuentes
+            públicas y se ofrece tal cual, sin garantías de exactitud o actualización. No somos la UNED ni estamos afiliados a ella.
           </p>
         </section>
 
         <section>
-          <h2 className="text-2xl font-bold text-foreground mb-4">3. Obligaciones del Usuario</h2>
+          <h2 className="text-2xl font-bold text-foreground mb-4">3. Uso permitido</h2>
           <ul className="list-disc list-inside text-muted-foreground space-y-2">
-            <li>Utilizar el servicio de acuerdo con la legislación vigente</li>
-            <li>No realizar actividades que puedan dañar el funcionamiento del servicio</li>
-            <li>No reproducir o redistribuir la información sin autorización</li>
-            <li>Proporcionar información veraz en los registros de usuario</li>
+            <li>Usar el servicio conforme a la legislación vigente y a estos términos.</li>
+            <li>No intentar interrumpir, degradar o comprometer la seguridad del servicio.</li>
+            <li>No realizar scraping masivo ni automatizado desde este sitio.</li>
+            <li>No suplantar identidad ni proporcionar datos falsos al registrarse.</li>
           </ul>
         </section>
 
         <section>
-          <h2 className="text-2xl font-bold text-foreground mb-4">4. Propiedad Intelectual</h2>
+          <h2 className="text-2xl font-bold text-foreground mb-4">4. Propiedad intelectual</h2>
           <p className="text-muted-foreground">
-            Este software es propiedad de <a href="https://simplicer.com" className="text-primary hover:underline">Simplicer SL</a> y se distribuye bajo la licencia <a href="https://opensource.org/licenses/MIT" className="text-primary hover:underline">MIT</a>.
-            Los contenidos de la UNED pertenecen a dicha institución.
+            El software se distribuye bajo licencia MIT. Los contenidos y marcas de la UNED pertenecen a dicha institución.
+            Este sitio no reclama derechos sobre los contenidos de la UNED.
           </p>
         </section>
 
         <section>
-          <h2 className="text-2xl font-bold text-foreground mb-4">5. Limitación de Responsabilidad</h2>
-          <p className="text-muted-foreground">
-            El servicio se ofrece "tal cual" sin garantías de ningún tipo. Simplicer SL no se hace responsable de:
-          </p>
+          <h2 className="text-2xl font-bold text-foreground mb-4">5. Limitación de responsabilidad</h2>
           <ul className="list-disc list-inside text-muted-foreground space-y-2">
-            <li>La exactitud o actualización de la información mostrada</li>
-            <li>Daños directos o indirectos derivados del uso del servicio</li>
-            <li>La disponibilidad continúa del servicio</li>
+            <li>La información puede contener errores o estar desactualizada.</li>
+            <li>No garantizamos la disponibilidad continua del servicio.</li>
+            <li>No asumimos responsabilidad por daños derivados del uso del servicio.</li>
           </ul>
         </section>
 
         <section>
-          <h2 className="text-2xl font-bold text-foreground mb-4">6. Protección de Datos</h2>
+          <h2 className="text-2xl font-bold text-foreground mb-4">6. Protección de datos</h2>
           <p className="text-muted-foreground">
-            Los datos personales se tratan conforme a la Política de Privacidad. Al usar el servicio, consientes el tratamiento de tus datos según lo descrito en dicha política.
+            El tratamiento de datos personales se regula en la Política de Privacidad. Al utilizar el servicio aceptas dicho tratamiento.
           </p>
         </section>
 
         <section>
           <h2 className="text-2xl font-bold text-foreground mb-4">7. Modificaciones</h2>
           <p className="text-muted-foreground">
-            Simplicer SL se reserva el derecho de modificar estos términos en cualquier momento. Las modificaciones entrarán en vigor desde su publicación en esta página.
+            Estos términos pueden modificarse en cualquier momento. Las modificaciones entran en vigor desde su publicación en esta página.
           </p>
         </section>
 
         <section>
-          <h2 className="text-2xl font-bold text-foreground mb-4">8. Contacto</h2>
+          <h2 className="text-2xl font-bold text-foreground mb-4">8. Titular y contacto</h2>
           <p className="text-muted-foreground">
-            Para cualquier cuestión sobre estos términos, puedes contactar con Simplicer SL a través de su web <a href="https://simplicer.com" className="text-primary hover:underline">simplicer.com</a>.
+            Titular del servicio: <strong>Antonio Villamarin</strong>. Para contacto, consulta los canales públicos del
+            repositorio en Codeberg.
           </p>
         </section>
       </div>

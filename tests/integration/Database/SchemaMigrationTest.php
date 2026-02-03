@@ -84,6 +84,7 @@ class SchemaMigrationTest extends TestCase
                     center TEXT,
                     typology TEXT,
                     area TEXT,
+                    image_url TEXT,
                     status TEXT NOT NULL DEFAULT 'active'
                 )
             SQL);

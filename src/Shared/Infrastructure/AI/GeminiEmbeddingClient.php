@@ -7,9 +7,9 @@ namespace Shared\Infrastructure\AI;
 use RuntimeException;
 
 /**
- * OpenRouter embeddings client.
+ * Gemini embeddings client.
  */
-final readonly class OpenRouterEmbeddingClient implements EmbeddingClient
+final readonly class GeminiEmbeddingClient implements EmbeddingClient
 {
     public function __construct(
         private string $apiKey,
@@ -23,25 +23,31 @@ final readonly class OpenRouterEmbeddingClient implements EmbeddingClient
     public function embed(string $text): array
     {
         if ($this->apiKey === '' || $this->model === '') {
-            throw new RuntimeException('OpenRouter embedding config missing');
+            throw new RuntimeException('Gemini embedding config missing');
         }
 
         $payload = [
-            'model' => $this->model,
-            'input' => $text,
+            'content' => [
+                'parts' => [
+                    ['text' => $text],
+                ],
+            ],
         ];
 
         $jsonPayload = json_encode($payload, JSON_THROW_ON_ERROR);
 
-        $ch = curl_init('https://openrouter.ai/api/v1/embeddings');
+        $url = sprintf(
+            'https://generativelanguage.googleapis.com/v1beta/models/%s:embedContent?key=%s',
+            urlencode($this->model),
+            urlencode($this->apiKey),
+        );
 
+        $ch = curl_init($url);
         curl_setopt_array($ch, [
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_POST => true,
             CURLOPT_HTTPHEADER => [
                 'Content-Type: application/json',
-                'Authorization: Bearer ' . $this->apiKey,
-                'HTTP-Referer: https://extension.uned.es',
             ],
             CURLOPT_POSTFIELDS => $jsonPayload,
             CURLOPT_TIMEOUT => 120,
@@ -53,20 +59,20 @@ final readonly class OpenRouterEmbeddingClient implements EmbeddingClient
         curl_close($ch);
 
         if ($error) {
-            throw new RuntimeException('OpenRouter embeddings request failed: ' . $error);
+            throw new RuntimeException('Gemini embeddings request failed: ' . $error);
         }
 
         if ($httpCode !== 200) {
-            throw new RuntimeException('OpenRouter embeddings API returned HTTP ' . $httpCode . ': ' . $response);
+            throw new RuntimeException('Gemini embeddings API returned HTTP ' . $httpCode . ': ' . $response);
         }
 
         $data = json_decode($response, true, 512, JSON_THROW_ON_ERROR);
 
-        if (!isset($data['data'][0]['embedding']) || !is_array($data['data'][0]['embedding'])) {
-            throw new RuntimeException('Invalid OpenRouter embeddings response');
+        if (!isset($data['embedding']['values']) || !is_array($data['embedding']['values'])) {
+            throw new RuntimeException('Invalid Gemini embeddings response');
         }
 
-        return array_map('floatval', $data['data'][0]['embedding']);
+        return array_map('floatval', $data['embedding']['values']);
     }
 
     public function model(): string

@@ -2,7 +2,7 @@
  * Authentication API methods.
  */
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+import { buildApiUrl } from './base';
 
 interface ApiError {
   error: string;
@@ -10,7 +10,7 @@ interface ApiError {
 }
 
 async function authFetch<T>(endpoint: string, options?: RequestInit): Promise<T> {
-  const url = `${API_BASE}/v1${endpoint}`;
+  const url = buildApiUrl(endpoint);
   const authToken = getStoredAuthToken();
 
   const response = await fetch(url, {

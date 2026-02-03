@@ -10,6 +10,7 @@ import type { ActivityFilters } from '@/lib/api/activities';
 import { useQuery } from '@tanstack/react-query';
 import { getActivities } from '@/lib/api/activities';
 import { useDebounce } from '@/hooks/useDebounce';
+import { useTranslation } from 'react-i18next';
 
 interface ActivityListPageProps {
   isFilterOpen: boolean;
@@ -17,6 +18,7 @@ interface ActivityListPageProps {
 }
 
 export function ActivityListPage({ isFilterOpen, onToggleFilter }: ActivityListPageProps) {
+  const { t } = useTranslation();
   const [filters, setFilters] = useState<ActivityFilters>(() => {
     try {
       const raw = localStorage.getItem('activities_filters');
@@ -53,6 +55,15 @@ export function ActivityListPage({ isFilterOpen, onToggleFilter }: ActivityListP
       // Ignore storage errors
     }
   }, [filters]);
+
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    document.title = t('meta.siteName');
+    const metaDescription = document.querySelector('meta[name="description"]') as HTMLMetaElement | null;
+    if (metaDescription) {
+      metaDescription.content = t('meta.defaultDescription');
+    }
+  }, [t]);
 
   return (
     <div className="flex gap-6">

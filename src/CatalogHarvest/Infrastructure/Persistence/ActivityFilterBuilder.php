@@ -22,7 +22,7 @@ final class ActivityFilterBuilder
 
         if (isset($filters['center']) && $filters['center'] !== '') {
             $conditions[] = 'center ILIKE :center';
-            $params['center'] = '%' . $filters['center'] . '%';
+            $params['center'] = $filters['center'];
         }
 
         if (isset($filters['typology']) && $filters['typology'] !== '') {
@@ -36,17 +36,27 @@ final class ActivityFilterBuilder
         }
 
         if (isset($filters['modality']) && $filters['modality'] !== '') {
-            // Hybrid activities should appear in both online and in-person filters
             if ($filters['modality'] === 'online') {
-                // Show online OR hybrid activities
-                $conditions[] = '(modality = :modality_online OR modality = :modality_hybrid)';
+                // Show online activities only (including legacy labels)
+                $conditions[] = '(modality = :modality_online'
+                    . ' OR modality ILIKE :modality_online_legacy)';
                 $params['modality_online'] = 'online';
-                $params['modality_hybrid'] = 'hybrid';
+                $params['modality_online_legacy'] = '%online%';
             } elseif ($filters['modality'] === 'in-person') {
-                // Show in-person OR hybrid activities
-                $conditions[] = '(modality = :modality_in_person OR modality = :modality_hybrid)';
+                // Show in-person activities only (including legacy labels)
+                $conditions[] = '(modality = :modality_in_person'
+                    . ' OR modality ILIKE :modality_in_person_legacy'
+                    . ' OR modality IS NULL OR trim(coalesce(modality, \'\')) = \'\')';
                 $params['modality_in_person'] = 'in-person';
+                $params['modality_in_person_legacy'] = '%presencial%';
+            } elseif ($filters['modality'] === 'hybrid') {
+                // Only hybrid activities (including legacy labels)
+                $conditions[] = '(modality = :modality_hybrid'
+                    . ' OR modality ILIKE :modality_hybrid_legacy'
+                    . ' OR modality ILIKE :modality_semipresencial)';
                 $params['modality_hybrid'] = 'hybrid';
+                $params['modality_hybrid_legacy'] = '%hibrid%';
+                $params['modality_semipresencial'] = '%semi%presen%';
             } else {
                 // Exact match for other modalities
                 $conditions[] = 'modality = :modality';

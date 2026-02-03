@@ -3,11 +3,10 @@
  */
 
 import { getStoredAuthToken } from './auth';
+import { buildApiUrl } from './base';
 
 export async function apiFetch<T>(endpoint: string, options?: RequestInit): Promise<T> {
-  const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8080';
-
-  const url = `${API_BASE}/v1${endpoint}`;
+  const url = buildApiUrl(endpoint);
   const authToken = getStoredAuthToken();
 
   const response = await fetch(url, {
@@ -48,9 +47,7 @@ export interface ApiResponse<T> {
 }
 
 export async function apiFetchWithMeta<T>(endpoint: string, options?: RequestInit): Promise<ApiResponse<T>> {
-  const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8080';
-
-  const url = `${API_BASE}/v1${endpoint}`;
+  const url = buildApiUrl(endpoint);
   const authToken = getStoredAuthToken();
 
   const response = await fetch(url, {

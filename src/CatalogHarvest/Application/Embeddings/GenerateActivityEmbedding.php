@@ -6,7 +6,7 @@ namespace CatalogHarvest\Application\Embeddings;
 
 use CatalogHarvest\Domain\Entity\Activity;
 use CatalogHarvest\Domain\Port\ActivityEmbeddingRepository;
-use Shared\Infrastructure\AI\OpenRouterEmbeddingClient;
+use Shared\Infrastructure\AI\EmbeddingClient;
 
 /**
  * Generates and stores embeddings for activities.
@@ -15,8 +15,7 @@ final readonly class GenerateActivityEmbedding
 {
     public function __construct(
         private ActivityEmbeddingRepository $embeddingRepository,
-        private OpenRouterEmbeddingClient $embeddingClient,
-        private string $model,
+        private EmbeddingClient $embeddingClient,
         private bool $enabled = true,
     ) {
     }
@@ -33,7 +32,7 @@ final readonly class GenerateActivityEmbedding
         }
 
         $embedding = $this->embeddingClient->embed($text);
-        $this->embeddingRepository->upsert($activity->id, $embedding, $this->model);
+        $this->embeddingRepository->upsert($activity->id, $embedding, $this->embeddingClient->model());
     }
 
     private function buildText(Activity $activity): string

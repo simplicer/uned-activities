@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next';
 
 const languages = [
   { code: 'en', name: 'English' },
-  { code: 'es', name: 'Español' },
+  { code: 'es', name: 'Castellano' },
   { code: 'ca', name: 'Català' },
   { code: 'val', name: 'Valencià' },
   { code: 'eu', name: 'Euskara' },
