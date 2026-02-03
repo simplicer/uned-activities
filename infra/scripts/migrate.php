@@ -20,7 +20,7 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 
 // Load environment
 if (file_exists(__DIR__ . '/../../.env')) {
-    $dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/../..');
+    $dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/../../');
     $dotenv->load();
 }
 
@@ -84,7 +84,7 @@ final class MigrateCommand extends Command
             try {
                 $sql = file_get_contents($files['up']);
                 $pdo->exec($sql);
-                $this->saveVersion($number);
+                $this->saveVersion((string) $number);
                 $io->success("Migration {$number} completed");
             } catch (\PDOException $e) {
                 $io->error("Migration {$number} failed: " . $e->getMessage());
@@ -143,18 +143,37 @@ final class MigrateCommand extends Command
 
     private function createPdo(): PDO
     {
-        $dsn = $_ENV['DB_DSN'] ?? 'sqlite::memory:';
+        // Try individual env vars first (Docker Compose style)
+        $host = $_ENV['DB_HOST'] ?? null;
+        $port = $_ENV['DB_PORT'] ?? 5432;
+        $dbname = $_ENV['DB_NAME'] ?? null;
+        $user = $_ENV['DB_USER'] ?? null;
+        $password = $_ENV['DB_PASSWORD'] ?? null;
 
+        if ($host && $dbname && $user) {
+            $dsn = "pgsql:host={$host};port={$port};dbname={$dbname};options='--client_encoding=UTF8'";
+            $pdo = new PDO($dsn, $user, $password, [
+                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            ]);
+            $pdo->exec("SET NAMES 'utf8'");
+            return $pdo;
+        }
+
+        // Fallback to DB_DSN env var
+        $dsn = $_ENV['DB_DSN'] ?? 'sqlite::memory:';
         if (str_starts_with($dsn, 'postgres')) {
             $pattern = '#postgres://(?<user>[^:]+):(?<password>[^@]+)@(?<host>[^:]+):(?<port>\d+)/(?<dbname>[^/]+)#';
             if (!preg_match($pattern, $dsn, $matches)) {
                 throw new \RuntimeException("Invalid PostgreSQL DSN");
             }
 
-            $dsn = "pgsql:host={$matches['host']};port={$matches['port']};dbname={$matches['dbname']}";
-            return new PDO($dsn, $matches['user'], $matches['password'], [
+            $dsn = "pgsql:host={$matches['host']};port={$matches['port']};dbname={$matches['dbname']};options='--client_encoding=UTF8'";
+
+            $pdo = new PDO($dsn, $matches['user'], $matches['password'], [
                 PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
             ]);
+            $pdo->exec("SET NAMES 'utf8'");
+            return $pdo;
         }
 
         // SQLite fallback
@@ -173,9 +192,15 @@ final class MigrateCommand extends Command
                 continue;
             }
 
-            $parts = explode('_', basename($file, '.sql'));
-            $number = (int) $parts[0];
-            $direction = $parts[count($parts) - 1]; // up or down
+            // Extract migration number and direction from filename
+            // Format: NNN_description.direction.sql
+            $basename = basename($file, '.sql');
+            if (!preg_match('/^(\d+)_.+\.(up|down)$/', $basename, $matches)) {
+                continue;
+            }
+
+            $number = (int) $matches[1];
+            $direction = $matches[2]; // up or down
 
             $migrations[$number][$direction] = self::MIGRATIONS_DIR . '/' . $file;
         }
@@ -220,5 +245,9 @@ final class MigrateCommand extends Command
 
 // Run
 $app = new Application('UNED Migrations', '1.0.0');
-$app->add(new MigrateCommand());
+
+$command = new MigrateCommand();
+$command->setName('migrate');
+$app->add($command);
+
 $app->run();

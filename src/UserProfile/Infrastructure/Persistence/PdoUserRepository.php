@@ -12,14 +12,15 @@ use UserProfile\Domain\ValueObject\UserId;
 /**
  * PDO implementation of UserRepository.
  */
-final class PdoUserRepository implements UserRepository
+final readonly class PdoUserRepository implements UserRepository
 {
-    private const TABLE = 'users';
+    private const string TABLE = 'users';
 
-    public function __construct(private readonly PDO $connection)
+    public function __construct(private PDO $connection)
     {
     }
 
+    #[\Override]
     public function save(User $user): void
     {
         $exists = $this->existsById($user->id);
@@ -31,6 +32,7 @@ final class PdoUserRepository implements UserRepository
         }
     }
 
+    #[\Override]
     public function findById(UserId $id): ?User
     {
         $stmt = $this->connection->prepare(
@@ -40,13 +42,14 @@ final class PdoUserRepository implements UserRepository
         $stmt->execute(['id' => $id->toString()]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        if (!$row) {
+        if ($row === false) {
             return null;
         }
 
         return $this->mapToEntity($row);
     }
 
+    #[\Override]
     public function findByEmail(string $email): ?User
     {
         $stmt = $this->connection->prepare(
@@ -56,7 +59,7 @@ final class PdoUserRepository implements UserRepository
         $stmt->execute(['email' => $email]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        if (!$row) {
+        if ($row === false) {
             return null;
         }
 
@@ -117,7 +120,7 @@ final class PdoUserRepository implements UserRepository
         return User::fromPersistence(
             UserId::fromString($row['id']),
             $row['email'],
-            $row['full_name'] ?: null,
+            $row['full_name'] !== '' ? $row['full_name'] : null,
             json_decode($row['preferences'] ?? '{}', true),
             new \DateTimeImmutable($row['created_at']),
             new \DateTimeImmutable($row['updated_at']),

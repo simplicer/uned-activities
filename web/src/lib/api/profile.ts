@@ -2,7 +2,7 @@
  * Profile API methods.
  */
 
-import { apiFetch, type ApiResponse } from '../api';
+import { apiFetch } from '../api';
 
 export interface UserProfile {
   id: string;
@@ -23,8 +23,9 @@ export interface SavedSearch {
 /**
  * Get current user profile.
  */
-export async function getProfile(): Promise<ApiResponse<UserProfile>> {
-  return apiFetch<UserProfile>('/profile');
+export async function getProfile(): Promise<UserProfile> {
+  const response = await apiFetch<{ data: UserProfile }>('/profile');
+  return response.data;
 }
 
 /**
@@ -33,18 +34,20 @@ export async function getProfile(): Promise<ApiResponse<UserProfile>> {
 export async function updateProfile(data: {
   fullName?: string;
   preferences?: Record<string, any>;
-}): Promise<ApiResponse<{ updated: boolean }>> {
-  return apiFetch<{ updated: boolean }>('/profile', {
+}): Promise<{ updated: boolean }> {
+  const response = await apiFetch<{ data: { updated: boolean } }>('/profile', {
     method: 'PUT',
     body: JSON.stringify(data),
   });
+  return response.data;
 }
 
 /**
  * Get saved searches.
  */
-export async function getSavedSearches(): Promise<ApiResponse<SavedSearch[]>> {
-  return apiFetch<SavedSearch[]>('/profile/saved-searches');
+export async function getSavedSearches(): Promise<SavedSearch[]> {
+  const response = await apiFetch<{ data: SavedSearch[] }>('/profile/saved-searches');
+  return response.data;
 }
 
 /**
@@ -54,18 +57,20 @@ export async function createSavedSearch(data: {
   name: string;
   filters: Record<string, any>;
   notifyOnNew?: boolean;
-}): Promise<ApiResponse<SavedSearch>> {
-  return apiFetch<SavedSearch>('/profile/saved-searches', {
+}): Promise<SavedSearch> {
+  const response = await apiFetch<{ data: SavedSearch }>('/profile/saved-searches', {
     method: 'POST',
     body: JSON.stringify(data),
   });
+  return response.data;
 }
 
 /**
  * Delete saved search.
  */
-export async function deleteSavedSearch(id: string): Promise<ApiResponse<{ deleted: boolean }>> {
-  return apiFetch<{ deleted: boolean }>(`/profile/saved-searches/${id}`, {
+export async function deleteSavedSearch(id: string): Promise<{ deleted: boolean }> {
+  const response = await apiFetch<{ data: { deleted: boolean } }>(`/profile/saved-searches/${id}`, {
     method: 'DELETE',
   });
+  return response.data;
 }

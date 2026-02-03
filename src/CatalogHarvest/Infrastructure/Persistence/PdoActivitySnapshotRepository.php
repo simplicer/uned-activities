@@ -11,14 +11,15 @@ use CatalogHarvest\Domain\ValueObject\ActivityId;
 /**
  * PDO implementation of ActivitySnapshotRepository.
  */
-final class PdoActivitySnapshotRepository implements ActivitySnapshotRepository
+final readonly class PdoActivitySnapshotRepository implements ActivitySnapshotRepository
 {
-    private const TABLE = 'activity_snapshots';
+    private const string TABLE = 'activity_snapshots';
 
-    public function __construct(private readonly \PDO $connection)
+    public function __construct(private \PDO $connection)
     {
     }
 
+    #[\Override]
     public function store(ActivitySnapshot $snapshot): void
     {
         $stmt = $this->connection->prepare(
@@ -39,6 +40,7 @@ final class PdoActivitySnapshotRepository implements ActivitySnapshotRepository
         ]);
     }
 
+    #[\Override]
     public function findLatestByActivityId(ActivityId $activityId): ?ActivitySnapshot
     {
         $stmt = $this->connection->prepare(
@@ -50,13 +52,14 @@ final class PdoActivitySnapshotRepository implements ActivitySnapshotRepository
         $stmt->execute(['activity_id' => $activityId->toString()]);
         $row = $stmt->fetch(\PDO::FETCH_ASSOC);
 
-        if (!$row) {
+        if ($row === false) {
             return null;
         }
 
         return $this->mapToSnapshot($row);
     }
 
+    #[\Override]
     public function findByActivityId(ActivityId $activityId): array
     {
         $stmt = $this->connection->prepare(
@@ -68,6 +71,7 @@ final class PdoActivitySnapshotRepository implements ActivitySnapshotRepository
         $stmt->execute(['activity_id' => $activityId->toString()]);
 
         $snapshots = [];
+
         while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
             $snapshots[] = $this->mapToSnapshot($row);
         }
@@ -80,7 +84,7 @@ final class PdoActivitySnapshotRepository implements ActivitySnapshotRepository
         return new ActivitySnapshot(
             activityId: ActivityId::fromString($row['activity_id']),
             capturedAt: new \DateTimeImmutable($row['captured_at']),
-            data: json_decode($row['data'], true),
+            data: json_decode((string) $row['data'], true),
             hash: $row['hash'],
             changeType: $row['change_type'],
         );

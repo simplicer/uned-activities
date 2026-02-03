@@ -1,58 +1,95 @@
 /**
- * Authentication context and provider.
+ * Authentication context and provider with magic link authentication.
  */
 
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { auth, supabase } from '@/lib/supabase';
-import type { User } from '@supabase/supabase-js';
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import {
+  requestMagicLink,
+  verifyMagicLink,
+  storeAuthToken,
+  clearAuthToken,
+  getStoredUser,
+  getStoredAuthToken,
+  isAuthenticated as checkIsAuthenticated,
+  type AuthUser,
+} from '@/lib/api/auth';
 
 interface AuthContextType {
-  user: User | null;
+  user: AuthUser | null;
   loading: boolean;
-  signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string) => Promise<void>;
+  isAuthenticated: boolean;
+  signIn: (email: string) => Promise<void>;
+  verifyToken: (token: string) => Promise<void>;
   signOut: () => Promise<void>;
+  magicLinkSent: boolean;
+  setMagicLinkSent: (sent: boolean) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
+  const [magicLinkSent, setMagicLinkSent] = useState(false);
 
+  // Check for stored auth on mount
   useEffect(() => {
-    // Get initial session
-    auth.getUser().then(({ data: { user } }) => {
-      setUser(user);
-      setLoading(false);
-    });
-
-    // Listen for auth changes
-    const { data: { subscription } } = auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
+    const storedUser = getStoredUser();
+    if (checkIsAuthenticated() && storedUser.id && storedUser.email) {
+      setUser({
+        id: storedUser.id,
+        email: storedUser.email,
+        token: getStoredAuthToken() || '',
+      });
+    }
+    setLoading(false);
   }, []);
 
-  const signIn = async (email: string, password: string) => {
-    const { data } = await auth.signIn(email, password);
-    setUser(data.user);
+  const signIn = async (email: string) => {
+    try {
+      await requestMagicLink(email);
+      setMagicLinkSent(true);
+    } catch (error) {
+      // Still show success message to prevent email enumeration
+      setMagicLinkSent(true);
+    }
   };
 
-  const signUp = async (email: string, password: string) => {
-    const { data } = await auth.signUp(email, password);
-    setUser(data.user);
+  const verifyToken = async (token: string) => {
+    try {
+      const response = await verifyMagicLink(token);
+      const authUser: AuthUser = {
+        id: response.user.id,
+        email: response.user.email,
+        token: response.token,
+      };
+      setUser(authUser);
+      storeAuthToken(response.token, response.user.id, response.user.email);
+      setMagicLinkSent(false);
+    } catch (error) {
+      throw new Error(error instanceof Error ? error.message : 'Verification failed');
+    }
   };
 
   const signOut = async () => {
-    await auth.signOut();
     setUser(null);
+    clearAuthToken();
+    setMagicLinkSent(false);
+  };
+
+  const value: AuthContextType = {
+    user,
+    loading,
+    isAuthenticated: user !== null,
+    signIn,
+    verifyToken,
+    signOut,
+    magicLinkSent,
+    setMagicLinkSent,
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, signIn, signUp, signOut }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );

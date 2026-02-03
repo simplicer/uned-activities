@@ -11,14 +11,15 @@ use CatalogHarvest\Domain\ValueObject\ActivityId;
 /**
  * PDO implementation of PriceSnapshotRepository.
  */
-final class PdoPriceSnapshotRepository implements PriceSnapshotRepository
+final readonly class PdoPriceSnapshotRepository implements PriceSnapshotRepository
 {
-    private const TABLE = 'activity_price_snapshots';
+    private const string TABLE = 'activity_price_snapshots';
 
-    public function __construct(private readonly \PDO $connection)
+    public function __construct(private \PDO $connection)
     {
     }
 
+    #[\Override]
     public function store(PriceSnapshot $snapshot): void
     {
         $stmt = $this->connection->prepare(
@@ -38,6 +39,7 @@ final class PdoPriceSnapshotRepository implements PriceSnapshotRepository
         ]);
     }
 
+    #[\Override]
     public function findLatestByActivityId(ActivityId $activityId): ?PriceSnapshot
     {
         $stmt = $this->connection->prepare(
@@ -49,13 +51,14 @@ final class PdoPriceSnapshotRepository implements PriceSnapshotRepository
         $stmt->execute(['activity_id' => $activityId->toString()]);
         $row = $stmt->fetch(\PDO::FETCH_ASSOC);
 
-        if (!$row) {
+        if ($row === false) {
             return null;
         }
 
         return $this->mapToSnapshot($row);
     }
 
+    #[\Override]
     public function findByActivityId(ActivityId $activityId): array
     {
         $stmt = $this->connection->prepare(
@@ -67,6 +70,7 @@ final class PdoPriceSnapshotRepository implements PriceSnapshotRepository
         $stmt->execute(['activity_id' => $activityId->toString()]);
 
         $snapshots = [];
+
         while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
             $snapshots[] = $this->mapToSnapshot($row);
         }

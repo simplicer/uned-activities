@@ -5,7 +5,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { getProfile, updateProfile, getSavedSearches, createSavedSearch, deleteSavedSearch } from '@/lib/api/profile';
-import { Loader2, Save, Trash2, Plus, Bell, BellOff } from 'lucide-react';
+import { Loader2, Trash2, Plus, Bell, BellOff } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { SavedSearch } from '@/lib/api/profile';
@@ -109,9 +109,9 @@ export function ProfilePage() {
             <div className="flex gap-2">
               <input
                 type="text"
-                defaultValue={profile?.data.fullName || ''}
+                defaultValue={profile?.fullName || ''}
                 onBlur={(e) => {
-                  if (e.target.value !== profile?.data.fullName) {
+                  if (e.target.value !== profile?.fullName) {
                     updateProfileMutation.mutate({ fullName: e.target.value });
                   }
                 }}
@@ -153,7 +153,15 @@ export function ProfilePage() {
                 onClick={() => {
                   if (newSearchName.trim()) {
                     // Get current filters from localStorage or URL params
-                    const currentFilters = {}; // TODO: get from state
+                    let currentFilters = {};
+                    try {
+                      const raw = localStorage.getItem('activities_filters');
+                      if (raw) {
+                        currentFilters = JSON.parse(raw);
+                      }
+                    } catch {
+                      currentFilters = {};
+                    }
                     createSearchMutation.mutate({
                       name: newSearchName,
                       filters: currentFilters,
@@ -179,9 +187,9 @@ export function ProfilePage() {
           </div>
         )}
 
-        {searches?.data && searches.data.length > 0 ? (
+        {searches && searches.length > 0 ? (
           <div className="space-y-2">
-            {searches.data.map((search: SavedSearch) => (
+            {searches.map((search: SavedSearch) => (
               <div key={search.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
                 <div className="flex-1">
                   <div className="flex items-center gap-2">

@@ -22,6 +22,7 @@ final class InMemoryActivityRepository implements ActivityRepository
     private array $byUnedId = [];
     private array $byUrl = [];
 
+    #[\Override]
     public function save(Activity $activity): void
     {
         $id = $activity->id->toString();
@@ -30,31 +31,37 @@ final class InMemoryActivityRepository implements ActivityRepository
         $this->byUrl[$activity->url] = $activity;
     }
 
+    #[\Override]
     public function findByUnedId(string $unedId): ?Activity
     {
         return $this->byUnedId[$unedId] ?? null;
     }
 
+    #[\Override]
     public function findByUrl(string $url): ?Activity
     {
         return $this->byUrl[$url] ?? null;
     }
 
+    #[\Override]
     public function existsByUnedId(string $unedId): bool
     {
         return isset($this->byUnedId[$unedId]);
     }
 
+    #[\Override]
     public function existsByUrl(string $url): bool
     {
         return isset($this->byUrl[$url]);
     }
 
+    #[\Override]
     public function findAll(): array
     {
         return array_values($this->activities);
     }
 
+    #[\Override]
     public function findById(ActivityId $id): ?Activity
     {
         return $this->activities[$id->toString()] ?? null;
@@ -75,6 +82,34 @@ final class InMemoryActivityRepository implements ActivityRepository
      */
     public function count(): int
     {
-        return count($this->activities);
+        return \count($this->activities);
+    }
+
+    #[\Override]
+    public function findByFilters(array $filters, int $page = 1, int $perPage = 20): array
+    {
+        // Simplified implementation - return all activities
+        return array_values($this->activities);
+    }
+
+    #[\Override]
+    public function findByIds(array $ids): array
+    {
+        $results = [];
+
+        foreach ($ids as $id) {
+            $key = $id->toString();
+            if (isset($this->activities[$key])) {
+                $results[] = $this->activities[$key];
+            }
+        }
+
+        return $results;
+    }
+
+    #[\Override]
+    public function countByFilters(array $filters): int
+    {
+        return \count($this->activities);
     }
 }

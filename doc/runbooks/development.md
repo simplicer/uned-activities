@@ -143,7 +143,7 @@ chore: tareas varias
 
 ```bash
 # Ver API responses
-curl -H "X-API-Token: dev-token" http://localhost:8080/activities | jq
+curl http://localhost:8080/v1/activities | jq
 
 # Con verbosidad
 curl -v http://localhost:8080/status

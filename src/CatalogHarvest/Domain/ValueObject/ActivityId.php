@@ -10,7 +10,7 @@ use Ramsey\Uuid\UuidInterface;
 /**
  * Activity identifier value object.
  */
-final readonly class ActivityId
+final readonly class ActivityId implements \Stringable
 {
     private string $value;
 
@@ -46,6 +46,7 @@ final readonly class ActivityId
         return $this->value === $other->value;
     }
 
+    #[\Override]
     public function __toString(): string
     {
         return $this->value;

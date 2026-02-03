@@ -11,13 +11,13 @@ use CatalogQuery\Application\Dto\ActivityListResult;
 /**
  * List activities with filters and pagination.
  */
-final class ListActivities
+final readonly class ListActivities
 {
-    private const DEFAULT_PER_PAGE = 20;
-    private const MAX_PER_PAGE = 100;
+    private const int DEFAULT_PER_PAGE = 20;
+    private const int MAX_PER_PAGE = 100;
 
     public function __construct(
-        private readonly ActivityRepository $repository,
+        private ActivityRepository $repository,
     ) {
     }
 
@@ -56,11 +56,14 @@ final class ListActivities
             'typology' => $filters->typology,
             'area' => $filters->area,
             'modality' => $filters->modality,
+            'freeOnly' => $filters->freeOnly === true ? true : null,
+            'deliveryMode' => $filters->deliveryMode,
+            'withCredits' => $filters->withCredits === true ? true : null,
             'minPrice' => $filters->minPrice,
             'maxPrice' => $filters->maxPrice,
             'startDateFrom' => $filters->startDateFrom,
             'startDateTo' => $filters->startDateTo,
             'search' => $filters->search,
-        ], fn($v) => $v !== null);
+        ], fn ($v): bool => $v !== null);
     }
 }

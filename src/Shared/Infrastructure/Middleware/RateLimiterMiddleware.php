@@ -17,9 +17,9 @@ use Slim\Psr7\Response as SlimResponse;
  */
 final class RateLimiterMiddleware
 {
-    private const DEFAULT_LIMIT = 100; // requests per window
-    private const DEFAULT_WINDOW = 60; // seconds
-    private const STORAGE_KEY_PREFIX = 'rate_limit:';
+    private const int DEFAULT_LIMIT = 100; // requests per window
+    private const int DEFAULT_WINDOW = 60; // seconds
+    private const string STORAGE_KEY_PREFIX = 'rate_limit:';
 
     private array $memoryStore = [];
 
@@ -51,6 +51,7 @@ final class RateLimiterMiddleware
 
         // Add rate limit headers to response
         $response = $handler->handle($request);
+
         return $this->addRateLimitHeaders(
             $response,
             $this->requestsPerWindow,
@@ -66,6 +67,7 @@ final class RateLimiterMiddleware
     {
         // Check for API token first
         $token = $this->extractToken($request);
+
         if ($token !== null) {
             return 'token:' . $token;
         }
@@ -77,8 +79,8 @@ final class RateLimiterMiddleware
             ?? 'unknown';
 
         // Handle multiple IPs (X-Forwarded-For)
-        if (str_contains($ip, ',')) {
-            $ip = trim(explode(',', $ip)[0]);
+        if (str_contains((string) $ip, ',')) {
+            $ip = trim(explode(',', (string) $ip)[0]);
         }
 
         return 'ip:' . $ip;
@@ -91,12 +93,14 @@ final class RateLimiterMiddleware
     {
         // Check Authorization header
         $auth = $request->getHeaderLine('Authorization');
+
         if (str_starts_with(strtolower($auth), 'bearer ')) {
             return substr($auth, 7);
         }
 
         // Check query parameter
         $params = $request->getQueryParams();
+
         return $params['token'] ?? $params['api_key'] ?? null;
     }
 
@@ -107,7 +111,7 @@ final class RateLimiterMiddleware
      */
     private function getRateLimitData(string $key): array
     {
-        if ($this->redis !== null) {
+        if ($this->redis instanceof \Redis) {
             return $this->getFromRedis($key);
         }
 
@@ -121,9 +125,13 @@ final class RateLimiterMiddleware
      */
     private function getFromRedis(string $key): array
     {
+        if (!$this->redis instanceof \Redis) {
+            return [0, 0];
+        }
+
         $data = $this->redis->hGetAll($key);
 
-        if (empty($data)) {
+        if ($data === [] || $data === false) {
             return [0, 0];
         }
 
@@ -149,6 +157,7 @@ final class RateLimiterMiddleware
         // Check if window expired
         if (time() > $data['reset_at']) {
             unset($this->memoryStore[$key]);
+
             return [0, 0];
         }
 
@@ -160,8 +169,9 @@ final class RateLimiterMiddleware
      */
     private function incrementCounter(string $key, int $resetAt): void
     {
-        if ($this->redis !== null) {
+        if ($this->redis instanceof \Redis) {
             $this->incrementInRedis($key, $resetAt);
+
             return;
         }
 
@@ -170,6 +180,10 @@ final class RateLimiterMiddleware
 
     private function incrementInRedis(string $key, int $resetAt): void
     {
+        if (!$this->redis instanceof \Redis) {
+            return;
+        }
+
         $pipe = $this->redis->multi();
         $pipe->hIncrBy($key, 'count', 1);
         $pipe->hSet($key, 'reset_at', $resetAt);
@@ -182,11 +196,12 @@ final class RateLimiterMiddleware
         if (!isset($this->memoryStore[$key])) {
             $this->memoryStore[$key] = [
                 'count' => 0,
-                'reset_at' => $resetAt > 0 ? $resetAt : time() + $this->windowSeconds
+                'reset_at' => $resetAt > 0 ? $resetAt : time() + $this->windowSeconds,
             ];
         }
 
         $this->memoryStore[$key]['count']++;
+
         if ($resetAt > 0) {
             $this->memoryStore[$key]['reset_at'] = $resetAt;
         }
@@ -212,7 +227,7 @@ final class RateLimiterMiddleware
     /**
      * Add rate limit headers to response.
      */
-    private function addRateLimitHeaders(Response $response, int $limit, int $count, int $resetAt): Response
+    private function addRateLimitHeaders(\Psr\Http\Message\ResponseInterface|\Slim\Psr7\Response $response, int $limit, int $count, int $resetAt): Response
     {
         $remaining = max(0, $limit - $count);
         $retryAfter = max(0, $resetAt - time());

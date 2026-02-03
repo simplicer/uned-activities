@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Notifications\Application\Digest;
 
 use CatalogHarvest\Domain\Port\ActivityRepository;
-use CatalogHarvest\Domain\ValueObject\ActivityId;
 use Notifications\Domain\Entity\Notification;
 use Notifications\Domain\Port\NotificationRepository;
 use UserProfile\Domain\Port\SavedSearchRepository;
@@ -16,14 +15,14 @@ use UserProfile\Domain\ValueObject\UserId;
  *
  * Runs periodically to check for new activities matching saved searches.
  */
-final class DigestJob
+final readonly class DigestJob
 {
-    private const NOTIFICATION_TYPE = 'new_activity_match';
+    private const string NOTIFICATION_TYPE = 'new_activity_match';
 
     public function __construct(
-        private readonly SavedSearchRepository $searchRepository,
-        private readonly ActivityRepository $activityRepository,
-        private readonly NotificationRepository $notificationRepository,
+        private SavedSearchRepository $searchRepository,
+        private ActivityRepository $activityRepository,
+        private NotificationRepository $notificationRepository,
     ) {
     }
 
@@ -43,7 +42,7 @@ final class DigestJob
 
         // Get all searches with notifications enabled
         $searches = $this->searchRepository->findAllWithNotifications();
-        $results['searches_processed'] = count($searches);
+        $results['searches_processed'] = \count($searches);
 
         foreach ($searches as $search) {
             try {
@@ -60,7 +59,7 @@ final class DigestJob
                         $this->notificationRepository->save($notification);
                         $results['notifications_created']++;
 
-                        if (!in_array($userId->toString(), $results['users_notified'])) {
+                        if (!\in_array($userId->toString(), $results['users_notified'], true)) {
                             $results['users_notified'][] = $userId->toString();
                         }
                     }
@@ -84,7 +83,7 @@ final class DigestJob
     /**
      * Check if notification should be sent for this activity.
      */
-    private function shouldNotify(UserId $userId, $activity): bool
+    private function shouldNotify(UserId $userId, \CatalogHarvest\Domain\Entity\Activity $activity): bool
     {
         // Check if we already notified about this activity
         $existing = $this->notificationRepository->findByUserId($userId, 1000, 0);
@@ -99,6 +98,7 @@ final class DigestJob
 
         // Only notify if activity is recent (last 7 days)
         $weekAgo = new \DateTimeImmutable('-7 days');
+
         return $activity->createdAt > $weekAgo;
     }
 }

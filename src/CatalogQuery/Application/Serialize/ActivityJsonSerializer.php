@@ -33,6 +33,7 @@ final class ActivityJsonSerializer
             'priceAmount' => $activity->priceAmount,
             'priceCurrency' => $activity->priceCurrency,
             'priceDisplay' => $this->formatPrice($activity->priceAmount, $activity->priceCurrency),
+            'isFree' => $activity->isFree,
             'enrollmentOpen' => $activity->enrollmentOpen,
             'enrollmentStartDate' => $activity->enrollmentStartDate?->format('Y-m-d'),
             'enrollmentEndDate' => $activity->enrollmentEndDate?->format('Y-m-d'),
@@ -40,6 +41,17 @@ final class ActivityJsonSerializer
             'createdAt' => $activity->createdAt->format('Y-m-d H:i:s'),
             'updatedAt' => $activity->updatedAt->format('Y-m-d H:i:s'),
             'hash' => $activity->hash,
+            'credits' => $activity->credits,
+            // Extended fields
+            'hasLive' => $activity->hasLive,
+            'hasRecorded' => $activity->hasRecorded,
+            'pricingTable' => $activity->pricingTable,
+            'staff' => $activity->staff,
+            'sessions' => $activity->sessions,
+            'targetAudience' => $activity->targetAudience,
+            'requirements' => $activity->requirements,
+            'locationDetails' => $activity->locationDetails,
+            'scheduleDetails' => $activity->scheduleDetails,
         ];
     }
 
@@ -51,7 +63,7 @@ final class ActivityJsonSerializer
      */
     public function toArrayList(array $activities): array
     {
-        return array_map(fn($a) => $this->toArray($a), $activities);
+        return array_map(fn ($a): array => $this->toArray($a), $activities);
     }
 
     /**

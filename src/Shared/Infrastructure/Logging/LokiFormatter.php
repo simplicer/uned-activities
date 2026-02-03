@@ -14,17 +14,12 @@ use Monolog\LogRecord;
  */
 final class LokiFormatter extends JsonFormatter
 {
-    private const BATCH_SIZE = 100;
-
-    private array $batch = [];
-    private string $streamName;
-
-    public function __construct(string $streamName = 'uned-app')
+    public function __construct(private readonly string $streamName = 'uned-app')
     {
         parent::__construct();
-        $this->streamName = $streamName;
     }
 
+    #[\Override]
     public function format(LogRecord $record): string
     {
         $entry = [
@@ -33,7 +28,7 @@ final class LokiFormatter extends JsonFormatter
                     'stream' => $this->buildStreamLabels($record),
                     'values' => [
                         [
-                            (string) ($record->datetime->format('U')), // nanosecond placeholder
+                            $record->datetime->format('U'), // Unix timestamp
                             $record->formatted,
                         ],
                     ],
@@ -41,7 +36,13 @@ final class LokiFormatter extends JsonFormatter
             ],
         ];
 
-        return json_encode($entry, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+        $result = json_encode($entry, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+
+        if ($result === false) {
+            return '{"streams":[]}';
+        }
+
+        return $result;
     }
 
     /**
@@ -59,12 +60,15 @@ final class LokiFormatter extends JsonFormatter
 
         // Add contextual labels if available
         $context = $record->context;
+
         if (isset($context['request_id'])) {
             $labels['request_id'] = $context['request_id'];
         }
+
         if (isset($context['user_id'])) {
             $labels['user_id'] = $context['user_id'];
         }
+
         if (isset($context['action'])) {
             $labels['action'] = $context['action'];
         }

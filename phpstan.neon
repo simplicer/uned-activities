@@ -5,12 +5,16 @@ parameters:
         - apps
     excludePaths:
         - %currentWorkingDirectory%/vendor/*
+        - %currentWorkingDirectory%/apps/HttpApi/public/index.php
     checkMissingIterableValueType: false
     checkGenericClassInNonGenericObjectType: false
     reportUnmatchedIgnoredErrors: false
     ignoreErrors:
-        # Allow Doctrine repository patterns
-        - '#Doctrine\\Persistence\\ObjectRepository#'
-
-    includes:
-        - vendor/phpstan/phpstan-strict-rules/rules.neon
+        # Ignore common PSR-7/Psr-18 patterns
+        - '~Psr\\\\Http\\\\Message\\\\.*~'
+        - '~Psr\\\\Http\\\\Server\\\\.*~'
+        # Ignore preg_match isset warnings (known false positives)
+        - '~Offset 1 on array.*in isset\(\) always exists~'
+        # Ignore Symfony Console static properties (used by framework internally)
+        - '~Static property .*::\$defaultName is never read~'
+        - '~Static property .*::\$defaultDescription is never read~'

@@ -12,14 +12,15 @@ use UserProfile\Domain\ValueObject\UserId;
 /**
  * PDO implementation of SavedSearchRepository.
  */
-final class PdoSavedSearchRepository implements SavedSearchRepository
+final readonly class PdoSavedSearchRepository implements SavedSearchRepository
 {
-    private const TABLE = 'saved_searches';
+    private const string TABLE = 'saved_searches';
 
-    public function __construct(private readonly PDO $connection)
+    public function __construct(private PDO $connection)
     {
     }
 
+    #[\Override]
     public function save(SavedSearch $search): void
     {
         $exists = $this->existsById($search->id);
@@ -31,6 +32,7 @@ final class PdoSavedSearchRepository implements SavedSearchRepository
         }
     }
 
+    #[\Override]
     public function findById(string $id): ?SavedSearch
     {
         $stmt = $this->connection->prepare(
@@ -40,13 +42,14 @@ final class PdoSavedSearchRepository implements SavedSearchRepository
         $stmt->execute(['id' => $id]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        if (!$row) {
+        if ($row === false) {
             return null;
         }
 
         return $this->mapToEntity($row);
     }
 
+    #[\Override]
     public function findByUserId(UserId $userId): array
     {
         $stmt = $this->connection->prepare(
@@ -56,6 +59,7 @@ final class PdoSavedSearchRepository implements SavedSearchRepository
         $stmt->execute(['user_id' => $userId->toString()]);
 
         $searches = [];
+
         while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
             $searches[] = $this->mapToEntity($row);
         }
@@ -63,6 +67,7 @@ final class PdoSavedSearchRepository implements SavedSearchRepository
         return $searches;
     }
 
+    #[\Override]
     public function delete(string $id): void
     {
         $stmt = $this->connection->prepare(
@@ -72,6 +77,7 @@ final class PdoSavedSearchRepository implements SavedSearchRepository
         $stmt->execute(['id' => $id]);
     }
 
+    #[\Override]
     public function findAllWithNotifications(): array
     {
         $stmt = $this->connection->prepare(
@@ -81,6 +87,7 @@ final class PdoSavedSearchRepository implements SavedSearchRepository
         $stmt->execute();
 
         $searches = [];
+
         while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
             $searches[] = $this->mapToEntity($row);
         }
@@ -146,7 +153,7 @@ final class PdoSavedSearchRepository implements SavedSearchRepository
             $row['id'],
             UserId::fromString($row['user_id']),
             $row['name'],
-            json_decode($row['filters'], true),
+            json_decode((string) $row['filters'], true),
             $row['notify_on_new'] === '1',
             new \DateTimeImmutable($row['created_at']),
             new \DateTimeImmutable($row['updated_at']),

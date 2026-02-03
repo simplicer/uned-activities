@@ -3,20 +3,16 @@ import { render, screen } from '@testing-library/react';
 import App from '../src/App';
 
 describe('App', () => {
-  it('renders title', () => {
-    render(<App />);
-    expect(screen.getByText('UNED Activities Finder')).toBeInTheDocument();
-  });
-
-  it('renders welcome message', () => {
+  it('renders header brand', () => {
     render(<App />);
     expect(
-      screen.getByText('Welcome to UNED Activities Finder')
+      screen.getByText('Universidad Nacional de Educación a Distancia')
     ).toBeInTheDocument();
   });
 
   it('renders language switcher', () => {
     render(<App />);
-    expect(screen.getByLabelText('Language:')).toBeInTheDocument();
+    expect(screen.getByRole('combobox')).toBeInTheDocument();
+    expect(screen.getByText('Español')).toBeInTheDocument();
   });
 });

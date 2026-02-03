@@ -5,8 +5,6 @@ declare(strict_types=1);
 namespace Shared\Infrastructure\Routing;
 
 use HttpApi\Controller\ActivityController;
-use Psr\Http\Message\ResponseInterface as Response;
-use Psr\Http\Message\ServerRequestInterface as Request;
 use Slim\App;
 
 /**
@@ -16,10 +14,14 @@ class ActivityRoutes
 {
     public function __invoke(App $app, ActivityController $controller): void
     {
-        // GET /activities - List activities with filters
-        $app->get('/activities', [$controller, 'list']);
+        // GET /v1/activities - List activities with filters
+        // (nginx rewrites /api/v1/activities -> /v1/activities)
+        $app->get('/v1/activities', fn($request, $response) => $controller->list($request, $response));
 
-        // GET /activities/{id} - Get activity detail
-        $app->get('/activities/{id}', [$controller, 'detail']);
+        // GET /v1/activities/{id} - Get activity detail
+        $app->get('/v1/activities/{id}', fn($request, $response, $args) => $controller->detail($request, $response, $args['id']));
+
+        // GET /v1/activities/{id}/similar - Get similar activities
+        $app->get('/v1/activities/{id}/similar', fn($request, $response, $args) => $controller->similar($request, $response, $args['id']));
     }
 }

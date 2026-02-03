@@ -20,6 +20,7 @@ final class ListActivitiesTest extends TestCase
     private ActivityRepository $repository;
     private ListActivities $useCase;
 
+    #[\Override]
     protected function setUp(): void
     {
         $this->repository = $this->createMock(ActivityRepository::class);
@@ -113,7 +114,7 @@ final class ListActivitiesTest extends TestCase
             ->expects($this->once())
             ->method('findByFilters')
             ->with(
-                $this->callback(function ($filterArray) {
+                $this->callback(function (array $filterArray): bool {
                     return $filterArray['center'] === 'Madrid'
                         && $filterArray['modality'] === 'online'
                         && $filterArray['minPrice'] === 5000 // 50 * 100

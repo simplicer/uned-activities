@@ -13,7 +13,7 @@ use PHPUnit\Framework\TestCase;
 #[CoversNothing]
 class SchemaMigrationTest extends TestCase
 {
-    private const MIGRATION_TABLES = [
+    private const array MIGRATION_TABLES = [
         'activities',
         'activity_snapshots',
         'activity_price_snapshots',
@@ -26,6 +26,7 @@ class SchemaMigrationTest extends TestCase
 
     private \PDO $connection;
 
+    #[\Override]
     protected function setUp(): void
     {
         $this->connection = new \PDO('sqlite::memory:');
@@ -34,6 +35,7 @@ class SchemaMigrationTest extends TestCase
         $this->runMigrations();
     }
 
+    #[\Override]
     protected function tearDown(): void
     {
         unset($this->connection);
@@ -68,25 +70,23 @@ class SchemaMigrationTest extends TestCase
 
     private function runMigrations(): void
     {
-        $migrationsDir = __DIR__ . '/../../../infra/migrations';
-
         // For SQLite, we need to adapt the PostgreSQL syntax
         // This is a simplified version for testing
         $this->connection->exec(<<<'SQL'
-            CREATE TABLE activities (
-                id TEXT PRIMARY KEY,
-                uned_id TEXT NOT NULL UNIQUE,
-                title TEXT NOT NULL,
-                url TEXT NOT NULL UNIQUE,
-                start_date TEXT,
-                end_date TEXT,
-                modality TEXT,
-                center TEXT,
-                typology TEXT,
-                area TEXT,
-                status TEXT NOT NULL DEFAULT 'active'
-            )
-        SQL);
+                CREATE TABLE activities (
+                    id TEXT PRIMARY KEY,
+                    uned_id TEXT NOT NULL UNIQUE,
+                    title TEXT NOT NULL,
+                    url TEXT NOT NULL UNIQUE,
+                    start_date TEXT,
+                    end_date TEXT,
+                    modality TEXT,
+                    center TEXT,
+                    typology TEXT,
+                    area TEXT,
+                    status TEXT NOT NULL DEFAULT 'active'
+                )
+            SQL);
 
         $this->connection->exec('CREATE INDEX idx_activities_start_date ON activities(start_date)');
         $this->connection->exec('CREATE INDEX idx_activities_modality ON activities(modality)');

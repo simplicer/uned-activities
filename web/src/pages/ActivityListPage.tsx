@@ -2,7 +2,7 @@
  * Activity List Page component.
  */
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { FilterSidebar } from '@/components/FilterSidebar';
 import { ActivityList } from '@/components/ActivityList';
 import { Pagination } from '@/components/Pagination';
@@ -17,7 +17,18 @@ interface ActivityListPageProps {
 }
 
 export function ActivityListPage({ isFilterOpen, onToggleFilter }: ActivityListPageProps) {
-  const [filters, setFilters] = useState<ActivityFilters>({ page: 1, perPage: 12 });
+  const [filters, setFilters] = useState<ActivityFilters>(() => {
+    try {
+      const raw = localStorage.getItem('activities_filters');
+      if (raw) {
+        const parsed = JSON.parse(raw) as ActivityFilters;
+        return { ...parsed, page: parsed.page ?? 1, perPage: parsed.perPage ?? 12 };
+      }
+    } catch {
+      // Ignore invalid local storage
+    }
+    return { page: 1, perPage: 12 };
+  });
   const debouncedFilters = useDebounce(filters, 500);
 
   // Fetch to get pagination metadata
@@ -34,6 +45,14 @@ export function ActivityListPage({ isFilterOpen, onToggleFilter }: ActivityListP
   const handleFiltersChange = (newFilters: ActivityFilters) => {
     setFilters({ ...newFilters, page: 1 }); // Reset to page 1 when filters change
   };
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('activities_filters', JSON.stringify(filters));
+    } catch {
+      // Ignore storage errors
+    }
+  }, [filters]);
 
   return (
     <div className="flex gap-6">
@@ -53,10 +72,10 @@ export function ActivityListPage({ isFilterOpen, onToggleFilter }: ActivityListP
         {data?.meta && (
           <div className="mt-8">
             <Pagination
-              currentPage={data.meta.page}
-              totalPages={data.meta.totalPages}
-              hasNextPage={data.meta.hasNextPage}
-              hasPrevPage={data.meta.hasPrevPage}
+              currentPage={data.meta.page || 1}
+              totalPages={data.meta.totalPages || 1}
+              hasNextPage={data.meta.hasNextPage || false}
+              hasPrevPage={data.meta.hasPrevPage || false}
               onPageChange={handlePageChange}
             />
           </div>

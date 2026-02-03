@@ -8,6 +8,11 @@ use CatalogHarvest\Infrastructure\Http\GuzzleHtmlFetcher;
 use CatalogHarvest\Infrastructure\Persistence\PdoActivityRepository;
 use CatalogHarvest\Infrastructure\Persistence\PdoActivitySnapshotRepository;
 use CatalogHarvest\Infrastructure\Persistence\PdoPriceSnapshotRepository;
+use CatalogHarvest\Infrastructure\Persistence\PdoActivityEmbeddingRepository;
+use CatalogHarvest\Infrastructure\AI\AIActivityParser;
+use CatalogHarvest\Application\Embeddings\GenerateActivityEmbedding;
+use Shared\Infrastructure\AI\AIExtractor;
+use Shared\Infrastructure\AI\OpenRouterEmbeddingClient;
 use Shared\Infrastructure\Logging\LoggerFactory;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Command\Command;
@@ -21,7 +26,7 @@ require_once __DIR__ . '/../../../vendor/autoload.php';
 
 // Load environment
 if (file_exists(__DIR__ . '/../../../.env')) {
-    $dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/../..');
+    $dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/../../../');
     $dotenv->load();
 }
 
@@ -32,9 +37,10 @@ if (file_exists(__DIR__ . '/../../../.env')) {
  */
 final class RefreshCommand extends Command
 {
-    protected static $defaultName = 'refresh';
-    protected static $defaultDescription = 'Refresh activities from UNED detail pages';
+    private static string $defaultName = 'refresh';
+    private static string $defaultDescription = 'Refresh activities from UNED detail pages';
 
+    #[\Override]
     protected function configure(): void
     {
         $this
@@ -43,6 +49,7 @@ final class RefreshCommand extends Command
             ->addOption('dry-run', null, InputOption::VALUE_NONE, 'Do not save changes');
     }
 
+    #[\Override]
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $io = new SymfonyStyle($input, $output);
@@ -50,7 +57,7 @@ final class RefreshCommand extends Command
 
         $activityId = $input->getArgument('activity-id');
         $limit = (int) $input->getOption('limit');
-        $isDryRun = $input->getOption('dry-run');
+        $isDryRun = (bool) $input->getOption('dry-run');
 
         $io->title('UNED Activities Refresh');
         $logger->info('Refresh started', ['activity_id' => $activityId, 'limit' => $limit]);
@@ -65,7 +72,40 @@ final class RefreshCommand extends Command
         $snapshotRepo = new PdoActivitySnapshotRepository($this->createPdo());
         $priceRepo = new PdoPriceSnapshotRepository($this->createPdo());
 
-        $useCase = new RefreshActivity($fetcher, $activityRepo, $snapshotRepo, $priceRepo);
+        // Create AI parser if API keys are available
+        $aiParser = null;
+        $geminiKey = $_ENV['GEMINI_API_KEY'] ?? null;
+        $openRouterKey = $_ENV['OPENROUTER_API_KEY'] ?? null;
+        $embeddingService = null;
+
+        if ($geminiKey || $openRouterKey) {
+            $io->text('Using AI-powered extraction');
+            $extractor = new AIExtractor(
+                geminiKey: $geminiKey ?? '',
+                openrouterKey: $openRouterKey ?? '',
+            );
+            $aiParser = new AIActivityParser($extractor);
+        } else {
+            $io->text('AI keys not configured, using basic XPath parser');
+        }
+
+        $embeddingsEnabled = filter_var($_ENV['EMBEDDINGS_ENABLED'] ?? 'true', FILTER_VALIDATE_BOOLEAN);
+        $embeddingModel = $_ENV['OPENROUTER_EMBEDDING_MODEL'] ?? 'nomic-ai/nomic-embed-text-v1.5';
+
+        if ($openRouterKey && $embeddingsEnabled) {
+            $embeddingClient = new OpenRouterEmbeddingClient($openRouterKey, $embeddingModel);
+            $embeddingRepo = new PdoActivityEmbeddingRepository($this->createPdo());
+            $embeddingService = new GenerateActivityEmbedding($embeddingRepo, $embeddingClient, $embeddingModel, true);
+        }
+
+        $useCase = new RefreshActivity(
+            $fetcher,
+            $activityRepo,
+            $snapshotRepo,
+            $priceRepo,
+            aiParser: $aiParser,
+            embeddingService: $embeddingService
+        );
 
         try {
             if ($activityId === 'all') {
@@ -102,7 +142,7 @@ final class RefreshCommand extends Command
     private function refreshAll(
         SymfonyStyle $io,
         RefreshActivity $useCase,
-        $activityRepo,
+        \CatalogHarvest\Domain\Port\ActivityRepository $activityRepo,
         int $limit,
         bool $isDryRun,
     ): int {
@@ -112,8 +152,9 @@ final class RefreshCommand extends Command
         $io->text("Found " . count($activities) . " activities");
         $io->newLine();
 
-        if (count($activities) === 0) {
+        if ($activities === []) {
             $io->warning('No activities found. Run discover first.');
+
             return Command::SUCCESS;
         }
 
@@ -128,6 +169,7 @@ final class RefreshCommand extends Command
         ];
 
         $tableData = [];
+
         foreach ($activities as $activity) {
             $oldHash = $activity->hash;
 
@@ -137,7 +179,7 @@ final class RefreshCommand extends Command
 
                     // Get updated activity
                     $updated = $activityRepo->findById($activity->id);
-                    $hasChanged = ($updated && $updated->hash !== $oldHash);
+                    $hasChanged = ($updated instanceof \CatalogHarvest\Domain\Entity\Activity && $updated->hash !== $oldHash);
 
                     if ($hasChanged) {
                         $results['changed']++;
@@ -190,20 +232,41 @@ final class RefreshCommand extends Command
 
     private function createPdo(): PDO
     {
-        $dsn = $_ENV['DB_DSN'] ?? 'sqlite::memory:';
+        // Try individual env vars first (Docker Compose style)
+        $host = $_ENV['DB_HOST'] ?? null;
+        $port = $_ENV['DB_PORT'] ?? 5432;
+        $dbname = $_ENV['DB_NAME'] ?? null;
+        $user = $_ENV['DB_USER'] ?? null;
+        $password = $_ENV['DB_PASSWORD'] ?? null;
 
-        if (str_starts_with($dsn, 'postgres')) {
+        if ($host && $dbname && $user) {
+            $dsn = "pgsql:host={$host};port={$port};dbname={$dbname};options='--client_encoding=UTF8'";
+            $pdo = new PDO($dsn, $user, $password, [
+                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            ]);
+            $pdo->exec("SET NAMES 'utf8'");
+            return $pdo;
+        }
+
+        // Fallback to DB_DSN env var
+        $dsn = $_ENV['DB_DSN'] ?? 'sqlite::memory:';
+        if (str_starts_with((string) $dsn, 'postgres')) {
             $pattern = '#postgres://(?<user>[^:]+):(?<password>[^@]+)@(?<host>[^:]+):(?<port>\d+)/(?<dbname>[^/]+)#';
-            if (!preg_match($pattern, $dsn, $matches)) {
+
+            if (preg_match($pattern, (string) $dsn, $matches) !== 1) {
                 throw new \RuntimeException("Invalid PostgreSQL DSN");
             }
 
-            $dsn = "pgsql:host={$matches['host']};port={$matches['port']};dbname={$matches['dbname']}";
-            return new PDO($dsn, $matches['user'], $matches['password'], [
+            $dsn = "pgsql:host={$matches['host']};port={$matches['port']};dbname={$matches['dbname']};options='--client_encoding=UTF8'";
+
+            $pdo = new PDO($dsn, $matches['user'], $matches['password'], [
                 PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
             ]);
+            $pdo->exec("SET NAMES 'utf8'");
+            return $pdo;
         }
 
+        // SQLite fallback
         return new PDO('sqlite::memory:', null, null, [
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
         ]);
@@ -212,5 +275,9 @@ final class RefreshCommand extends Command
 
 // Run console application
 $app = new Application('UNED Activities Finder CLI', '1.0.0');
-$app->add(new RefreshCommand());
+
+$command = new RefreshCommand();
+$command->setName('refresh');
+$app->add($command);
+
 $app->run();

@@ -38,15 +38,15 @@ test: test-unit test-integration test-acceptance ## Run all tests
 
 test-unit: ## Run unit tests
 	@echo "$(BLUE)Running unit tests...$(NC)"
-	phpunit --testsuite=Unit
+	./vendor/bin/phpunit --testsuite=Unit
 
 test-integration: ## Run integration tests
 	@echo "$(BLUE)Running integration tests...$(NC)"
-	phpunit --testsuite=Integration
+	./vendor/bin/phpunit --testsuite=Integration
 
 test-acceptance: ## Run acceptance tests
 	@echo "$(BLUE)Running acceptance tests...$(NC)"
-	phpunit --testsuite=Acceptance
+	./vendor/bin/phpunit --testsuite=Acceptance
 
 lint: ## Run PHP CS Fixer (dry-run)
 	@echo "$(BLUE)Checking code style...$(NC)"
@@ -149,6 +149,10 @@ harvest: ## Run harvest job (full refresh)
 digest: ## Run notification digest
 	@echo "$(BLUE)Running notification digest...$(NC)"
 	php apps/CliJobs/bin/digest.php
+
+embeddings: ## Generate embeddings for activities
+	@echo "$(BLUE)Generating activity embeddings...$(NC)"
+	php apps/CliJobs/bin/embeddings.php
 
 ##@ Docker
 

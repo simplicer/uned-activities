@@ -2,7 +2,7 @@
  * Supabase client configuration.
  */
 
-import { createClient } from '@supabase/supabase-js';
+import { createClient, type User } from '@supabase/supabase-js';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
@@ -13,24 +13,24 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey);
  * Authentication functions.
  */
 export const auth = {
-  async signUp(email: string, password: string) {
+  async signUp(email: string, password: string): Promise<User | null> {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
     });
 
     if (error) throw error;
-    return data;
+    return data.user;
   },
 
-  async signIn(email: string, password: string) {
+  async signIn(email: string, password: string): Promise<User | null> {
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
 
     if (error) throw error;
-    return data;
+    return data.user;
   },
 
   async signOut() {
@@ -38,7 +38,7 @@ export const auth = {
     if (error) throw error;
   },
 
-  async getUser() {
+  async getUser(): Promise<User | null> {
     const { data: { user } } = await supabase.auth.getUser();
     return user;
   },

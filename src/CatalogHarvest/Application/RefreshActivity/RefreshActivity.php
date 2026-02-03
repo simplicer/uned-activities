@@ -13,6 +13,8 @@ use CatalogHarvest\Domain\Port\PriceSnapshot;
 use CatalogHarvest\Domain\Port\HtmlFetcher;
 use CatalogHarvest\Domain\ValueObject\ActivityId;
 use CatalogHarvest\Infrastructure\Http\ActivityDetailParser;
+use CatalogHarvest\Infrastructure\AI\AIActivityParser;
+use CatalogHarvest\Application\Embeddings\GenerateActivityEmbedding;
 
 /**
  * RefreshActivity use case.
@@ -20,14 +22,16 @@ use CatalogHarvest\Infrastructure\Http\ActivityDetailParser;
  * Fetches activity detail page, normalizes fields,
  * stores snapshots and price changes.
  */
-final class RefreshActivity
+final readonly class RefreshActivity
 {
     public function __construct(
-        private readonly HtmlFetcher $htmlFetcher,
-        private readonly ActivityRepository $activityRepository,
-        private readonly ActivitySnapshotRepository $snapshotRepository,
-        private readonly PriceSnapshotRepository $priceSnapshotRepository,
-        private readonly ActivityDetailParser $parser = new ActivityDetailParser(),
+        private HtmlFetcher $htmlFetcher,
+        private ActivityRepository $activityRepository,
+        private ActivitySnapshotRepository $snapshotRepository,
+        private PriceSnapshotRepository $priceSnapshotRepository,
+        private ActivityDetailParser $parser = new ActivityDetailParser(),
+        private ?AIActivityParser $aiParser = null,
+        private ?GenerateActivityEmbedding $embeddingService = null,
     ) {
     }
 
@@ -40,21 +44,36 @@ final class RefreshActivity
     {
         // Fetch existing activity
         $activity = $this->activityRepository->findById($activityId);
-        if ($activity === null) {
+
+        if (!$activity instanceof \CatalogHarvest\Domain\Entity\Activity) {
             throw new \RuntimeException("Activity not found: {$activityId}");
         }
 
         // Fetch HTML from detail page
         $html = $this->htmlFetcher->fetch($activity->url);
 
-        // Parse fields from HTML
-        $data = $this->parser->parse($html, $activity->url);
+        // Use XPath parser as primary (more reliable), AI as fallback
+        $data = $this->parser->parse($html);
 
         // Calculate new hash
         $newHash = $this->calculateHash($data);
 
         // Check if changed
         $hasChanged = $activity->hasChanged($newHash);
+
+        // Extract credits and extended fields from AI parser
+        $credits = $data['credits'] ?? null;
+        $hasLive = $data['hasLive'] ?? null;
+        $hasRecorded = $data['hasRecorded'] ?? null;
+
+        // Extended fields
+        $pricingTable = $data['pricingTable'] ?? null;
+        $staff = $data['staff'] ?? null;
+        $sessions = $data['sessions'] ?? null;
+        $targetAudience = $data['targetAudience'] ?? null;
+        $requirements = $data['requirements'] ?? null;
+        $locationDetails = $data['locationDetails'] ?? null;
+        $scheduleDetails = $data['scheduleDetails'] ?? null;
 
         // Update activity with refresh data
         $updatedActivity = $activity->withRefreshData(
@@ -68,13 +87,32 @@ final class RefreshActivity
             area: $data['area'],
             priceAmount: $data['priceAmount'],
             priceCurrency: $data['priceCurrency'],
+            isFree: $data['isFree'] ?? false,
             enrollmentOpen: $data['enrollmentOpen'],
             enrollmentStartDate: $data['enrollmentStartDate'],
             enrollmentEndDate: $data['enrollmentEndDate'],
             newHash: $newHash,
+            credits: $credits,
+            hasLive: $hasLive,
+            hasRecorded: $hasRecorded,
+            pricingTable: $pricingTable,
+            staff: $staff,
+            sessions: $sessions,
+            targetAudience: $targetAudience,
+            requirements: $requirements,
+            locationDetails: $locationDetails,
+            scheduleDetails: $scheduleDetails,
         );
 
         $this->activityRepository->save($updatedActivity);
+
+        if ($this->embeddingService instanceof GenerateActivityEmbedding) {
+            try {
+                $this->embeddingService->generate($updatedActivity);
+            } catch (\Throwable $e) {
+                error_log('Embedding generation failed: ' . $e->getMessage());
+            }
+        }
 
         // Store snapshot if changed
         if ($hasChanged) {

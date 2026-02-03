@@ -1,0 +1,158 @@
+<?php
+
+declare(strict_types=1);
+
+namespace HttpApi\Controller;
+
+use Auth\Application\RequestMagicLink\RequestMagicLink;
+use Auth\Application\VerifyMagicLink\VerifyMagicLink;
+use Psr\Http\Message\ResponseInterface as Response;
+use Psr\Http\Message\ServerRequestInterface as Request;
+use Shared\Infrastructure\Auth\JwtService;
+
+/**
+ * Authentication controller for magic link auth.
+ */
+final readonly class AuthController
+{
+    public function __construct(
+        private RequestMagicLink $requestMagicLink,
+        private VerifyMagicLink $verifyMagicLink,
+        private JwtService $jwtService,
+    ) {
+    }
+
+    /**
+     * POST /auth/request - Request a magic link
+     */
+    public function request(Request $request, Response $response): Response
+    {
+        $body = $request->getParsedBody();
+        $email = $body['email'] ?? '';
+
+        if ($email === '') {
+            $response->getBody()->write(json_encode([
+                'error' => 'validation_error',
+                'message' => 'Email is required',
+            ], JSON_THROW_ON_ERROR));
+
+            return $response->withStatus(400)->withHeader('Content-Type', 'application/json');
+        }
+
+        try {
+            // Always return success to prevent email enumeration
+            $expireMinutes = isset($_ENV['MAGIC_LINK_EXPIRE_MINUTES'])
+                ? (int) $_ENV['MAGIC_LINK_EXPIRE_MINUTES']
+                : null;
+            $this->requestMagicLink->execute($email, $expireMinutes);
+
+            $response->getBody()->write(json_encode([
+                'message' => 'If the email exists, a magic link has been sent',
+            ], JSON_THROW_ON_ERROR));
+
+            return $response->withHeader('Content-Type', 'application/json');
+        } catch (\InvalidArgumentException $e) {
+            $response->getBody()->write(json_encode([
+                'error' => 'validation_error',
+                'message' => $e->getMessage(),
+            ], JSON_THROW_ON_ERROR));
+
+            return $response->withStatus(400)->withHeader('Content-Type', 'application/json');
+        } catch (\Exception $e) {
+            // Log error but don't expose it
+            error_log('Magic link request failed: ' . $e->getMessage());
+
+            $response->getBody()->write(json_encode([
+                'message' => 'If the email exists, a magic link has been sent',
+            ], JSON_THROW_ON_ERROR));
+
+            return $response->withHeader('Content-Type', 'application/json');
+        }
+    }
+
+    /**
+     * POST /auth/verify - Verify a magic link
+     */
+    public function verify(Request $request, Response $response): Response
+    {
+        $body = $request->getParsedBody();
+        $token = $body['token'] ?? '';
+
+        if ($token === '') {
+            $response->getBody()->write(json_encode([
+                'error' => 'validation_error',
+                'message' => 'Token is required',
+            ], JSON_THROW_ON_ERROR));
+
+            return $response->withStatus(400)->withHeader('Content-Type', 'application/json');
+        }
+
+        $result = $this->verifyMagicLink->execute($token);
+
+        if (!$result->success) {
+            $response->getBody()->write(json_encode([
+                'error' => 'invalid_token',
+                'message' => $result->error ?? 'Invalid token',
+            ], JSON_THROW_ON_ERROR));
+
+            return $response->withStatus(401)->withHeader('Content-Type', 'application/json');
+        }
+
+        try {
+            $sessionToken = $this->jwtService->issue([
+                'sub' => $result->user->id->toString(),
+                'email' => $result->user->email,
+                'role' => 'authenticated',
+            ]);
+        } catch (\RuntimeException $e) {
+            $response->getBody()->write(json_encode([
+                'error' => 'server_error',
+                'message' => $e->getMessage(),
+            ], JSON_THROW_ON_ERROR));
+
+            return $response->withStatus(500)->withHeader('Content-Type', 'application/json');
+        }
+
+        // Store session token in user metadata or separate sessions table
+        // For now, return user data with a session token
+        $response->getBody()->write(json_encode([
+            'data' => [
+                'user' => [
+                    'id' => $result->user->id->toString(),
+                    'email' => $result->user->email->toString(),
+                ],
+                'token' => $sessionToken,
+                'message' => 'Authentication successful',
+            ],
+        ], JSON_THROW_ON_ERROR));
+
+        return $response->withHeader('Content-Type', 'application/json');
+    }
+
+    /**
+     * GET /auth/me - Get current user info
+     */
+    public function me(Request $request, Response $response): Response
+    {
+        $userId = $request->getAttribute('auth_user_id');
+        $email = $request->getAttribute('auth_email');
+
+        if (!is_string($userId) || $userId === '') {
+            $response->getBody()->write(json_encode([
+                'error' => 'unauthorized',
+                'message' => 'Authentication required',
+            ], JSON_THROW_ON_ERROR));
+
+            return $response->withStatus(401)->withHeader('Content-Type', 'application/json');
+        }
+
+        $response->getBody()->write(json_encode([
+            'data' => [
+                'id' => $userId,
+                'email' => $email,
+            ],
+        ], JSON_THROW_ON_ERROR));
+
+        return $response->withHeader('Content-Type', 'application/json');
+    }
+}

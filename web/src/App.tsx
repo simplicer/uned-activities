@@ -1,11 +1,17 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ActivityListPage } from './pages/ActivityListPage';
 import { ActivityDetailPage } from './components/ActivityDetail';
 import { ProfilePage } from './components/ProfilePage';
 import { AuthModal } from './components/AuthModal';
+import { LanguageSwitcher } from './components/LanguageSwitcher';
+import { CookieConsent } from './components/CookieConsent';
+import { TermsPage } from './pages/TermsPage';
+import { PrivacyPage } from './pages/PrivacyPage';
+import { BookOpen, Menu, X } from 'lucide-react';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -17,53 +23,182 @@ const queryClient = new QueryClient({
 });
 
 function AppContent() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <a href="/activities" className="text-xl font-bold hover:text-primary transition-colors">
-            UNED Activities Finder
-          </a>
-          <div className="flex items-center gap-4">
-            {user ? (
-              <a href="/profile" className="text-sm text-foreground hover:text-primary">
-                Mi Perfil
-              </a>
-            ) : (
-              <button
-                onClick={() => setIsAuthModalOpen(true)}
-                className="text-sm px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
-              >
-                Iniciar sesión
-              </button>
-            )}
+      {/* UNED Header */}
+      <header className="border-b border-primary/10 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80 sticky top-0 z-50 shadow-sm">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            {/* Logo and Title - links to homepage (activities) */}
+            <a
+              href="/"
+              className="flex items-center gap-3 group"
+            >
+              <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow">
+                <BookOpen className="w-6 h-6 text-white" />
+              </div>
+              <div className="hidden sm:block">
+                <h1 className="text-xl font-bold text-gradient">
+                  {t('nav.activities')}
+                </h1>
+                <p className="text-xs text-muted-foreground">Universidad Nacional de Educación a Distancia</p>
+              </div>
+            </a>
+
+            {/* Desktop Navigation */}
+            <nav className="hidden md:flex items-center gap-6">
+              {user ? (
+                <>
+                  <a
+                    href="/profile"
+                    className="text-sm font-medium text-foreground hover:text-primary transition-colors"
+                  >
+                    {t('nav.profile')}
+                  </a>
+                  <span className="text-sm text-muted-foreground">
+                    {user.email}
+                  </span>
+                </>
+              ) : (
+                <button
+                  onClick={() => setIsAuthModalOpen(true)}
+                  className="btn-primary text-sm"
+                >
+                  {t('auth.signIn')}
+                </button>
+              )}
+              <LanguageSwitcher />
+            </nav>
+
+            {/* Mobile Menu Button */}
+            <button
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="md:hidden p-2 rounded-lg hover:bg-muted transition-colors"
+              aria-label={t('close')}
+            >
+              {isMobileMenuOpen ? (
+                <X className="w-6 h-6" />
+              ) : (
+                <Menu className="w-6 h-6" />
+              )}
+            </button>
           </div>
+
+          {/* Mobile Navigation */}
+          {isMobileMenuOpen && (
+            <nav className="md:hidden py-4 border-t border-border">
+              <div className="flex flex-col gap-3">
+                {user ? (
+                  <>
+                    <a
+                      href="/profile"
+                      className="px-3 py-2 rounded-lg hover:bg-muted transition-colors text-sm font-medium"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      {t('nav.profile')}
+                    </a>
+                    <span className="px-3 py-2 text-sm text-muted-foreground">
+                      {user.email}
+                    </span>
+                  </>
+                ) : (
+                  <button
+                    onClick={() => {
+                      setIsAuthModalOpen(true);
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className="btn-primary text-sm text-left"
+                  >
+                    {t('auth.signIn')}
+                  </button>
+                )}
+                <div className="px-3 py-2">
+                  <LanguageSwitcher />
+                </div>
+              </div>
+            </nav>
+          )}
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8">
+      {/* Main Content */}
+      <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
         <Routes>
-          <Route path="/" element={<Navigate to="/activities" replace />} />
           <Route
-            path="/activities"
+            path="/"
             element={<ActivityListPage isFilterOpen={isFilterOpen} onToggleFilter={() => setIsFilterOpen(!isFilterOpen)} />}
           />
           <Route path="/activities/:id" element={<ActivityDetailPage />} />
           <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/terms" element={<TermsPage />} />
+          <Route path="/privacy" element={<PrivacyPage />} />
         </Routes>
       </main>
 
-      <footer className="border-t mt-16">
-        <div className="container mx-auto px-4 py-6 text-center text-sm text-muted-foreground">
-          <p>&copy; 2025 UNED Activities Finder.</p>
+      {/* UNED Footer */}
+      <footer className="border-t border-primary/10 bg-muted/30 mt-16">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="grid md:grid-cols-3 gap-8">
+            {/* Brand */}
+            <div>
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-8 h-8 bg-primary rounded-md flex items-center justify-center">
+                  <BookOpen className="w-5 h-5 text-white" />
+                </div>
+                <span className="font-semibold text-foreground">{t('footer.brand')}</span>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                {t('footer.description')}
+              </p>
+            </div>
+
+            {/* Links */}
+            <div>
+              <h3 className="font-semibold text-foreground mb-4">{t('footer.links')}</h3>
+              <ul className="space-y-2 text-sm">
+                <li>
+                  <a href="https://www.uned.es" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors">
+                    UNED
+                  </a>
+                </li>
+                <li>
+                  <a href="/" className="text-muted-foreground hover:text-primary transition-colors">
+                    {t('nav.home')}
+                  </a>
+                </li>
+                <li>
+                  <a href="/terms" className="text-muted-foreground hover:text-primary transition-colors">
+                    {t('termsOfUse')}
+                  </a>
+                </li>
+                <li>
+                  <a href="/privacy" className="text-muted-foreground hover:text-primary transition-colors">
+                    {t('privacyPolicy')}
+                  </a>
+                </li>
+              </ul>
+            </div>
+
+            {/* Legal */}
+            <div>
+              <h3 className="font-semibold text-foreground mb-4">{t('footer.legal')}</h3>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li>&copy; {new Date().getFullYear()} <a href="https://simplicer.com" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">Simplicer SL</a></li>
+                <li>{t('footer.license')} <a href="https://opensource.org/licenses/MIT" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">MIT</a></li>
+              </ul>
+            </div>
+          </div>
         </div>
       </footer>
 
       <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
+      <CookieConsent />
     </div>
   );
 }

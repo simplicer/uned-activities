@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Notifications\Domain\Entity;
 
 use CatalogHarvest\Domain\Entity\Activity;
-use CatalogHarvest\Domain\ValueObject\ActivityId;
 use Notifications\Domain\ValueObject\NotificationId;
 use UserProfile\Domain\ValueObject\UserId;
 
@@ -75,20 +74,28 @@ final class Notification
         UserId $userId,
         Activity $activity,
     ): self {
+        $title = $activity->title ?? 'Sin título';
+
+        $priceDisplay = 'N/A';
+
+        if ($activity->priceAmount !== null && $activity->priceCurrency !== null) {
+            $priceDisplay = number_format($activity->priceAmount / 100, 2) . ' ' . $activity->priceCurrency;
+        }
+
         return new self(
             id: NotificationId::generate(),
             userId: $userId,
             type: 'new_activity',
             title: 'Nueva actividad disponible',
-            message: sprintf(
+            message: \sprintf(
                 'Se ha publicado una nueva actividad: %s',
-                $activity->title ?: 'Sin título'
+                $title
             ),
             data: [
                 'activity_id' => $activity->id->toString(),
                 'activity_uned_id' => $activity->unedId,
                 'activity_title' => $activity->title,
-                'activity_price' => $activity->priceDisplay,
+                'activity_price' => $priceDisplay,
             ],
             isRead: false,
             createdAt: new \DateTimeImmutable(),
@@ -105,14 +112,16 @@ final class Notification
         $change = $newPrice - $oldPrice;
         $direction = $change > 0 ? 'aumentado' : 'reducido';
 
+        $activityTitle = $activity->title !== null && $activity->title !== '' ? $activity->title : 'la actividad';
+
         return new self(
             id: NotificationId::generate(),
             userId: $userId,
             type: 'price_change',
             title: 'Cambio de precio',
-            message: sprintf(
+            message: \sprintf(
                 'El precio de "%s" ha %s de %s a %s',
-                $activity->title ?: 'la actividad',
+                $activityTitle,
                 $direction,
                 number_format($oldPrice / 100, 2),
                 number_format($newPrice / 100, 2)

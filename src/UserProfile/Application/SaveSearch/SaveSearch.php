@@ -11,10 +11,10 @@ use UserProfile\Domain\ValueObject\UserId;
 /**
  * Save search use case.
  */
-final class SaveSearch
+final readonly class SaveSearch
 {
     public function __construct(
-        private readonly SavedSearchRepository $repository,
+        private SavedSearchRepository $repository,
     ) {
     }
 
@@ -22,6 +22,7 @@ final class SaveSearch
     {
         $search = SavedSearch::create($userId, $name, $filters, $notifyOnNew);
         $this->repository->save($search);
+
         return $search;
     }
 
@@ -29,7 +30,7 @@ final class SaveSearch
     {
         $search = $this->repository->findById($searchId);
 
-        if ($search === null) {
+        if (!$search instanceof \UserProfile\Domain\Entity\SavedSearch) {
             throw new \RuntimeException('Saved search not found', 404);
         }
 
@@ -46,6 +47,7 @@ final class SaveSearch
         }
 
         $this->repository->save($search);
+
         return $search;
     }
 

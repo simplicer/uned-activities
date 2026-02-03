@@ -5,12 +5,9 @@ declare(strict_types=1);
 namespace Tests\Unit\CatalogHarvest\DiscoverActivities;
 
 use CatalogHarvest\Application\DiscoverActivities\DiscoverActivities;
-use CatalogHarvest\Application\DiscoverActivities\DiscoverActivitiesResult;
-use CatalogHarvest\Application\DiscoverActivities\DiscoveredActivity;
 use CatalogHarvest\Domain\Entity\Activity;
 use CatalogHarvest\Domain\Port\ActivityRepository;
 use CatalogHarvest\Domain\Port\HtmlFetcher;
-use CatalogHarvest\Domain\ValueObject\ActivityId;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\TestDox;
@@ -23,6 +20,7 @@ final class DiscoverActivitiesTest extends TestCase
     private ActivityRepository $repository;
     private DiscoverActivities $useCase;
 
+    #[\Override]
     protected function setUp(): void
     {
         $this->htmlFetcher = $this->createMock(HtmlFetcher::class);
@@ -39,29 +37,30 @@ final class DiscoverActivitiesTest extends TestCase
         $this->htmlFetcher
             ->expects($this->once())
             ->method('fetch')
-            ->with('https://www.uned.es/cursos/ext/index')
+            ->with('https://extension.uned.es/cursos/ext/index')
             ->willReturn($indexHtml);
 
         $this->repository
             ->expects($this->exactly(3))
             ->method('existsByUrl')
             ->willReturnMap([
-                ['https://www.uned.es/cursos/curso/12345', false],
-                ['https://www.uned.es/cursos/curso/67890', false],
-                ['https://www.uned.es/cursos/curso/11111', false],
+                ['https://extension.uned.es/cursos/curso/12345', false],
+                ['https://extension.uned.es/cursos/curso/67890', false],
+                ['https://extension.uned.es/cursos/curso/11111', false],
             ]);
 
         $savedActivities = [];
         $this->repository
             ->expects($this->exactly(3))
             ->method('save')
-            ->with($this->callback(function (Activity $activity) use (&$savedActivities) {
+            ->with($this->callback(function (Activity $activity) use (&$savedActivities): true {
                 $savedActivities[] = $activity;
+
                 return true;
             }));
 
         // Act
-        $result = $this->useCase->discover('https://www.uned.es/cursos/ext/index', maxPages: 1);
+        $result = $this->useCase->discover('https://extension.uned.es/cursos/ext/index', maxPages: 1);
 
         // Assert
         $this->assertCount(3, $result->discovered);
@@ -85,9 +84,9 @@ final class DiscoverActivitiesTest extends TestCase
             ->expects($this->exactly(3))
             ->method('existsByUrl')
             ->willReturnMap([
-                ['https://www.uned.es/cursos/curso/12345', true],
-                ['https://www.uned.es/cursos/curso/67890', false],
-                ['https://www.uned.es/cursos/curso/11111', false],
+                ['https://extension.uned.es/cursos/curso/12345', true],
+                ['https://extension.uned.es/cursos/curso/67890', false],
+                ['https://extension.uned.es/cursos/curso/11111', false],
             ]);
 
         $this->repository
@@ -95,7 +94,7 @@ final class DiscoverActivitiesTest extends TestCase
             ->method('save');
 
         // Act
-        $result = $this->useCase->discover('https://www.uned.es/cursos/ext/index', maxPages: 1);
+        $result = $this->useCase->discover('https://extension.uned.es/cursos/ext/index', maxPages: 1);
 
         // Assert
         $this->assertCount(3, $result->discovered);
@@ -117,7 +116,7 @@ final class DiscoverActivitiesTest extends TestCase
             ->method('save');
 
         // Act
-        $result = $this->useCase->discover('https://www.uned.es/cursos/ext/index');
+        $result = $this->useCase->discover('https://extension.uned.es/cursos/ext/index');
 
         // Assert
         $this->assertCount(0, $result->discovered);
@@ -141,20 +140,21 @@ final class DiscoverActivitiesTest extends TestCase
         $discovered = [];
         $this->repository
             ->method('save')
-            ->with($this->callback(function (Activity $activity) use (&$discovered) {
+            ->with($this->callback(function (Activity $activity) use (&$discovered): true {
                 $discovered[] = $activity;
+
                 return true;
             }));
 
         // Act - limit to 1 page to avoid pagination
-        $this->useCase->discover('https://www.uned.es/cursos/ext/index', maxPages: 1);
+        $this->useCase->discover('https://extension.uned.es/cursos/ext/index', maxPages: 1);
 
         // Assert
         $this->assertCount(3, $discovered);
 
         // Check first activity
         $this->assertSame('UNED-001', $discovered[0]->unedId);
-        $this->assertSame('https://www.uned.es/cursos/curso/12345', $discovered[0]->url);
+        $this->assertSame('https://extension.uned.es/cursos/curso/12345', $discovered[0]->url);
         $this->assertSame('active', $discovered[0]->status);
     }
 
@@ -171,7 +171,7 @@ final class DiscoverActivitiesTest extends TestCase
         $this->expectExceptionMessage('Network error');
 
         // Act
-        $this->useCase->discover('https://www.uned.es/cursos/ext/index');
+        $this->useCase->discover('https://extension.uned.es/cursos/ext/index');
     }
 
     #[Test]
@@ -186,8 +186,8 @@ final class DiscoverActivitiesTest extends TestCase
             ->expects($this->exactly(2))
             ->method('fetch')
             ->willReturnMap([
-                ['https://www.uned.es/cursos/ext/index', $indexHtml],
-                ['https://www.uned.es/cursos/ext/index?page=2', $page2Html],
+                ['https://extension.uned.es/cursos/ext/index', $indexHtml],
+                ['https://extension.uned.es/cursos/ext/index?page=2', $page2Html],
             ]);
 
         $this->repository
@@ -197,12 +197,12 @@ final class DiscoverActivitiesTest extends TestCase
         $saveCount = 0;
         $this->repository
             ->method('save')
-            ->willReturnCallback(function () use (&$saveCount) {
+            ->willReturnCallback(function () use (&$saveCount): void {
                 $saveCount++;
             });
 
         // Act
-        $result = $this->useCase->discover('https://www.uned.es/cursos/ext/index', maxPages: 2);
+        $result = $this->useCase->discover('https://extension.uned.es/cursos/ext/index', maxPages: 2);
 
         // Assert
         $this->assertSame(2, $result->pagesScanned);
@@ -212,39 +212,41 @@ final class DiscoverActivitiesTest extends TestCase
     private function loadFixture(string $filename): string
     {
         $path = __DIR__ . '/../../../integration/fixtures/' . $filename;
+
         if (!file_exists($path)) {
             // Return mock HTML if fixture doesn't exist yet
             return $this->getMockHtml();
         }
+
         return file_get_contents($path);
     }
 
     private function getMockHtml(): string
     {
         return <<<HTML
-<!DOCTYPE html>
-<html>
-<body>
-    <div class="course-list">
-        <div class="course-item">
-            <a class="course-link" href="/cursos/curso/12345" data-id="UNED-001">
-                <h3 class="course-title">Photography Course</h3>
-            </a>
-        </div>
-        <div class="course-item">
-            <a class="course-link" href="/cursos/curso/67890" data-id="UNED-002">
-                <h3 class="course-title">Web Development</h3>
-            </a>
-        </div>
-        <div class="course-item">
-            <a class="course-link" href="/cursos/curso/11111" data-id="UNED-003">
-                <h3 class="course-title">Digital Marketing</h3>
-            </a>
-        </div>
-    </div>
-    <a class="pagination-next" href="/cursos/ext/index?page=2">Next</a>
-</body>
-</html>
-HTML;
+            <!DOCTYPE html>
+            <html>
+            <body>
+                <div class="course-list">
+                    <div class="course-item">
+                        <a class="course-link" href="/cursos/curso/12345" data-id="UNED-001">
+                            <h3 class="course-title">Photography Course</h3>
+                        </a>
+                    </div>
+                    <div class="course-item">
+                        <a class="course-link" href="/cursos/curso/67890" data-id="UNED-002">
+                            <h3 class="course-title">Web Development</h3>
+                        </a>
+                    </div>
+                    <div class="course-item">
+                        <a class="course-link" href="/cursos/curso/11111" data-id="UNED-003">
+                            <h3 class="course-title">Digital Marketing</h3>
+                        </a>
+                    </div>
+                </div>
+                <a class="pagination-next" href="/cursos/ext/index?page=2">Next</a>
+            </body>
+            </html>
+            HTML;
     }
 }

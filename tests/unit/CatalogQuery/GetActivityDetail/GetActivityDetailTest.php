@@ -22,6 +22,7 @@ final class GetActivityDetailTest extends TestCase
     private PriceSnapshotRepository $priceSnapshotRepository;
     private GetActivityDetail $useCase;
 
+    #[\Override]
     protected function setUp(): void
     {
         $this->activityRepository = $this->createMock(ActivityRepository::class);

@@ -7,10 +7,7 @@ require_once __DIR__ . '/../../../vendor/autoload.php';
 
 use CatalogHarvest\Domain\Port\ActivityRepository;
 use Notifications\Application\Digest\DigestJob;
-use Notifications\Domain\Port\NotificationRepository;
 use Notifications\Infrastructure\Persistence\PdoNotificationRepository;
-use Notifications\Infrastructure\Sender\NoOpNotificationSender;
-use UserProfile\Domain\Port\SavedSearchRepository;
 use UserProfile\Infrastructure\Persistence\PdoSavedSearchRepository;
 
 // Load environment
@@ -40,17 +37,8 @@ $pdo = new \PDO(
 $savedSearchRepository = new PdoSavedSearchRepository($pdo);
 $notificationRepository = new PdoNotificationRepository($pdo);
 
-// For ActivityRepository, we need to use the existing implementation
-// This is a simplified version - in production you'd use proper DI
-$activityRepository = new class($pdo) implements ActivityRepository {
-    private function __construct(private readonly \PDO $pdo) {}
-
-    public function findByFilters(array $filters, int $page = 1, int $perPage = 20): array
-    {
-        // Simplified implementation
-        return [];
-    }
-};
+// For ActivityRepository, use the existing implementation
+$activityRepository = new \CatalogHarvest\Infrastructure\Persistence\PdoActivityRepository($pdo);
 
 $job = new DigestJob(
     $savedSearchRepository,
@@ -70,6 +58,7 @@ echo sprintf(
 
 if ($result->hasErrors()) {
     echo "\nErrors:\n";
+
     foreach ($result->errors as $error) {
         echo sprintf("  - Search %s: %s\n", $error['search_id'], $error['error']);
     }

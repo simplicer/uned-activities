@@ -60,6 +60,16 @@ make server
 make web-dev
 ```
 
+### Environment (important)
+
+Ensure these variables are set (see `.env.example`):
+
+- `JWT_SECRET` (required for auth)
+- `SMTP_HOST/SMTP_USER/SMTP_PASSWORD` (magic link emails)
+- `OPENROUTER_API_KEY` (AI extraction + embeddings)
+- `OPENROUTER_EMBEDDING_MODEL` (default `nomic-ai/nomic-embed-text-v1.5`)
+- `CORS_ALLOWED_ORIGINS` (frontend origin)
+
 ### Run Tests
 
 ```bash

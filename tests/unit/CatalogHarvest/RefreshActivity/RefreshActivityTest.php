@@ -18,13 +18,14 @@ use PHPUnit\Framework\TestCase;
 #[CoversClass(RefreshActivity::class)]
 final class RefreshActivityTest extends TestCase
 {
-    private $activityRepository;
-    private $snapshotRepository;
-    private $priceSnapshotRepository;
-    private $htmlFetcher;
+    private \PHPUnit\Framework\MockObject\MockObject $activityRepository;
+    private \PHPUnit\Framework\MockObject\MockObject $snapshotRepository;
+    private \PHPUnit\Framework\MockObject\MockObject $priceSnapshotRepository;
+    private \PHPUnit\Framework\MockObject\MockObject $htmlFetcher;
 
     private RefreshActivity $useCase;
 
+    #[\Override]
     protected function setUp(): void
     {
         $this->activityRepository = $this->createMock(ActivityRepository::class);
@@ -73,10 +74,8 @@ final class RefreshActivityTest extends TestCase
         $this->activityRepository
             ->expects($this->once())
             ->method('save')
-            ->with($this->callback(function (Activity $activity) {
-                return $activity->title === 'Photography Digital Complete'
-                    && $activity->unedId === 'UNED-001';
-            }));
+            ->with($this->callback(fn(Activity $activity): bool => $activity->title === 'Photography Digital Complete'
+                && $activity->unedId === 'UNED-001'));
 
         $this->snapshotRepository
             ->expects($this->once())
@@ -116,10 +115,8 @@ final class RefreshActivityTest extends TestCase
         $this->priceSnapshotRepository
             ->expects($this->once())
             ->method('store')
-            ->with($this->callback(function ($snapshot) use ($activityId) {
-                return $snapshot->activityId->equals($activityId)
-                    && $snapshot->priceAmount === 18000;
-            }));
+            ->with($this->callback(fn($snapshot): bool => $snapshot->activityId->equals($activityId)
+                && $snapshot->priceAmount === 18000));
 
         // Act
         $this->useCase->refresh($activityId);
@@ -169,7 +166,7 @@ final class RefreshActivityTest extends TestCase
 
         $savedActivity = null;
         $this->activityRepository->method('save')->willReturnCallback(
-            function (Activity $activity) use (&$savedActivity) {
+            function (Activity $activity) use (&$savedActivity): void {
                 $savedActivity = $activity;
             }
         );
@@ -189,31 +186,33 @@ final class RefreshActivityTest extends TestCase
     private function loadFixture(string $filename): string
     {
         $path = __DIR__ . '/../../../integration/fixtures/' . $filename;
+
         if (!file_exists($path)) {
             return $this->getMockHtml();
         }
+
         return file_get_contents($path);
     }
 
     private function getMockHtml(): string
     {
         return <<<HTML
-<!DOCTYPE html>
-<html>
-<body>
-    <h1>Photography Digital Complete</h1>
-    <div class="details">
-        <span class="modality">Online</span>
-        <span class="center">Madrid</span>
-        <span class="typology">Curso</span>
-        <span class="area">Arts</span>
-        <span class="price">150€</span>
-        <span class="start-date">2025-03-01</span>
-        <span class="end-date">2025-06-30</span>
-        <span class="enrollment-open">Yes</span>
-    </div>
-</body>
-</html>
-HTML;
+            <!DOCTYPE html>
+            <html>
+            <body>
+                <h1>Photography Digital Complete</h1>
+                <div class="details">
+                    <span class="modality">Online</span>
+                    <span class="center">Madrid</span>
+                    <span class="typology">Curso</span>
+                    <span class="area">Arts</span>
+                    <span class="price">150€</span>
+                    <span class="start-date">2025-03-01</span>
+                    <span class="end-date">2025-06-30</span>
+                    <span class="enrollment-open">Yes</span>
+                </div>
+            </body>
+            </html>
+            HTML;
     }
 }

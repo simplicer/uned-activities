@@ -13,14 +13,15 @@ use UserProfile\Domain\ValueObject\UserId;
 /**
  * PDO implementation of NotificationRepository.
  */
-final class PdoNotificationRepository implements NotificationRepository
+final readonly class PdoNotificationRepository implements NotificationRepository
 {
-    private const TABLE = 'notifications';
+    private const string TABLE = 'notifications';
 
-    public function __construct(private readonly PDO $connection)
+    public function __construct(private PDO $connection)
     {
     }
 
+    #[\Override]
     public function save(Notification $notification): void
     {
         $exists = $this->existsById($notification->id);
@@ -32,6 +33,7 @@ final class PdoNotificationRepository implements NotificationRepository
         }
     }
 
+    #[\Override]
     public function findById(NotificationId $id): ?Notification
     {
         $stmt = $this->connection->prepare(
@@ -41,13 +43,14 @@ final class PdoNotificationRepository implements NotificationRepository
         $stmt->execute(['id' => $id->toString()]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        if (!$row) {
+        if ($row === false) {
             return null;
         }
 
         return $this->mapToEntity($row);
     }
 
+    #[\Override]
     public function findByUserId(UserId $userId, int $limit = 50, int $offset = 0): array
     {
         $stmt = $this->connection->prepare(
@@ -64,6 +67,7 @@ final class PdoNotificationRepository implements NotificationRepository
         ]);
 
         $notifications = [];
+
         while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
             $notifications[] = $this->mapToEntity($row);
         }
@@ -71,6 +75,7 @@ final class PdoNotificationRepository implements NotificationRepository
         return $notifications;
     }
 
+    #[\Override]
     public function markAsRead(NotificationId $id): void
     {
         $stmt = $this->connection->prepare(
@@ -83,6 +88,7 @@ final class PdoNotificationRepository implements NotificationRepository
         $stmt->execute(['id' => $id->toString()]);
     }
 
+    #[\Override]
     public function countUnread(UserId $userId): int
     {
         $stmt = $this->connection->prepare(
@@ -153,7 +159,7 @@ final class PdoNotificationRepository implements NotificationRepository
             $row['type'],
             $row['title'],
             $row['message'],
-            json_decode($row['data'], true),
+            json_decode((string) $row['data'], true),
             $row['is_read'] === '1',
             new \DateTimeImmutable($row['created_at']),
             $row['read_at'] ? new \DateTimeImmutable($row['read_at']) : null,

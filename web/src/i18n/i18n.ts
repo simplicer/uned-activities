@@ -19,17 +19,28 @@ const resources = {
 };
 
 // Get saved language or default to browser language
-const savedLanguage = localStorage.getItem('language');
-const browserLanguage = navigator.language.split('-')[0];
-const defaultLanguage = ['en', 'es', 'ca', 'val', 'eu', 'gl'].includes(browserLanguage)
-  ? browserLanguage
-  : 'en';
+// Wrap localStorage access in try-catch to avoid SSR issues
+const getInitialLanguage = (): string => {
+  try {
+    const savedLanguage = localStorage.getItem('language');
+    if (savedLanguage && ['en', 'es', 'ca', 'val', 'eu', 'gl'].includes(savedLanguage)) {
+      return savedLanguage;
+    }
+  } catch {
+    // localStorage not available (SSR or private browsing)
+  }
+
+  const browserLanguage = navigator.language.split('-')[0];
+  return ['en', 'es', 'ca', 'val', 'eu', 'gl'].includes(browserLanguage)
+    ? browserLanguage
+    : 'en';
+};
 
 i18n
   .use(initReactI18next)
   .init({
     resources,
-    lng: savedLanguage || defaultLanguage,
+    lng: getInitialLanguage(),
     fallbackLng: 'en',
     defaultNS: 'common',
     ns: ['common'],

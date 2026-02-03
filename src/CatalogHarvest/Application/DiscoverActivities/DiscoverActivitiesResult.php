@@ -25,16 +25,16 @@ final readonly class DiscoverActivitiesResult
 
     public function totalDiscovered(): int
     {
-        return count($this->discovered);
+        return \count($this->discovered);
     }
 
     public function newlyDiscovered(): int
     {
-        return count($this->newActivities);
+        return \count($this->newActivities);
     }
 
     public function alreadyKnown(): int
     {
-        return count($this->existingActivities);
+        return \count($this->existingActivities);
     }
 }

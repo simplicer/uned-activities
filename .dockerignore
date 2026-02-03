@@ -1,0 +1,13 @@
+# Docker ignore file
+vendor/
+infra/volumes/
+*.log
+.env
+.env.local
+.DS_Store
+node_modules/
+dist/
+build/
+coverage/
+.nyc_output/
+.cache/

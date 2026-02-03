@@ -14,6 +14,9 @@ final readonly class ActivityFilters
         public ?string $typology,
         public ?string $area,
         public ?string $modality,
+        public ?bool $freeOnly,
+        public ?string $deliveryMode,
+        public ?bool $withCredits,
         public ?int $minPrice,
         public ?int $maxPrice,
         public ?\DateTimeImmutable $startDateFrom,
@@ -24,16 +27,43 @@ final readonly class ActivityFilters
 
     public static function create(array $params): self
     {
+        $startDateFrom = null;
+
+        if (isset($params['startDateFrom']) && \is_string($params['startDateFrom'])) {
+            $date = \DateTimeImmutable::createFromFormat('Y-m-d', $params['startDateFrom']);
+            $startDateFrom = $date !== false ? $date : null;
+        }
+
+        $startDateTo = null;
+
+        if (isset($params['startDateTo']) && \is_string($params['startDateTo'])) {
+            $date = \DateTimeImmutable::createFromFormat('Y-m-d', $params['startDateTo']);
+            $startDateTo = $date !== false ? $date : null;
+        }
+
+        $minPrice = null;
+        if (isset($params['minPrice']) && is_numeric($params['minPrice'])) {
+            $minPrice = (int) round(((float) $params['minPrice']) * 100);
+        }
+
+        $maxPrice = null;
+        if (isset($params['maxPrice']) && is_numeric($params['maxPrice'])) {
+            $maxPrice = (int) round(((float) $params['maxPrice']) * 100);
+        }
+
         return new self(
-            center: $params['center'] ?? null,
-            typology: $params['typology'] ?? null,
-            area: $params['area'] ?? null,
-            modality: $params['modality'] ?? null,
-            minPrice: isset($params['minPrice']) ? (int) $params['minPrice'] * 100 : null,
-            maxPrice: isset($params['maxPrice']) ? (int) $params['maxPrice'] * 100 : null,
-            startDateFrom: isset($params['startDateFrom']) ? \DateTimeImmutable::createFromFormat('Y-m-d', $params['startDateFrom']) ?: null : null,
-            startDateTo: isset($params['startDateTo']) ? \DateTimeImmutable::createFromFormat('Y-m-d', $params['startDateTo']) ?: null : null,
-            search: $params['search'] ?? null,
+            center: isset($params['center']) && \is_string($params['center']) ? trim($params['center']) : null,
+            typology: isset($params['typology']) && \is_string($params['typology']) ? trim($params['typology']) : null,
+            area: isset($params['area']) && \is_string($params['area']) ? trim($params['area']) : null,
+            modality: isset($params['modality']) && \is_string($params['modality']) ? trim($params['modality']) : null,
+            freeOnly: isset($params['freeOnly']) && $params['freeOnly'] === 'true',
+            deliveryMode: isset($params['deliveryMode']) && \is_string($params['deliveryMode']) ? trim($params['deliveryMode']) : null,
+            withCredits: isset($params['withCredits']) && $params['withCredits'] === 'true',
+            minPrice: $minPrice,
+            maxPrice: $maxPrice,
+            startDateFrom: $startDateFrom,
+            startDateTo: $startDateTo,
+            search: isset($params['search']) && \is_string($params['search']) ? trim($params['search']) : null,
         );
     }
 
@@ -43,10 +73,71 @@ final readonly class ActivityFilters
             || $this->typology !== null
             || $this->area !== null
             || $this->modality !== null
+            || $this->freeOnly !== null
+            || $this->deliveryMode !== null
+            || $this->withCredits !== null
             || $this->minPrice !== null
             || $this->maxPrice !== null
-            || $this->startDateFrom !== null
-            || $this->startDateTo !== null
+            || $this->startDateFrom instanceof \DateTimeImmutable
+            || $this->startDateTo instanceof \DateTimeImmutable
             || $this->search !== null;
+    }
+
+    /**
+     * Convert to array format for repository filtering.
+     */
+    public function toRepositoryFilters(): array
+    {
+        $filters = [];
+
+        if ($this->center !== null) {
+            $filters['center'] = $this->center;
+        }
+
+        if ($this->typology !== null) {
+            $filters['typology'] = $this->typology;
+        }
+
+        if ($this->area !== null) {
+            $filters['area'] = $this->area;
+        }
+
+        if ($this->modality !== null) {
+            $filters['modality'] = $this->modality;
+        }
+
+        if ($this->freeOnly !== null) {
+            $filters['freeOnly'] = $this->freeOnly;
+        }
+
+        if ($this->deliveryMode !== null) {
+            $filters['deliveryMode'] = $this->deliveryMode;
+        }
+
+        if ($this->withCredits !== null) {
+            $filters['withCredits'] = $this->withCredits;
+        }
+
+        if ($this->minPrice !== null) {
+            $filters['minPrice'] = $this->minPrice;
+        }
+
+        if ($this->maxPrice !== null) {
+            $filters['maxPrice'] = $this->maxPrice;
+        }
+
+        if ($this->startDateFrom instanceof \DateTimeImmutable) {
+            $filters['startDateFrom'] = $this->startDateFrom;
+        }
+
+        if ($this->startDateTo instanceof \DateTimeImmutable) {
+            $filters['startDateTo'] = $this->startDateTo;
+        }
+
+        if ($this->search !== null) {
+            $filters['search'] = $this->search;
+        }
+
+        return $filters;
     }
 }

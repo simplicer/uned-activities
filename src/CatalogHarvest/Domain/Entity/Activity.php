@@ -11,31 +11,44 @@ use CatalogHarvest\Domain\ValueObject\ActivityId;
  *
  * Immutable entity with all fields for the catalog.
  */
-final class Activity
+final readonly class Activity
 {
     private function __construct(
-        public readonly ActivityId $id,
-        public readonly string $unedId,
-        public readonly string $url,
-        public readonly \DateTimeImmutable $createdAt,
-        public readonly \DateTimeImmutable $updatedAt,
-        public readonly string $hash,
-        public readonly string $status,
+        public ActivityId $id,
+        public string $unedId,
+        public string $url,
+        public \DateTimeImmutable $createdAt,
+        public \DateTimeImmutable $updatedAt,
+        public string $hash,
+        public string $status,
 
         // Full fields populated by RefreshActivity
-        public readonly ?string $title,
-        public readonly ?string $description,
-        public readonly ?\DateTimeImmutable $startDate,
-        public readonly ?\DateTimeImmutable $endDate,
-        public readonly ?string $modality,
-        public readonly ?string $center,
-        public readonly ?string $typology,
-        public readonly ?string $area,
-        public readonly ?int $priceAmount,      // in cents
-        public readonly ?string $priceCurrency,
-        public readonly ?bool $enrollmentOpen,
-        public readonly ?\DateTimeImmutable $enrollmentStartDate,
-        public readonly ?\DateTimeImmutable $enrollmentEndDate,
+        public ?string $title,
+        public ?string $description,
+        public ?\DateTimeImmutable $startDate,
+        public ?\DateTimeImmutable $endDate,
+        public ?string $modality,
+        public ?string $center,
+        public ?string $typology,
+        public ?string $area,
+        public ?int $priceAmount,      // in cents
+        public ?string $priceCurrency,
+        public bool $isFree,           // true if activity is free
+        public ?bool $enrollmentOpen,
+        public ?\DateTimeImmutable $enrollmentStartDate,
+        public ?\DateTimeImmutable $enrollmentEndDate,
+        public ?int $credits,          // ECTS credits stored as integer (e.g., 600 = 6.00)
+        public ?bool $hasLive,         // has live option
+        public ?bool $hasRecorded,     // has recorded/delayed option
+
+        // Extended fields from AI extraction
+        public ?array $pricingTable,   // Full pricing table: [{modality, studentType, amount, currency, display}]
+        public ?array $staff,          // Staff info: {director, coordinator, speakers[]}
+        public ?array $sessions,       // Program sessions: [{date, timeStart, timeEnd, title, location}]
+        public ?string $targetAudience,// Target audience description
+        public ?array $requirements,   // Requirements: {prerequisites[], methodology, evaluation}
+        public ?array $locationDetails,// Location details: {venue, address, city, timezone}
+        public ?array $scheduleDetails,// Schedule details: {timeStart, timeEnd, timezone}
     ) {
     }
 
@@ -46,6 +59,7 @@ final class Activity
         ActivityId $id,
         string $unedId,
         string $url,
+        ?string $title = null,
     ): self {
         $now = new \DateTimeImmutable();
         $hash = hash('sha256', $url);
@@ -58,8 +72,7 @@ final class Activity
             updatedAt: $now,
             hash: $hash,
             status: 'active',
-
-            title: null,
+            title: $title,
             description: null,
             startDate: null,
             endDate: null,
@@ -69,9 +82,20 @@ final class Activity
             area: null,
             priceAmount: null,
             priceCurrency: null,
+            isFree: false,
             enrollmentOpen: null,
             enrollmentStartDate: null,
             enrollmentEndDate: null,
+            credits: null,
+            hasLive: null,
+            hasRecorded: null,
+            pricingTable: null,
+            staff: null,
+            sessions: null,
+            targetAudience: null,
+            requirements: null,
+            locationDetails: null,
+            scheduleDetails: null,
         );
     }
 
@@ -96,9 +120,20 @@ final class Activity
         ?string $area = null,
         ?int $priceAmount = null,
         ?string $priceCurrency = null,
+        bool $isFree = false,
         ?bool $enrollmentOpen = null,
         ?\DateTimeImmutable $enrollmentStartDate = null,
         ?\DateTimeImmutable $enrollmentEndDate = null,
+        ?int $credits = null,
+        ?bool $hasLive = null,
+        ?bool $hasRecorded = null,
+        ?array $pricingTable = null,
+        ?array $staff = null,
+        ?array $sessions = null,
+        ?string $targetAudience = null,
+        ?array $requirements = null,
+        ?array $locationDetails = null,
+        ?array $scheduleDetails = null,
     ): self {
         return new self(
             id: $id,
@@ -118,9 +153,20 @@ final class Activity
             area: $area,
             priceAmount: $priceAmount,
             priceCurrency: $priceCurrency,
+            isFree: $isFree,
             enrollmentOpen: $enrollmentOpen,
             enrollmentStartDate: $enrollmentStartDate,
             enrollmentEndDate: $enrollmentEndDate,
+            credits: $credits,
+            hasLive: $hasLive,
+            hasRecorded: $hasRecorded,
+            pricingTable: $pricingTable,
+            staff: $staff,
+            sessions: $sessions,
+            targetAudience: $targetAudience,
+            requirements: $requirements,
+            locationDetails: $locationDetails,
+            scheduleDetails: $scheduleDetails,
         );
     }
 
@@ -138,10 +184,21 @@ final class Activity
         ?string $area,
         ?int $priceAmount,
         ?string $priceCurrency,
+        bool $isFree,
         ?bool $enrollmentOpen,
         ?\DateTimeImmutable $enrollmentStartDate,
         ?\DateTimeImmutable $enrollmentEndDate,
         ?string $newHash,
+        ?int $credits = null,
+        ?bool $hasLive = null,
+        ?bool $hasRecorded = null,
+        ?array $pricingTable = null,
+        ?array $staff = null,
+        ?array $sessions = null,
+        ?string $targetAudience = null,
+        ?array $requirements = null,
+        ?array $locationDetails = null,
+        ?array $scheduleDetails = null,
     ): self {
         return new self(
             id: $this->id,
@@ -161,9 +218,20 @@ final class Activity
             area: $area ?? $this->area,
             priceAmount: $priceAmount ?? $this->priceAmount,
             priceCurrency: $priceCurrency ?? $this->priceCurrency,
+            isFree: $isFree,
             enrollmentOpen: $enrollmentOpen ?? $this->enrollmentOpen,
             enrollmentStartDate: $enrollmentStartDate ?? $this->enrollmentStartDate,
             enrollmentEndDate: $enrollmentEndDate ?? $this->enrollmentEndDate,
+            credits: $credits ?? $this->credits,
+            hasLive: $hasLive ?? $this->hasLive,
+            hasRecorded: $hasRecorded ?? $this->hasRecorded,
+            pricingTable: $pricingTable ?? $this->pricingTable,
+            staff: $staff ?? $this->staff,
+            sessions: $sessions ?? $this->sessions,
+            targetAudience: $targetAudience ?? $this->targetAudience,
+            requirements: $requirements ?? $this->requirements,
+            locationDetails: $locationDetails ?? $this->locationDetails,
+            scheduleDetails: $scheduleDetails ?? $this->scheduleDetails,
         );
     }
 
@@ -192,6 +260,7 @@ final class Activity
             $this->area,
             $this->priceAmount,
             $this->priceCurrency,
+            $this->isFree,
             $this->enrollmentOpen,
             $this->enrollmentStartDate?->format('Y-m-d'),
             $this->enrollmentEndDate?->format('Y-m-d'),

@@ -16,7 +16,6 @@ interface ActivityRepository
      * Save an activity (create or update).
      *
      * @param Activity $activity The activity to save
-     * @return void
      */
     public function save(Activity $activity): void;
 
@@ -78,10 +77,17 @@ interface ActivityRepository
     public function findByFilters(array $filters, int $page = 1, int $perPage = 20): array;
 
     /**
+     * Find activities by IDs.
+     *
+     * @param array<ActivityId> $ids
+     * @return array<Activity>
+     */
+    public function findByIds(array $ids): array;
+
+    /**
      * Count activities matching filters.
      *
      * @param array<string, mixed> $filters
-     * @return int
      */
     public function countByFilters(array $filters): int;
 }

@@ -1,156 +1,98 @@
-# Docker Compose for UNED Activities Finder
-# Includes Supabase self-hosted services, backend, and frontend
-# No reverse proxy included (Dokploy provides Traefik + SSL)
+# Docker Compose para UNED Activities Finder
+# Basado en Supabase self-hosted oficial
 
 services:
   # PostgreSQL (Supabase database)
-  postgres:
-    image: supabase/postgres:15.8.1.006
-    container_name: uned-postgres
-    environment:
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: uned_activities
-      POSTGRES_USER: postgres
-    ports:
-      - "5432:5432"
-    volumes:
-      - uned_data:/data
-      - postgres_data:/var/lib/postgresql/data
+  # Imagen oficial: supabase/postgres:15.8.1.085
+  db:
+    container_name: supabase-db
+    image: supabase/postgres:15.8.1.085
+    restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD", "pg_isready", "-U", "postgres", "-h", "localhost"]
       interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 10
+    environment:
+      POSTGRES_HOST: /var/run/postgresql
+      PGPORT: 5432
+      POSTGRES_PORT: 5432
+      PGPASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      PGDATABASE: ${POSTGRES_DB:-uned_activities}
+      POSTGRES_DB: ${POSTGRES_DB:-uned_activities}
+      JWT_SECRET: ${JWT_SECRET:-see-dokploy-panel}
+      JWT_EXP: ${JWT_EXPIRY:-3600}
+    command:
+      [
+        "postgres",
+        "-c", "config_file=/etc/postgresql/postgresql.conf",
+        "-c", "log_min_messages=fatal"
+      ]
+    ports:
+      - "${POSTGRES_PORT:-5433}:5432"
+    volumes:
+      - ./volumes/db/data:/var/lib/postgresql/data:Z
+      - ./init-scripts:/docker-entrypoint-initdb.d:ro
     networks:
       - uned_network
 
-  # Supabase GoTrue (Auth)
-  gotrue:
-    image: supabase/gotrue:v2.158.2
-    container_name: uned-gotrue
+  # GoTrue (Auth)
+  auth:
+    container_name: supabase-auth
+    image: supabase/gotrue:v2.184.0
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9999/health"]
+      timeout: 5s
+      interval: 5s
+      retries: 3
+    depends_on:
+      db:
+        condition: service_healthy
     environment:
       GOTRUE_API_HOST: 0.0.0.0
       GOTRUE_API_PORT: 9999
-      DATABASE_URL: postgres://postgres:postgres@postgres:5432/uned_activities
+      API_EXTERNAL_URL: ${API_EXTERNAL_URL:-http://localhost:8000}
       GOTRUE_DB_DRIVER: postgres
-      GOTRUE_SITE_URL: http://localhost:3000
-      GOTRUE_URI_ALLOW_LIST: "*"
-      GOTRUE_JWT_SECRET: see-dokploy-panel
-      GOTRUE_JWT_EXP: 3600
+      GOTRUE_DB_DATABASE_URL: postgres://supabase_auth_admin:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-uned_activities}
+      GOTRUE_SITE_URL: ${SITE_URL:-http://localhost:3000}
+      GOTRUE_URI_ALLOW_LIST: ${ADDITIONAL_REDIRECT_URLS:-}
+      GOTRUE_DISABLE_SIGNUP: ${DISABLE_SIGNUP:-false}
+      GOTRUE_JWT_ADMIN_ROLES: service_role
+      GOTRUE_JWT_AUD: authenticated
       GOTRUE_JWT_DEFAULT_GROUP_NAME: authenticated
-      GOTRUE_EXTERNAL_EMAIL_ENABLED: "true"
-      GOTRUE_EXTERNAL_ANONYMOUS_USERS_ENABLED: "true"
+      GOTRUE_JWT_EXP: ${JWT_EXPIRY:-3600}
+      GOTRUE_JWT_SECRET: ${JWT_SECRET:-see-dokploy-panel}
+      GOTRUE_EXTERNAL_EMAIL_ENABLED: ${ENABLE_EMAIL_SIGNUP:-true}
+      GOTRUE_EXTERNAL_ANONYMOUS_USERS_ENABLED: ${ENABLE_ANONYMOUS_USERS:-true}
+      GOTRUE_MAILER_AUTOCONFIRM: ${ENABLE_EMAIL_AUTOCONFIRM:-true}
+      GOTRUE_EXTERNAL_PHONE_ENABLED: ${ENABLE_PHONE_SIGNUP:-false}
+      GOTRUE_SMS_AUTOCONFIRM: ${ENABLE_PHONE_AUTOCONFIRM:-false}
     ports:
-      - "9999:9999"
-    depends_on:
-      postgres:
-        condition: service_healthy
+      - "${GOTRUE_PORT:-9999}:9999"
     networks:
       - uned_network
 
-  # Supabase Realtime (optional for future features)
-  realtime:
-    image: supabase/realtime:v2.29.15
-    container_name: uned-realtime
-    environment:
-      PORT: 4000
-      DB_HOST: postgres
-      DB_PORT: 5432
-      DB_USER: postgres
-      DB_PASSWORD: postgres
-      DB_NAME: uned_activities
-      SLOT_NAME: realtime
-      IP_V4: 0.0.0.0
+  # Redis para rate limiting
+  redis:
+    image: redis:7-alpine
+    container_name: uned-redis
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
     ports:
-      - "4000:4000"
-    depends_on:
-      postgres:
-        condition: service_healthy
-    networks:
-      - uned_network
-
-  # Supabase Studio (Admin UI - development only)
-  studio:
-    image: supabase/studio:20240306-1185633
-    container_name: uned-studio
-    environment:
-      STUDIO_PG_META_URL: http://meta:8080
-      POSTGRES_PASSWORD: postgres
-      DEFAULT_ORGANIZATION_NAME: UNED Activities
-      DEFAULT_PROJECT_NAME: Development
-    ports:
-      - "3001:3000"
-    depends_on:
-      - meta
-    networks:
-      - uned_network
-
-  # Supabase Meta (database introspection for Studio)
-  meta:
-    image: supabase/postgres-meta:v0.79.3
-    container_name: uned-meta
-    environment:
-      PG_META_PORT: 8080
-      PG_META_DB_HOST: postgres
-      PG_META_DB_PORT: 5432
-      PG_META_DB_NAME: uned_activities
-      PG_META_DB_USER: postgres
-      PG_META_DB_PASSWORD: postgres
-    depends_on:
-      postgres:
-        condition: service_healthy
-    networks:
-      - uned_network
-
-  # Backend API (PHP)
-  backend:
-    build:
-      context: ..
-      dockerfile: container/backend.Containerfile
-    container_name: uned-backend
-    environment:
-      APP_ENV: local
-      DB_DSN: postgres://postgres:postgres@postgres:5432/uned_activities
-      GOTRUE_URL: http://gotrue:9999
-      JWT_SECRET: see-dokploy-panel
-      LOG_LEVEL: debug
-    ports:
-      - "8080:8080"
-    depends_on:
-      postgres:
-        condition: service_healthy
-      gotrue:
-        condition: service_started
-    networks:
-      - uned_network
+      - "${REDIS_PORT:-6379}:6379"
     volumes:
-      - ../src:/app/src:ro
-      - ../apps:/app/apps:ro
-
-  # Frontend (React + Vite)
-  frontend:
-    build:
-      context: ..
-      dockerfile: container/frontend.Containerfile
-    container_name: uned-frontend
-    environment:
-      VITE_API_URL: http://localhost:8080
-      VITE_GOTRUE_URL: http://localhost:9999
-    ports:
-      - "3000:80"
-    depends_on:
-      - backend
+      - redis_data:/data
     networks:
       - uned_network
 
 volumes:
-  postgres_data:
-  uned_data:
-    driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: /var/lib/uned/data
+  redis_data:
 
 networks:
   uned_network:

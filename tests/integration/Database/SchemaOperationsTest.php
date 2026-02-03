@@ -15,6 +15,7 @@ class SchemaOperationsTest extends TestCase
 {
     private \PDO $connection;
 
+    #[\Override]
     protected function setUp(): void
     {
         $this->connection = new \PDO('sqlite::memory:');
@@ -23,6 +24,7 @@ class SchemaOperationsTest extends TestCase
         $this->createTables();
     }
 
+    #[\Override]
     protected function tearDown(): void
     {
         unset($this->connection);
@@ -179,22 +181,22 @@ class SchemaOperationsTest extends TestCase
     private function createTables(): void
     {
         $this->connection->exec(<<<'SQL'
-            CREATE TABLE activities (
-                id TEXT PRIMARY KEY,
-                uned_id TEXT NOT NULL UNIQUE,
-                title TEXT NOT NULL,
-                url TEXT NOT NULL UNIQUE,
-                start_date TEXT,
-                end_date TEXT,
-                modality TEXT,
-                center TEXT,
-                typology TEXT,
-                area TEXT,
-                status TEXT NOT NULL DEFAULT 'active',
-                created_at TEXT,
-                updated_at TEXT,
-                hash TEXT
-            )
-        SQL);
+                CREATE TABLE activities (
+                    id TEXT PRIMARY KEY,
+                    uned_id TEXT NOT NULL UNIQUE,
+                    title TEXT NOT NULL,
+                    url TEXT NOT NULL UNIQUE,
+                    start_date TEXT,
+                    end_date TEXT,
+                    modality TEXT,
+                    center TEXT,
+                    typology TEXT,
+                    area TEXT,
+                    status TEXT NOT NULL DEFAULT 'active',
+                    created_at TEXT,
+                    updated_at TEXT,
+                    hash TEXT
+                )
+            SQL);
     }
 }

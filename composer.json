@@ -7,14 +7,16 @@
         "php": ">=8.3",
         "ext-json": "*",
         "ext-pdo": "*",
-        "slim/slim": "^4.0",
-        "slim/psr7": "^1.0",
-        "guzzlehttp/guzzle": "^7.8",
-        "ramsey/uuid": "^4.7",
-        "symfony/uid": "^7.0",
-        "symfony/console": "^7.0",
         "firebase/php-jwt": "^6.10",
+        "guzzlehttp/guzzle": "^7.8",
         "monolog/monolog": "^3.5",
+        "php-di/php-di": "^7.0",
+        "phpmailer/phpmailer": "^6.9",
+        "ramsey/uuid": "^4.7",
+        "slim/psr7": "^1.0",
+        "slim/slim": "^4.0",
+        "symfony/console": "^7.0",
+        "symfony/uid": "^7.0",
         "vlucas/phpdotenv": "^5.6"
     },
     "require-dev": {
@@ -32,9 +34,11 @@
         "psr-4": {
             "CatalogHarvest\\": "src/CatalogHarvest/",
             "CatalogQuery\\": "src/CatalogQuery/",
-            "UserPreferences\\": "src/UserPreferences/",
+            "UserProfile\\": "src/UserProfile/",
             "Notifications\\": "src/Notifications/",
-            "Shared\\": "src/Shared/"
+            "Auth\\": "src/Auth/",
+            "Shared\\": "src/Shared/",
+            "HttpApi\\": "apps/HttpApi/"
         }
     },
     "autoload-dev": {

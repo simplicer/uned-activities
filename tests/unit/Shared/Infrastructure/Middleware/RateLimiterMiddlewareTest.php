@@ -11,7 +11,6 @@ use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use Shared\Infrastructure\Middleware\RateLimiterMiddleware;
-use Slim\Psr7\Response;
 
 #[CoversClass(RateLimiterMiddleware::class)]
 final class RateLimiterMiddlewareTest extends TestCase
@@ -19,6 +18,7 @@ final class RateLimiterMiddlewareTest extends TestCase
     private ServerRequestInterface $request;
     private RequestHandlerInterface $handler;
 
+    #[\Override]
     protected function setUp(): void
     {
         $this->request = $this->createMock(ServerRequestInterface::class);
@@ -121,7 +121,6 @@ final class RateLimiterMiddlewareTest extends TestCase
             $this->request->method('getHeaderLine')
                 ->willReturnMap([
                     ['Authorization', 'Bearer ' . $token],
-                    ['X-API-Token', $token],
                 ]);
         } else {
             $this->request->method('getHeaderLine')->willReturn('');

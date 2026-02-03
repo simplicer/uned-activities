@@ -15,24 +15,20 @@ use GuzzleHttp\Promise\Utils;
  */
 final class GuzzleHtmlFetcher implements HtmlFetcher
 {
-    private const DEFAULT_DELAY_MS = 1000; // 1 second between requests
-    private const DEFAULT_TIMEOUT = 30;
+    private const int DEFAULT_DELAY_MS = 1000; // 1 second between requests
+    private const int DEFAULT_TIMEOUT = 30;
 
     private float $lastRequestTime = 0;
-    private int $delayMs;
 
-    public function __construct(
-        private readonly Client $client,
-        int $delayMs = self::DEFAULT_DELAY_MS,
-    ) {
-        $this->delayMs = $delayMs;
+    public function __construct(private readonly Client $client, private readonly int $delayMs = self::DEFAULT_DELAY_MS)
+    {
     }
 
     public static function create(array $config = []): self
     {
         $defaultConfig = [
             'timeout' => self::DEFAULT_TIMEOUT,
-            'connect_timeout' => 10,
+            'connect_timeout' => 30, // Increased from 10 to 30 seconds
             'headers' => [
                 'User-Agent' => 'UNED Activities Finder/1.0 (+https://github.com/uned/activities-finder)',
                 'Accept' => 'text/html,application/xhtml+xml,application/xml',
@@ -45,6 +41,7 @@ final class GuzzleHtmlFetcher implements HtmlFetcher
         return new self($client);
     }
 
+    #[\Override]
     public function fetch(string $url): string
     {
         $this->rateLimit();
@@ -53,6 +50,7 @@ final class GuzzleHtmlFetcher implements HtmlFetcher
             $response = $this->client->get($url);
 
             $statusCode = $response->getStatusCode();
+
             if ($statusCode !== 200) {
                 throw HtmlFetchException::fromUrl($url, $statusCode);
             }
@@ -60,7 +58,7 @@ final class GuzzleHtmlFetcher implements HtmlFetcher
             $body = (string) $response->getBody();
 
             // Validate HTML
-            if (empty($body) || strlen($body) < 100) {
+            if ($body === '' || \strlen($body) < 100) {
                 throw HtmlFetchException::fromUrl($url, $statusCode, 'Empty or invalid response');
             }
 
@@ -69,10 +67,12 @@ final class GuzzleHtmlFetcher implements HtmlFetcher
             if ($e->getCode() === 0) {
                 throw HtmlFetchException::networkError($url, $e->getMessage());
             }
+
             throw HtmlFetchException::fromUrl($url, $e->getCode(), $e->getMessage());
         }
     }
 
+    #[\Override]
     public function fetchMultiple(array $urls): array
     {
         $results = [];
@@ -83,20 +83,16 @@ final class GuzzleHtmlFetcher implements HtmlFetcher
 
             $promises[$url] = $this->client->getAsync($url)
                 ->then(
-                    function ($response) use ($url) {
-                        return [
-                            'url' => $url,
-                            'content' => (string) $response->getBody(),
-                            'status' => $response->getStatusCode(),
-                        ];
-                    },
-                    function ($reason) use ($url) {
-                        return [
-                            'url' => $url,
-                            'error' => $reason->getMessage(),
-                            'status' => $reason->getCode(),
-                        ];
-                    }
+                    fn($response): array => [
+                        'url' => $url,
+                        'content' => (string) $response->getBody(),
+                        'status' => $response->getStatusCode(),
+                    ],
+                    fn($reason): array => [
+                        'url' => $url,
+                        'error' => $reason->getMessage(),
+                        'status' => $reason->getCode(),
+                    ]
                 );
         }
 
@@ -106,12 +102,14 @@ final class GuzzleHtmlFetcher implements HtmlFetcher
         foreach ($settled as $url => $promiseResult) {
             if ($promiseResult['state'] === 'fulfilled') {
                 $data = $promiseResult['value'];
+
                 if (isset($data['error'])) {
                     throw HtmlFetchException::fromUrl($url, $data['status'], $data['error']);
                 }
                 $results[$url] = $data['content'];
             } else {
                 $reason = $promiseResult['reason'];
+
                 throw HtmlFetchException::networkError($url, $reason->getMessage());
             }
         }

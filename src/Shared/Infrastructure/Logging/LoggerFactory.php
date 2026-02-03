@@ -20,7 +20,6 @@ final class LoggerFactory
      * @param string $name Logger name (e.g., 'http', 'harvest', 'cli')
      * @param string $stream Output stream (default: stdout)
      * @param Level $level Minimum log level
-     * @return LoggerInterface
      */
     public static function create(
         string $name,
@@ -43,7 +42,6 @@ final class LoggerFactory
      * @param string $name Logger name
      * @param string $filePath Path to log file
      * @param Level $level Minimum log level
-     * @return LoggerInterface
      */
     public static function createForFile(
         string $name,

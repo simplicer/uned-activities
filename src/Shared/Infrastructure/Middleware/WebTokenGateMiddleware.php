@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Shared\Infrastructure\Middleware;
 
+use Firebase\JWT\JWT;
+use Firebase\JWT\Key;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Server\RequestHandlerInterface as RequestHandler;
@@ -12,156 +14,136 @@ use Slim\Psr7\Response as SlimResponse;
 /**
  * Web token gate middleware.
  *
- * Requires valid API token for access.
- * Tokens are stored in database or environment variables.
+ * Requires valid JWT for protected endpoints.
  */
 final class WebTokenGateMiddleware
 {
-    private const TOKEN_HEADER = 'X-API-Token';
-    private const TOKEN_QUERY_PARAM = 'token';
-
-    /** @var array<string, true> Valid tokens cache */
-    private array $validTokens = [];
-
-    /** @var array<string, true> Whitelisted paths that don't require tokens */
-    private const WHITELIST_PATHS = [
+    private const array PUBLIC_PATHS = [
         '/status',
         '/version',
         '/health',
+        '/v1/status',
+        '/v1/version',
+        '/v1/health',
+        '/v1/activities',
+        '/v1/auth/request',
+        '/v1/auth/verify',
     ];
 
     public function __construct(
-        private readonly ?\PDO $db = null,
+        private readonly string $jwtSecret,
+        private readonly ?string $jwtIssuer = null,
+        private readonly ?string $jwtAudience = null,
     ) {
-        $this->loadTokensFromEnv();
-    }
-
-    /**
-     * Load tokens from environment for development.
-     */
-    private function loadTokensFromEnv(): void
-    {
-        $tokens = $_ENV['API_TOKENS'] ?? '';
-        if (empty($tokens)) {
-            return;
-        }
-
-        foreach (explode(',', $tokens) as $token) {
-            $token = trim($token);
-            if (!empty($token)) {
-                $this->validTokens[$token] = true;
-            }
-        }
     }
 
     public function __invoke(Request $request, RequestHandler $handler): Response
     {
-        // Check if path is whitelisted
-        $path = $request->getUri()->getPath();
-        if ($this->isWhitelisted($path)) {
+        $path = $this->normalizePath($request->getUri()->getPath());
+        $method = strtoupper($request->getMethod());
+
+        if ($this->isPublicRoute($method, $path)) {
             return $handler->handle($request);
         }
 
-        // Extract token
-        $token = $this->extractToken($request);
+        if ($this->jwtSecret === '') {
+            return $this->createUnauthorizedResponse('JWT secret not configured');
+        }
+
+        $token = $this->extractBearerToken($request);
 
         if ($token === null) {
-            return $this->createUnauthorizedResponse('Missing API token');
+            return $this->createUnauthorizedResponse('Missing bearer token');
         }
 
-        // Validate token
-        if (!$this->isValidToken($token)) {
-            return $this->createUnauthorizedResponse('Invalid API token');
+        try {
+            $claims = (array) JWT::decode($token, new Key($this->jwtSecret, 'HS256'));
+        } catch (\Throwable $e) {
+            return $this->createUnauthorizedResponse('Invalid token');
         }
 
-        // Add token info to request for downstream use
+        if (!$this->validateClaims($claims)) {
+            return $this->createUnauthorizedResponse('Invalid token claims');
+        }
+
+        $request = $request
+            ->withAttribute('auth_user_id', $claims['sub'])
+            ->withAttribute('auth_email', $claims['email'] ?? null)
+            ->withAttribute('auth_role', $claims['role'] ?? null);
+
         return $handler->handle($request);
     }
 
-    /**
-     * Check if path is whitelisted.
-     */
-    private function isWhitelisted(string $path): bool
+    private function normalizePath(string $path): string
     {
-        // Exact match
-        if (in_array($path, self::WHITELIST_PATHS, true)) {
+        if (str_starts_with($path, '/api/v1/')) {
+            return substr($path, 4);
+        }
+
+        if ($path === '/api/v1') {
+            return '/v1';
+        }
+
+        return $path;
+    }
+
+    private function isPublicRoute(string $method, string $path): bool
+    {
+        if (\in_array($path, self::PUBLIC_PATHS, true)) {
             return true;
         }
 
-        // Prefix match for health check variants
-        foreach (self::WHITELIST_PATHS as $whitelisted) {
-            if (str_starts_with($path, $whitelisted)) {
-                return true;
+        if ($method === 'GET' && preg_match('#^/v1/activities/[^/]+(/similar)?$#', $path) === 1) {
+            return true;
+        }
+
+        return false;
+    }
+
+    private function extractBearerToken(Request $request): ?string
+    {
+        $auth = $request->getHeaderLine('Authorization');
+
+        if ($auth === '') {
+            return null;
+        }
+
+        if (!str_starts_with(strtolower($auth), 'bearer ')) {
+            return null;
+        }
+
+        $token = trim(substr($auth, 7));
+
+        return $token !== '' ? $token : null;
+    }
+
+    private function validateClaims(array $claims): bool
+    {
+        if (!isset($claims['sub']) || !is_string($claims['sub']) || $claims['sub'] === '') {
+            return false;
+        }
+
+        if ($this->jwtIssuer !== null && ($claims['iss'] ?? null) !== $this->jwtIssuer) {
+            return false;
+        }
+
+        if ($this->jwtAudience !== null) {
+            $aud = $claims['aud'] ?? null;
+            if (is_array($aud)) {
+                if (!in_array($this->jwtAudience, $aud, true)) {
+                    return false;
+                }
+            } elseif ($aud !== $this->jwtAudience) {
+                return false;
             }
         }
 
-        return false;
+        return true;
     }
 
-    /**
-     * Extract API token from request.
-     */
-    private function extractToken(Request $request): ?string
-    {
-        // Check custom header
-        $token = $request->getHeaderLine(self::TOKEN_HEADER);
-        if (!empty($token)) {
-            return $token;
-        }
-
-        // Check Authorization header (Bearer token)
-        $auth = $request->getHeaderLine('Authorization');
-        if (str_starts_with(strtolower($auth), 'bearer ')) {
-            return substr($auth, 7);
-        }
-
-        // Check query parameter
-        $params = $request->getQueryParams();
-        return $params[self::TOKEN_QUERY_PARAM] ?? null;
-    }
-
-    /**
-     * Validate token against database or environment.
-     */
-    private function isValidToken(string $token): bool
-    {
-        // Check environment tokens first
-        if (isset($this->validTokens[$token])) {
-            return true;
-        }
-
-        // Check database if available
-        if ($this->db !== null) {
-            return $this->validateTokenFromDb($token);
-        }
-
-        return false;
-    }
-
-    /**
-     * Validate token from database.
-     */
-    private function validateTokenFromDb(string $token): bool
-    {
-        static $stmt = null;
-
-        if ($stmt === null) {
-            $stmt = $this->db->prepare(
-                'SELECT COUNT(*) FROM api_tokens WHERE token = :token AND is_active = true AND (expires_at IS NULL OR expires_at > NOW())'
-            );
-        }
-
-        $stmt->execute(['token' => $token]);
-
-        return (int) $stmt->fetchColumn() > 0;
-    }
-
-    /**
-     * Create unauthorized response.
-     */
     private function createUnauthorizedResponse(string $message): Response
     {
-        $response = new SlimResponse(401); // HTTP 401 Unauthorized
+        $response = new SlimResponse(401);
 
         $response->getBody()->write(json_encode([
             'error' => 'unauthorized',

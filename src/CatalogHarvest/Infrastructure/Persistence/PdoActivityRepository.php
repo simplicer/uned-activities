@@ -11,14 +11,15 @@ use CatalogHarvest\Domain\ValueObject\ActivityId;
 /**
  * PDO implementation of ActivityRepository.
  */
-final class PdoActivityRepository implements ActivityRepository
+final readonly class PdoActivityRepository implements ActivityRepository
 {
-    private const TABLE = 'activities';
+    private const string TABLE = 'activities';
 
-    public function __construct(private readonly \PDO $connection)
+    public function __construct(private \PDO $connection)
     {
     }
 
+    #[\Override]
     public function save(Activity $activity): void
     {
         // Check if exists
@@ -31,6 +32,7 @@ final class PdoActivityRepository implements ActivityRepository
         }
     }
 
+    #[\Override]
     public function findByUnedId(string $unedId): ?Activity
     {
         $stmt = $this->connection->prepare(
@@ -40,13 +42,14 @@ final class PdoActivityRepository implements ActivityRepository
         $stmt->execute(['uned_id' => $unedId]);
         $row = $stmt->fetch(\PDO::FETCH_ASSOC);
 
-        if (!$row) {
+        if ($row === false) {
             return null;
         }
 
         return $this->mapToEntity($row);
     }
 
+    #[\Override]
     public function findByUrl(string $url): ?Activity
     {
         $stmt = $this->connection->prepare(
@@ -56,13 +59,14 @@ final class PdoActivityRepository implements ActivityRepository
         $stmt->execute(['url' => $url]);
         $row = $stmt->fetch(\PDO::FETCH_ASSOC);
 
-        if (!$row) {
+        if ($row === false) {
             return null;
         }
 
         return $this->mapToEntity($row);
     }
 
+    #[\Override]
     public function existsByUnedId(string $unedId): bool
     {
         $stmt = $this->connection->prepare(
@@ -74,6 +78,7 @@ final class PdoActivityRepository implements ActivityRepository
         return (int) $stmt->fetchColumn() > 0;
     }
 
+    #[\Override]
     public function existsByUrl(string $url): bool
     {
         $stmt = $this->connection->prepare(
@@ -85,13 +90,19 @@ final class PdoActivityRepository implements ActivityRepository
         return (int) $stmt->fetchColumn() > 0;
     }
 
+    #[\Override]
     public function findAll(): array
     {
         $stmt = $this->connection->query(
             'SELECT * FROM ' . self::TABLE . ' ORDER BY created_at DESC'
         );
 
+        if ($stmt === false) {
+            return [];
+        }
+
         $activities = [];
+
         while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
             $activities[] = $this->mapToEntity($row);
         }
@@ -99,6 +110,7 @@ final class PdoActivityRepository implements ActivityRepository
         return $activities;
     }
 
+    #[\Override]
     public function findById(ActivityId $id): ?Activity
     {
         $stmt = $this->connection->prepare(
@@ -108,7 +120,7 @@ final class PdoActivityRepository implements ActivityRepository
         $stmt->execute(['id' => $id->toString()]);
         $row = $stmt->fetch(\PDO::FETCH_ASSOC);
 
-        if (!$row) {
+        if ($row === false) {
             return null;
         }
 
@@ -120,14 +132,20 @@ final class PdoActivityRepository implements ActivityRepository
         $stmt = $this->connection->prepare(
             'INSERT INTO ' . self::TABLE . ' (
                 id, uned_id, url, title, description, start_date, end_date,
-                modality, center, typology, area, price_amount, price_currency,
+                modality, center, typology, area, price_amount, price_currency, is_free,
                 enrollment_open, enrollment_start_date, enrollment_end_date,
-                created_at, updated_at, hash, status
+                created_at, updated_at, hash, status,
+                credits, has_live, has_recorded,
+                pricing_table, staff, sessions, target_audience, requirements,
+                location_details, schedule_details
             ) VALUES (
                 :id, :uned_id, :url, :title, :description, :start_date, :end_date,
-                :modality, :center, :typology, :area, :price_amount, :price_currency,
+                :modality, :center, :typology, :area, :price_amount, :price_currency, :is_free,
                 :enrollment_open, :enrollment_start_date, :enrollment_end_date,
-                :created_at, :updated_at, :hash, :status
+                :created_at, :updated_at, :hash, :status,
+                :credits, :has_live, :has_recorded,
+                :pricing_table, :staff, :sessions, :target_audience, :requirements,
+                :location_details, :schedule_details
             )'
         );
 
@@ -145,13 +163,24 @@ final class PdoActivityRepository implements ActivityRepository
             'area' => $activity->area,
             'price_amount' => $activity->priceAmount,
             'price_currency' => $activity->priceCurrency,
-            'enrollment_open' => $activity->enrollmentOpen ? '1' : '0',
+            'is_free' => $activity->isFree === true ? '1' : '0',
+            'enrollment_open' => $activity->enrollmentOpen === true ? '1' : '0',
             'enrollment_start_date' => $this->formatDateTime($activity->enrollmentStartDate),
             'enrollment_end_date' => $this->formatDateTime($activity->enrollmentEndDate),
             'created_at' => $activity->createdAt->format('Y-m-d H:i:s'),
             'updated_at' => $activity->updatedAt->format('Y-m-d H:i:s'),
             'hash' => $activity->hash,
             'status' => $activity->status,
+            'credits' => $activity->credits,
+            'has_live' => $activity->hasLive === true ? '1' : '0',
+            'has_recorded' => $activity->hasRecorded === true ? '1' : '0',
+            'pricing_table' => $activity->pricingTable !== null ? json_encode($activity->pricingTable, JSON_THROW_ON_ERROR) : null,
+            'staff' => $activity->staff !== null ? json_encode($activity->staff, JSON_THROW_ON_ERROR) : null,
+            'sessions' => $activity->sessions !== null ? json_encode($activity->sessions, JSON_THROW_ON_ERROR) : null,
+            'target_audience' => $activity->targetAudience,
+            'requirements' => $activity->requirements !== null ? json_encode($activity->requirements, JSON_THROW_ON_ERROR) : null,
+            'location_details' => $activity->locationDetails !== null ? json_encode($activity->locationDetails, JSON_THROW_ON_ERROR) : null,
+            'schedule_details' => $activity->scheduleDetails !== null ? json_encode($activity->scheduleDetails, JSON_THROW_ON_ERROR) : null,
         ]);
     }
 
@@ -169,11 +198,22 @@ final class PdoActivityRepository implements ActivityRepository
                 area = :area,
                 price_amount = :price_amount,
                 price_currency = :price_currency,
+                is_free = :is_free,
                 enrollment_open = :enrollment_open,
                 enrollment_start_date = :enrollment_start_date,
                 enrollment_end_date = :enrollment_end_date,
                 updated_at = :updated_at,
-                hash = :hash
+                hash = :hash,
+                credits = :credits,
+                has_live = :has_live,
+                has_recorded = :has_recorded,
+                pricing_table = :pricing_table,
+                staff = :staff,
+                sessions = :sessions,
+                target_audience = :target_audience,
+                requirements = :requirements,
+                location_details = :location_details,
+                schedule_details = :schedule_details
             WHERE id = :id'
         );
 
@@ -188,11 +228,22 @@ final class PdoActivityRepository implements ActivityRepository
             'area' => $activity->area,
             'price_amount' => $activity->priceAmount,
             'price_currency' => $activity->priceCurrency,
-            'enrollment_open' => $activity->enrollmentOpen ? '1' : '0',
+            'is_free' => $activity->isFree === true ? '1' : '0',
+            'enrollment_open' => $activity->enrollmentOpen === true ? '1' : '0',
             'enrollment_start_date' => $this->formatDateTime($activity->enrollmentStartDate),
             'enrollment_end_date' => $this->formatDateTime($activity->enrollmentEndDate),
             'updated_at' => (new \DateTimeImmutable())->format('Y-m-d H:i:s'),
             'hash' => $activity->hash,
+            'credits' => $activity->credits,
+            'has_live' => $activity->hasLive === true ? '1' : '0',
+            'has_recorded' => $activity->hasRecorded === true ? '1' : '0',
+            'pricing_table' => $activity->pricingTable !== null ? json_encode($activity->pricingTable, JSON_THROW_ON_ERROR) : null,
+            'staff' => $activity->staff !== null ? json_encode($activity->staff, JSON_THROW_ON_ERROR) : null,
+            'sessions' => $activity->sessions !== null ? json_encode($activity->sessions, JSON_THROW_ON_ERROR) : null,
+            'target_audience' => $activity->targetAudience,
+            'requirements' => $activity->requirements !== null ? json_encode($activity->requirements, JSON_THROW_ON_ERROR) : null,
+            'location_details' => $activity->locationDetails !== null ? json_encode($activity->locationDetails, JSON_THROW_ON_ERROR) : null,
+            'schedule_details' => $activity->scheduleDetails !== null ? json_encode($activity->scheduleDetails, JSON_THROW_ON_ERROR) : null,
             'id' => $activity->id->toString(),
         ]);
     }
@@ -207,27 +258,40 @@ final class PdoActivityRepository implements ActivityRepository
             new \DateTimeImmutable($row['updated_at']),
             $row['hash'],
             $row['status'],
-            $row['title'] ?: null,
-            $row['description'] ?: null,
-            $row['start_date'] ? new \DateTimeImmutable($row['start_date']) : null,
-            $row['end_date'] ? new \DateTimeImmutable($row['end_date']) : null,
-            $row['modality'] ?: null,
-            $row['center'] ?: null,
-            $row['typology'] ?: null,
-            $row['area'] ?: null,
+            $row['title'] !== '' ? $row['title'] : null,
+            $row['description'] !== '' ? $row['description'] : null,
+            $row['start_date'] !== null ? new \DateTimeImmutable($row['start_date']) : null,
+            $row['end_date'] !== null ? new \DateTimeImmutable($row['end_date']) : null,
+            $row['modality'] !== '' ? $row['modality'] : null,
+            $row['center'] !== '' ? $row['center'] : null,
+            $row['typology'] !== '' ? $row['typology'] : null,
+            $row['area'] !== '' ? $row['area'] : null,
             $row['price_amount'] !== null ? (int) $row['price_amount'] : null,
-            $row['price_currency'] ?: null,
-            $row['enrollment_open'] !== null ? ($row['enrollment_open'] === '1') : null,
-            $row['enrollment_start_date'] ? new \DateTimeImmutable($row['enrollment_start_date']) : null,
-            $row['enrollment_end_date'] ? new \DateTimeImmutable($row['enrollment_end_date']) : null,
+            $row['price_currency'] !== '' ? $row['price_currency'] : null,
+            isset($row['is_free']) ? ($row['is_free'] === '1' || $row['is_free'] === true || $row['is_free'] === 't') : false,
+            $row['enrollment_open'] !== null ? ($row['enrollment_open'] === '1' || $row['enrollment_open'] === 't' || $row['enrollment_open'] === true) : null,
+            $row['enrollment_start_date'] !== null ? new \DateTimeImmutable($row['enrollment_start_date']) : null,
+            $row['enrollment_end_date'] !== null ? new \DateTimeImmutable($row['enrollment_end_date']) : null,
+            isset($row['credits']) ? (int) $row['credits'] : null,
+            isset($row['has_live']) ? ($row['has_live'] === '1' || $row['has_live'] === true || $row['has_live'] === 't') : null,
+            isset($row['has_recorded']) ? ($row['has_recorded'] === '1' || $row['has_recorded'] === true || $row['has_recorded'] === 't') : null,
+            // Extended fields
+            isset($row['pricing_table']) && $row['pricing_table'] !== null ? json_decode($row['pricing_table'], true) : null,
+            isset($row['staff']) && $row['staff'] !== null ? json_decode($row['staff'], true) : null,
+            isset($row['sessions']) && $row['sessions'] !== null ? json_decode($row['sessions'], true) : null,
+            $row['target_audience'] !== '' ? $row['target_audience'] : null,
+            isset($row['requirements']) && $row['requirements'] !== null ? json_decode($row['requirements'], true) : null,
+            isset($row['location_details']) && $row['location_details'] !== null ? json_decode($row['location_details'], true) : null,
+            isset($row['schedule_details']) && $row['schedule_details'] !== null ? json_decode($row['schedule_details'], true) : null,
         );
     }
 
     private function formatDateTime(?\DateTimeImmutable $dt): ?string
     {
-        return $dt?->format('Y-m-d H:i:s') ?: null;
+        return $dt instanceof \DateTimeImmutable ? $dt->format('Y-m-d H:i:s') : null;
     }
 
+    #[\Override]
     public function findByFilters(array $filters, int $page = 1, int $perPage = 20): array
     {
         $offset = ($page - 1) * $perPage;
@@ -235,7 +299,7 @@ final class PdoActivityRepository implements ActivityRepository
         $params = [];
         $where = (new ActivityFilterBuilder())->build($filters, $params);
 
-        if ($where) {
+        if ($where !== '') {
             $sql .= ' WHERE ' . $where;
         }
 
@@ -245,6 +309,7 @@ final class PdoActivityRepository implements ActivityRepository
         $stmt->execute($params);
 
         $activities = [];
+
         while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
             $activities[] = $this->mapToEntity($row);
         }
@@ -252,13 +317,53 @@ final class PdoActivityRepository implements ActivityRepository
         return $activities;
     }
 
+    #[\Override]
+    public function findByIds(array $ids): array
+    {
+        if ($ids === []) {
+            return [];
+        }
+
+        $placeholders = [];
+        $params = [];
+
+        foreach ($ids as $index => $id) {
+            $key = ':id_' . $index;
+            $placeholders[] = $key;
+            $params[$key] = $id->toString();
+        }
+
+        $sql = 'SELECT * FROM ' . self::TABLE . ' WHERE id IN (' . implode(',', $placeholders) . ')';
+
+        $stmt = $this->connection->prepare($sql);
+        $stmt->execute($params);
+
+        $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        $activitiesById = [];
+
+        foreach ($rows as $row) {
+            $activitiesById[$row['id']] = $this->mapToEntity($row);
+        }
+
+        $ordered = [];
+        foreach ($ids as $id) {
+            $key = $id->toString();
+            if (isset($activitiesById[$key])) {
+                $ordered[] = $activitiesById[$key];
+            }
+        }
+
+        return $ordered;
+    }
+
+    #[\Override]
     public function countByFilters(array $filters): int
     {
         $sql = 'SELECT COUNT(*) FROM ' . self::TABLE;
         $params = [];
         $where = (new ActivityFilterBuilder())->build($filters, $params);
 
-        if ($where) {
+        if ($where !== '') {
             $sql .= ' WHERE ' . $where;
         }
 

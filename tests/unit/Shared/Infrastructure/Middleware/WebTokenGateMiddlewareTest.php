@@ -10,6 +10,7 @@ use PHPUnit\Framework\Attributes\TestDox;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
+use Firebase\JWT\JWT;
 use Shared\Infrastructure\Middleware\WebTokenGateMiddleware;
 
 #[CoversClass(WebTokenGateMiddleware::class)]
@@ -18,12 +19,10 @@ final class WebTokenGateMiddlewareTest extends TestCase
     private ServerRequestInterface $request;
     private RequestHandlerInterface $handler;
 
+    #[\Override]
     protected function setUp(): void
     {
         parent::setUp();
-
-        // Set up test tokens in environment
-        $_ENV['API_TOKENS'] = 'test-token-1,test-token-2';
 
         $this->request = $this->createMock(ServerRequestInterface::class);
         $this->handler = $this->createMock(RequestHandlerInterface::class);
@@ -36,104 +35,63 @@ final class WebTokenGateMiddlewareTest extends TestCase
     }
 
     #[Test]
-    #[TestDox('allows requests with valid token')]
+    #[TestDox('allows protected requests with valid JWT')]
     public function itAllowsWithValidToken(): void
     {
-        // Arrange
-        $middleware = new WebTokenGateMiddleware();
-        $this->mockRequest('/activities', 'test-token-1');
+        $middleware = new WebTokenGateMiddleware('test-secret');
+        $token = JWT::encode(['sub' => 'user-1', 'exp' => time() + 3600], 'test-secret', 'HS256');
+        $this->mockRequest('/v1/profile', 'POST', $token);
 
-        // Act
         $result = $middleware($this->request, $this->handler);
 
-        // Assert
         $this->assertSame(200, $result->getStatusCode());
     }
 
     #[Test]
-    #[TestDox('blocks requests without token')]
+    #[TestDox('blocks protected requests without token')]
     public function itBlocksWithoutToken(): void
     {
-        // Arrange
-        $middleware = new WebTokenGateMiddleware();
-        $this->mockRequest('/activities', null);
+        $middleware = new WebTokenGateMiddleware('test-secret');
+        $this->mockRequest('/v1/profile', 'GET', null);
 
-        // Act
         $result = $middleware($this->request, $this->handler);
 
-        // Assert
         $this->assertSame(401, $result->getStatusCode());
     }
 
     #[Test]
-    #[TestDox('blocks requests with invalid token')]
+    #[TestDox('blocks protected requests with invalid token')]
     public function itBlocksWithInvalidToken(): void
     {
-        // Arrange
-        $middleware = new WebTokenGateMiddleware();
-        $this->mockRequest('/activities', 'invalid-token');
+        $middleware = new WebTokenGateMiddleware('test-secret');
+        $this->mockRequest('/v1/profile', 'GET', 'invalid-token');
 
-        // Act
         $result = $middleware($this->request, $this->handler);
 
-        // Assert
         $this->assertSame(401, $result->getStatusCode());
     }
 
     #[Test]
-    #[TestDox('allows whitelisted paths without token')]
+    #[TestDox('allows public GET routes without token')]
     public function itAllowsWhitelistedPaths(): void
     {
-        // Arrange
-        $middleware = new WebTokenGateMiddleware();
-        $this->mockRequest('/status', null);
+        $middleware = new WebTokenGateMiddleware('test-secret');
+        $this->mockRequest('/v1/activities', 'GET', null);
 
-        // Act
         $result = $middleware($this->request, $this->handler);
 
-        // Assert
         $this->assertSame(200, $result->getStatusCode());
     }
 
-    #[Test]
-    #[TestDox('accepts token from X-API-Token header')]
-    public function itAcceptsTokenFromCustomHeader(): void
-    {
-        // Arrange
-        $middleware = new WebTokenGateMiddleware();
-        $this->mockRequest('/activities', 'test-token-1', useCustomHeader: true);
-
-        // Act
-        $result = $middleware($this->request, $this->handler);
-
-        // Assert
-        $this->assertSame(200, $result->getStatusCode());
-    }
-
-    private function mockRequest(string $path, ?string $token, bool $useCustomHeader = false): void
+    private function mockRequest(string $path, string $method, ?string $token): void
     {
         $uri = $this->createMock(\Psr\Http\Message\UriInterface::class);
         $uri->method('getPath')->willReturn($path);
         $this->request->method('getUri')->willReturn($uri);
+        $this->request->method('getMethod')->willReturn($method);
 
-        if ($token !== null) {
-            if ($useCustomHeader) {
-                $this->request->method('getHeaderLine')
-                    ->willReturnMap([
-                        ['X-API-Token', $token],
-                        ['Authorization', ''],
-                    ]);
-            } else {
-                $this->request->method('getHeaderLine')
-                    ->willReturnMap([
-                        ['X-API-Token', ''],
-                        ['Authorization', 'Bearer ' . $token],
-                    ]);
-            }
-        } else {
-            $this->request->method('getHeaderLine')->willReturn('');
-        }
-
-        $this->request->method('getQueryParams')->willReturn([]);
+        $this->request->method('getHeaderLine')->willReturn(
+            $token !== null ? 'Bearer ' . $token : ''
+        );
     }
 }

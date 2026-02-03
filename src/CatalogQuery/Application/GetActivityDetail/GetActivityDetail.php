@@ -12,11 +12,11 @@ use CatalogQuery\Application\Dto\ActivityDetailResult;
 /**
  * Get activity detail with price history.
  */
-final class GetActivityDetail
+final readonly class GetActivityDetail
 {
     public function __construct(
-        private readonly ActivityRepository $activityRepository,
-        private readonly PriceSnapshotRepository $priceSnapshotRepository,
+        private ActivityRepository $activityRepository,
+        private PriceSnapshotRepository $priceSnapshotRepository,
     ) {
     }
 
@@ -24,7 +24,7 @@ final class GetActivityDetail
     {
         $activity = $this->activityRepository->findById($id);
 
-        if ($activity === null) {
+        if (!$activity instanceof \CatalogHarvest\Domain\Entity\Activity) {
             throw new \RuntimeException('Activity not found', 404);
         }
 

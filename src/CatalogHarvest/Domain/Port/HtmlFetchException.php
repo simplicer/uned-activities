@@ -11,8 +11,10 @@ final class HtmlFetchException extends \RuntimeException
 {
     public static function fromUrl(string $url, int $code, ?string $message = null): self
     {
+        $suffix = $message !== null ? " - {$message}" : '';
+
         return new self(
-            "Failed to fetch URL '{$url}': HTTP {$code}" . ($message ? " - {$message}" : ''),
+            "Failed to fetch URL '{$url}': HTTP {$code}{$suffix}",
             $code
         );
     }

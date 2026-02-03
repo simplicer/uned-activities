@@ -19,11 +19,7 @@ export function LanguageSwitcher() {
 
   return (
     <div className="flex items-center gap-2">
-      <label htmlFor="language-select" className="text-sm font-medium">
-        Language:
-      </label>
       <select
-        id="language-select"
         value={i18n.language}
         onChange={(e) => changeLanguage(e.target.value)}
         className="border rounded px-2 py-1 text-sm bg-background"

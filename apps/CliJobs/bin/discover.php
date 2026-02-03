@@ -5,10 +5,7 @@ declare(strict_types=1);
 
 use CatalogHarvest\Application\DiscoverActivities\DiscoverActivities;
 use CatalogHarvest\Infrastructure\Http\GuzzleHtmlFetcher;
-use CatalogHarvest\Infrastructure\Persistence\InMemoryActivityRepository;
-use Monolog\Handler\StreamHandler;
-use Monolog\Level;
-use Monolog\Logger;
+use CatalogHarvest\Infrastructure\Persistence\PdoActivityRepository;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -17,17 +14,13 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
-require_once __DIR__ . '/../../vendor/autoload.php';
+require_once __DIR__ . '/../../../vendor/autoload.php';
 
 // Load environment
-if (file_exists(__DIR__ . '/../../.env')) {
-    $dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/../..');
+if (file_exists(__DIR__ . '/../../../.env')) {
+    $dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/../../../');
     $dotenv->load();
 }
-
-// Setup logger
-$logger = new Logger('harvest');
-$logger->pushHandler(new StreamHandler('php://stdout', Level::Debug));
 
 /**
  * Discover Activities Command.
@@ -36,31 +29,31 @@ $logger->pushHandler(new StreamHandler('php://stdout', Level::Debug));
  */
 final class DiscoverCommand extends Command
 {
-    protected static $defaultName = 'discover';
-    protected static $defaultDescription = 'Discover activities from UNED index pages';
+    private static string $defaultName = 'discover';
+    private static string $defaultDescription = 'Discover activities from UNED index pages';
 
+    #[\Override]
     protected function configure(): void
     {
         $this
-            ->addArgument('url', InputArgument::OPTIONAL, 'The UNED index URL', 'https://www.uned.es/cursos/ext/index')
-            ->addOption('max-pages', 'm', InputOption::VALUE_OPTIONAL, 'Maximum pages to scan', 10)
-            ->addOption('delay', 'd', InputOption::VALUE_OPTIONAL, 'Delay between requests (ms)', 1000)
+            ->addArgument('url', InputArgument::OPTIONAL, 'The UNED index URL', 'https://extension.uned.es')
+            ->addOption('pages', 'p', InputOption::VALUE_OPTIONAL, 'Number of pages to scan', '5')
             ->addOption('dry-run', null, InputOption::VALUE_NONE, 'Do not save to database');
     }
 
+    #[\Override]
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $io = new SymfonyStyle($input, $output);
 
         $url = $input->getArgument('url');
-        $maxPages = (int) $input->getOption('max-pages');
-        $delay = (int) $input->getOption('delay');
-        $isDryRun = $input->getOption('dry-run');
+        $maxPages = (int) $input->getOption('pages');
+        $isDryRun = (bool) $input->getOption('dry-run');
 
         $io->title('UNED Activities Discovery');
         $io->text("Scanning: <info>{$url}</info>");
         $io->text("Max pages: <info>{$maxPages}</info>");
-        $io->text("Delay: <info>{$delay}ms</info>");
+
         if ($isDryRun) {
             $io->warning("DRY RUN - No activities will be saved");
         }
@@ -68,7 +61,7 @@ final class DiscoverCommand extends Command
 
         // Create dependencies
         $fetcher = GuzzleHtmlFetcher::create();
-        $repository = new InMemoryActivityRepository();
+        $repository = new PdoActivityRepository($this->createPdo());
 
         $useCase = new DiscoverActivities($fetcher, $repository);
 
@@ -76,7 +69,7 @@ final class DiscoverCommand extends Command
             $io->text("Starting discovery...");
             $io->newLine();
 
-            $result = $useCase->discover($url, $maxPages);
+            $result = $useCase->discover($url, $maxPages, $isDryRun);
 
             // Display results
             $io->success("Discovery completed!");
@@ -101,6 +94,7 @@ final class DiscoverCommand extends Command
                 $io->section('Discovered Activities (sample)');
 
                 $sample = array_slice($result->discovered, 0, 10);
+
                 foreach ($sample as $activity) {
                     $io->text("  • <comment>{$activity->unedId}</comment>: {$activity->title}");
                 }
@@ -118,10 +112,55 @@ final class DiscoverCommand extends Command
             return Command::FAILURE;
         }
     }
+
+    private function createPdo(): PDO
+    {
+        // Try individual env vars first (Docker Compose style)
+        $host = $_ENV['DB_HOST'] ?? null;
+        $port = $_ENV['DB_PORT'] ?? 5432;
+        $dbname = $_ENV['DB_NAME'] ?? null;
+        $user = $_ENV['DB_USER'] ?? null;
+        $password = $_ENV['DB_PASSWORD'] ?? null;
+
+        if ($host && $dbname && $user) {
+            $dsn = "pgsql:host={$host};port={$port};dbname={$dbname};options='--client_encoding=UTF8'";
+            $pdo = new PDO($dsn, $user, $password, [
+                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            ]);
+            $pdo->exec("SET NAMES 'utf8'");
+            return $pdo;
+        }
+
+        // Fallback to DB_DSN env var
+        $dsn = $_ENV['DB_DSN'] ?? 'sqlite::memory:';
+        if (str_starts_with((string) $dsn, 'postgres')) {
+            $pattern = '#postgres://(?<user>[^:]+):(?<password>[^@]+)@(?<host>[^:]+):(?<port>\d+)/(?<dbname>[^/]+)#';
+
+            if (preg_match($pattern, (string) $dsn, $matches) !== 1) {
+                throw new \RuntimeException("Invalid PostgreSQL DSN");
+            }
+
+            $dsn = "pgsql:host={$matches['host']};port={$matches['port']};dbname={$matches['dbname']};options='--client_encoding=UTF8'";
+
+            $pdo = new PDO($dsn, $matches['user'], $matches['password'], [
+                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            ]);
+            $pdo->exec("SET NAMES 'utf8'");
+            return $pdo;
+        }
+
+        // SQLite fallback
+        return new PDO('sqlite::memory:', null, null, [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+        ]);
+    }
 }
 
 // Run console application
 $app = new Application('UNED Activities Finder CLI', '1.0.0');
-$app->add(new DiscoverCommand());
+
+$command = new DiscoverCommand();
+$command->setName('discover');
+$app->add($command);
 
 $app->run();

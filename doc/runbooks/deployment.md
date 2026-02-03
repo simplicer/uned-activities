@@ -37,7 +37,7 @@ REDIS_PASSWORD=your_redis_password
 # API
 RATE_LIMIT=100
 RATE_WINDOW=60
-API_TOKENS=prod-token-1,prod-token-2
+JWT_SECRET=see-dokploy-panel
 
 # Frontend
 VITE_API_BASE=https://api.yourdomain.com

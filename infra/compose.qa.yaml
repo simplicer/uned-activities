@@ -1,0 +1,85 @@
+# Docker Compose para QA local - Con Proxy Inverso
+# Nginx sirve frontend estático y hace proxy de la API PHP
+
+services:
+  # PostgreSQL 17 - NO expone puerto públicamente
+  db:
+    container_name: uned-postgres-qa
+    image: supabase/postgres:17.6.1.079
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-uned_activities}
+      POSTGRES_USER: postgres
+    volumes:
+      - postgres_data_qa:/var/lib/postgresql/data
+      - ./init-scripts:/docker-entrypoint-initdb.d:ro
+    networks:
+      - uned_qa_network
+
+  # Redis 7 - NO expone puerto públicamente
+  redis:
+    image: redis:7-alpine
+    container_name: uned-redis-qa
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    volumes:
+      - redis_data_qa:/data
+    networks:
+      - uned_qa_network
+
+  # Backend PHP API - interno, NO expone puerto
+  backend:
+    container_name: uned-backend-qa
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile.backend
+    restart: unless-stopped
+    environment:
+      - APP_ENV=local
+      - APP_DEBUG=true
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_NAME=uned_activities
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - RATE_LIMIT=100
+      - RATE_WINDOW=60
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+    networks:
+      - uned_qa_network
+
+  # Nginx Proxy Inverso - ÚnICO puerto expuesto
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: uned-nginx-qa
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    volumes:
+      - ./nginx-fixed.conf:/etc/nginx/nginx.conf:ro
+      - ../web/dist:/usr/share/nginx/html:ro
+    depends_on:
+      - backend
+    networks:
+      - uned_qa_network
+
+volumes:
+  postgres_data_qa:
+  redis_data_qa:
+
+networks:
+  uned_qa_network:
+    driver: bridge

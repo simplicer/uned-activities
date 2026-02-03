@@ -22,13 +22,13 @@ final readonly class DigestResult
         return [
             'searches_processed' => $this->searchesProcessed,
             'notifications_created' => $this->notificationsCreated,
-            'users_notified' => count($this->usersNotified),
-            'errors' => count($this->errors),
+            'users_notified' => \count($this->usersNotified),
+            'errors' => \count($this->errors),
         ];
     }
 
     public function hasErrors(): bool
     {
-        return count($this->errors) > 0;
+        return $this->errors !== [];
     }
 }

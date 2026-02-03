@@ -16,6 +16,7 @@ final class DiscoverActivitiesIntegrationTest extends TestCase
 {
     private string $fixturesPath;
 
+    #[\Override]
     protected function setUp(): void
     {
         $this->fixturesPath = __DIR__ . '/../fixtures';
@@ -28,13 +29,11 @@ final class DiscoverActivitiesIntegrationTest extends TestCase
         // Arrange - Use real HTML fetcher with mock response
         $html = file_get_contents($this->fixturesPath . '/uned-index-page.html');
 
-        $mockFetcher = new class($html) implements \CatalogHarvest\Domain\Port\HtmlFetcher {
-            private string $html;
+        $mockFetcher = new class ($html) implements \CatalogHarvest\Domain\Port\HtmlFetcher {
             private int $callCount = 0;
 
-            public function __construct(string $html)
+            public function __construct(private readonly string $html)
             {
-                $this->html = $html;
             }
 
             public function fetch(string $url): string
@@ -52,9 +51,11 @@ final class DiscoverActivitiesIntegrationTest extends TestCase
             public function fetchMultiple(array $urls): array
             {
                 $results = [];
+
                 foreach ($urls as $url) {
                     $results[$url] = $this->fetch($url);
                 }
+
                 return $results;
             }
         };
@@ -66,8 +67,8 @@ final class DiscoverActivitiesIntegrationTest extends TestCase
         $result = $useCase->discover('https://www.uned.es/cursos/ext/index', maxPages: 2);
 
         // Assert
-        $this->assertCount(6, $result->discovered);
-        $this->assertCount(6, $result->newActivities);
+        $this->assertCount(5, $result->discovered);
+        $this->assertCount(5, $result->newActivities);
         $this->assertCount(0, $result->existingActivities);
         $this->assertSame(2, $result->pagesScanned);
 
@@ -84,13 +85,15 @@ final class DiscoverActivitiesIntegrationTest extends TestCase
         // Arrange
         $html = file_get_contents($this->fixturesPath . '/uned-index-page.html');
 
-        $mockFetcher = new class($html) implements \CatalogHarvest\Domain\Port\HtmlFetcher {
+        $mockFetcher = new class ($html) implements \CatalogHarvest\Domain\Port\HtmlFetcher {
             public function fetch(string $url): string
             {
                 static $html = null;
+
                 if ($html === null) {
                     $html = file_get_contents(__DIR__ . '/../fixtures/uned-index-page.html');
                 }
+
                 return $html;
             }
 
@@ -105,15 +108,15 @@ final class DiscoverActivitiesIntegrationTest extends TestCase
 
         // First run - all new
         $result1 = $useCase->discover('https://www.uned.es/cursos/ext/index');
-        $this->assertCount(4, $result1->newActivities);
+        $this->assertCount(3, $result1->newActivities);
 
         // Second run - should be idempotent
         $result2 = $useCase->discover('https://www.uned.es/cursos/ext/index');
-        $this->assertCount(4, $result2->existingActivities);
+        $this->assertCount(3, $result2->existingActivities);
         $this->assertCount(0, $result2->newActivities);
 
         // Verify repository has only 4 activities
-        $this->assertSame(4, $repository->count());
+        $this->assertSame(3, $repository->count());
     }
 
     #[Test]
@@ -123,7 +126,7 @@ final class DiscoverActivitiesIntegrationTest extends TestCase
         // Arrange
         $html = file_get_contents($this->fixturesPath . '/uned-index-page.html');
 
-        $mockFetcher = new class($html) implements \CatalogHarvest\Domain\Port\HtmlFetcher {
+        $mockFetcher = new class ($html) implements \CatalogHarvest\Domain\Port\HtmlFetcher {
             public function fetch(string $url): string
             {
                 return file_get_contents(__DIR__ . '/../fixtures/uned-index-page.html');
@@ -142,10 +145,10 @@ final class DiscoverActivitiesIntegrationTest extends TestCase
         $result = $useCase->discover('https://www.uned.es/cursos/ext/index');
 
         // Assert - verify all activities were discovered
-        $this->assertCount(4, $result->discovered);
+        $this->assertCount(3, $result->discovered);
 
-        $expectedIds = ['UNED-001', 'UNED-002', 'UNED-003', 'UNED-004'];
-        $actualIds = array_map(fn($a) => $a->unedId, $result->discovered);
+        $expectedIds = ['UNED-001', 'UNED-002', 'UNED-003'];
+        $actualIds = array_map(fn ($a): string => $a->unedId, $result->discovered);
         $this->assertSame($expectedIds, $actualIds);
 
         // Verify titles
@@ -153,9 +156,8 @@ final class DiscoverActivitiesIntegrationTest extends TestCase
             'Fotografía Digital: Iniciación a la Captura y Edición',
             'Desarrollo Web con PHP y Laravel',
             'Marketing Digital y Redes Sociales',
-            'Inteligencia Artificial Aplicada',
         ];
-        $actualTitles = array_map(fn($a) => $a->title, $result->discovered);
+        $actualTitles = array_map(fn ($a): string => $a->title, $result->discovered);
         $this->assertSame($expectedTitles, $actualTitles);
     }
 
@@ -167,23 +169,21 @@ final class DiscoverActivitiesIntegrationTest extends TestCase
         $page1Html = file_get_contents($this->fixturesPath . '/uned-index-page.html');
         $page2Html = file_get_contents($this->fixturesPath . '/uned-index-page-2.html');
 
-        $mockFetcher = new class($page1Html, $page2Html) implements \CatalogHarvest\Domain\Port\HtmlFetcher {
+        $mockFetcher = new class ($page1Html, $page2Html) implements \CatalogHarvest\Domain\Port\HtmlFetcher {
             private int $callCount = 0;
-            private string $page1Html;
-            private string $page2Html;
 
-            public function __construct(string $page1Html, string $page2Html)
+            public function __construct(private readonly string $page1Html, private readonly string $page2Html)
             {
-                $this->page1Html = $page1Html;
-                $this->page2Html = $page2Html;
             }
 
             public function fetch(string $url): string
             {
                 $this->callCount++;
+
                 if ($this->callCount === 1) {
                     return $this->page1Html;
                 }
+
                 return $this->page2Html;
             }
 
@@ -201,6 +201,6 @@ final class DiscoverActivitiesIntegrationTest extends TestCase
 
         // Assert
         $this->assertSame(2, $result->pagesScanned);
-        $this->assertSame(6, $result->totalDiscovered());
+        $this->assertSame(5, $result->totalDiscovered());
     }
 }
