@@ -30,6 +30,7 @@ final class EmbeddingsCommand extends Command
     protected function configure(): void
     {
         $this
+            ->setName('embeddings')
             ->addArgument('activity-id', InputArgument::OPTIONAL, 'Activity UUID to embed (or "all")', 'all')
             ->addOption('limit', 'l', InputOption::VALUE_OPTIONAL, 'Limit number of activities to embed', '50');
     }
