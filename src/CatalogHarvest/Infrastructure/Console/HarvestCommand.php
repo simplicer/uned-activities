@@ -6,7 +6,6 @@ namespace CatalogHarvest\Infrastructure\Console;
 
 use CatalogHarvest\Application\Harvest\HarvestActivities;
 use Shared\Infrastructure\AI\AIExtractor;
-use Symfony\Component\Console\Command\Command;
 use RuntimeException;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
