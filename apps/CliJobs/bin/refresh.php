@@ -6,6 +6,7 @@ declare(strict_types=1);
 use CatalogHarvest\Application\RefreshActivity\RefreshActivity;
 use CatalogHarvest\Application\Notifications\NotifyFavoriteUsers;
 use CatalogHarvest\Infrastructure\Http\GuzzleHtmlFetcher;
+use CatalogHarvest\Infrastructure\Http\ActivityDetailParser;
 use CatalogHarvest\Infrastructure\Persistence\PdoActivityRepository;
 use CatalogHarvest\Infrastructure\Persistence\PdoActivitySnapshotRepository;
 use CatalogHarvest\Infrastructure\Persistence\PdoPriceSnapshotRepository;
@@ -140,12 +141,15 @@ final class RefreshCommand extends Command
         $frontendUrl = $_ENV['FRONTEND_URL'] ?? 'http://localhost:8080';
         $favoriteNotifier = new NotifyFavoriteUsers($favoriteRepo, $notificationRepo, $emailService, $frontendUrl);
 
+        $contentExtractor = new ActivityDetailParser();
+
         $useCase = new RefreshActivity(
             $fetcher,
             $activityRepo,
             $snapshotRepo,
             $priceRepo,
-            aiParser: $aiParser,
+            $contentExtractor,
+            embeddingGenerator: $aiParser,
             embeddingService: $embeddingService,
             favoriteNotifier: $favoriteNotifier
         );
@@ -185,7 +189,7 @@ final class RefreshCommand extends Command
     private function refreshAll(
         SymfonyStyle $io,
         RefreshActivity $useCase,
-        \CatalogHarvest\Domain\Port\ActivityRepository $activityRepo,
+        \CatalogHarvest\Domain\ActivityDataStorage\ActivityRepository $activityRepo,
         int $limit,
         bool $isDryRun,
     ): int {
