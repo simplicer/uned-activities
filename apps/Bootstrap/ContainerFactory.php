@@ -60,37 +60,39 @@ final class ContainerFactory
 
             // Environment-based configuration
             'app.version' => '0.10.1-alpha',
-            'app.env' => \DI\env('APP_ENV', 'production'),
-            'app.debug' => \DI\env('APP_DEBUG', 'false'),
+            'app.env' => (string) ($_ENV['APP_ENV'] ?? 'production'),
+            'app.debug' => (string) ($_ENV['APP_DEBUG'] ?? 'false'),
 
             // JWT configuration
-            JwtService::class => \DI\create(JwtService::class)
-                ->constructor(
-                    jwtSecret: \DI\env('SUPABASE_JWT_SECRET', \DI\env('JWT_SECRET', '')),
-                    issuer: \DI\env('SUPABASE_JWT_ISSUER', null),
-                    audience: \DI\env('SUPABASE_JWT_AUDIENCE', null),
-                    ttl: (int) \DI\env('JWT_TTL_SECONDS', '3600')
-                ),
+            JwtService::class => function (): JwtService {
+                return new JwtService(
+                    secret: (string) ($_ENV['SUPABASE_JWT_SECRET'] ?? $_ENV['JWT_SECRET'] ?? ''),
+                    issuer: $_ENV['SUPABASE_JWT_ISSUER'] ?? null,
+                    audience: $_ENV['SUPABASE_JWT_AUDIENCE'] ?? null,
+                    ttlSeconds: (int) ($_ENV['JWT_TTL_SECONDS'] ?? 3600)
+                );
+            },
 
             // Email service configuration
-            SmtpEmailService::class => \DI\create(SmtpEmailService::class)
-                ->constructor(
-                    fromEmail: \DI\env('SMTP_FROM_EMAIL', 'noreply@example.com'),
-                    fromName: \DI\env('SMTP_FROM_NAME', 'UNED Activities'),
-                    host: \DI\env('SMTP_HOST', 'smtp.gmail.com'),
-                    port: (int) \DI\env('SMTP_PORT', '587'),
-                    username: \DI\env('SMTP_USER', \DI\env('SMTP_USERNAME', '')),
-                    password: \DI\env('SMTP_PASSWORD', ''),
-                    encryption: \DI\env('SMTP_ENCRYPTION', 'tls')
-                ),
+            SmtpEmailService::class => function (): SmtpEmailService {
+                return new SmtpEmailService(
+                    fromEmail: (string) ($_ENV['SMTP_FROM_EMAIL'] ?? 'noreply@example.com'),
+                    fromName: (string) ($_ENV['SMTP_FROM_NAME'] ?? 'UNED Activities'),
+                    host: (string) ($_ENV['SMTP_HOST'] ?? 'smtp.gmail.com'),
+                    port: (int) ($_ENV['SMTP_PORT'] ?? 587),
+                    username: (string) ($_ENV['SMTP_USER'] ?? $_ENV['SMTP_USERNAME'] ?? ''),
+                    password: (string) ($_ENV['SMTP_PASSWORD'] ?? ''),
+                    encryption: (string) ($_ENV['SMTP_ENCRYPTION'] ?? 'tls')
+                );
+            },
 
             // Database connection
             \PDO::class => function (): \PDO {
-                $host = \DI\env('DB_HOST', 'localhost');
-                $port = \DI\env('DB_PORT', '5432');
-                $dbname = \DI\env('DB_NAME', 'uned_activities');
-                $user = \DI\env('DB_USER', 'postgres');
-                $password = \DI\env('DB_PASSWORD', 'postgres');
+                $host = (string) ($_ENV['DB_HOST'] ?? 'localhost');
+                $port = (int) ($_ENV['DB_PORT'] ?? 5432);
+                $dbname = (string) ($_ENV['DB_NAME'] ?? 'uned_activities');
+                $user = (string) ($_ENV['DB_USER'] ?? 'postgres');
+                $password = (string) ($_ENV['DB_PASSWORD'] ?? 'postgres');
 
                 $dsn = "pgsql:host={$host};port={$port};dbname={$dbname}";
 
@@ -104,15 +106,16 @@ final class ContainerFactory
 
             // Redis connection (optional)
             \Redis::class => function (): ?\Redis {
-                $host = \DI\env('REDIS_HOST', '');
+                $host = (string) ($_ENV['REDIS_HOST'] ?? '');
                 if ($host === '') {
                     return null;
                 }
 
                 $redis = new \Redis();
-                $redis->connect($host, (int) \DI\env('REDIS_PORT', '6379'));
+                $port = (int) ($_ENV['REDIS_PORT'] ?? 6379);
+                $redis->connect($host, $port);
 
-                $password = \DI\env('REDIS_PASSWORD', '');
+                $password = (string) ($_ENV['REDIS_PASSWORD'] ?? '');
                 if ($password !== '') {
                     $redis->auth($password);
                 }
