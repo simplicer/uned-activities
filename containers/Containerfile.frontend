@@ -1,7 +1,7 @@
 # Multi-stage build for optimized frontend image
 FROM node:20-alpine AS build
 
-LABEL maintainer="UNED Activities Team"
+LABEL maintainer="Simplicer"
 LABEL version="0.19.0-alpha"
 LABEL description="React frontend for UNED Activities Finder"
 
@@ -33,7 +33,7 @@ RUN npm run build && \
 # Production stage - minimal nginx image
 FROM nginx:1.27-alpine
 
-LABEL maintainer="UNED Activities Team"
+LABEL maintainer="Simplicer"
 LABEL version="0.19.0-alpha"
 LABEL description="React frontend for UNED Activities Finder (production)"
 

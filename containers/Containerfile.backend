@@ -3,7 +3,7 @@ FROM composer:2 AS composer
 
 FROM php:8.3-fpm-alpine AS builder
 
-LABEL maintainer="UNED Activities Team"
+LABEL maintainer="Simplicer"
 LABEL version="0.19.0-alpha"
 
 # Install build dependencies and PHP extensions in one layer
@@ -47,7 +47,7 @@ COPY --chown=1000:1000 . .
 # Final stage - minimal image
 FROM php:8.3-fpm-alpine
 
-LABEL maintainer="UNED Activities Team"
+LABEL maintainer="Simplicer"
 LABEL version="0.19.0-alpha"
 
 # Install only runtime dependencies
