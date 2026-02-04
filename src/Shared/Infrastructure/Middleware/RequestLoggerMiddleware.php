@@ -35,9 +35,14 @@ final readonly class RequestLoggerMiddleware
         $method = strtoupper($request->getMethod());
         $status = $response->getStatusCode();
 
+        $rawUserId = $request->getAttribute('auth_user_id');
+        $userIdHash = is_string($rawUserId) && $rawUserId !== ''
+            ? substr(hash('sha256', $rawUserId), 0, 12)
+            : null;
+
         $this->logger->info('http_request', [
             'request_id' => $requestId,
-            'user_id' => $request->getAttribute('auth_user_id') ?: null,
+            'user_id' => $userIdHash,
             'action' => $method . ' ' . $path,
             'method' => $method,
             'path' => $path,

@@ -209,11 +209,11 @@ function AppContent() {
             {/* Brand */}
             <div>
               <div className="mt-4 text-2xl text-muted-foreground flex items-center gap-2">
-                <span className="font-simplicer text-[#c02626] font-bold tracking-wide">simplicer</span>
-                <span className="text-muted-foreground/80">·</span>
-                <span>hecho con</span>
+                <span>Hecho con</span>
                 <Heart className="w-5 h-5 text-rose-500 fill-current" />
                 <span>en Mojácar</span>
+                <span className="text-muted-foreground/80">·</span>
+                <span className="font-simplicer text-[#c02626] font-bold tracking-wide">simplicer</span>
               </div>
               <p className="mt-3 text-xs text-muted-foreground">
                 {t('footer.disclaimer')}
