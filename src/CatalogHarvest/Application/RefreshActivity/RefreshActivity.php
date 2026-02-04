@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace CatalogHarvest\Application\RefreshActivity;
 
 use CatalogHarvest\Domain\Entity\Activity;
-use CatalogHarvest\Domain\ActivityRepository;
-use CatalogHarvest\Domain\ActivitySnapshotRepository;
-use CatalogHarvest\Domain\ActivitySnapshot;
-use CatalogHarvest\Domain\PriceSnapshotRepository;
-use CatalogHarvest\Domain\PriceSnapshot;
-use CatalogHarvest\Domain\HtmlFetcher;
+use CatalogHarvest\Domain\ActivityDataStorage\ActivityRepository;
+use CatalogHarvest\Domain\ActivityDataStorage\ActivitySnapshotRepository;
+use CatalogHarvest\Domain\ActivityDataStorage\ActivitySnapshot;
+use CatalogHarvest\Domain\ActivityDataStorage\PriceSnapshotRepository;
+use CatalogHarvest\Domain\ActivityDataStorage\PriceSnapshot;
+use CatalogHarvest\Domain\ActivityDataStorage\HtmlFetcher;
 use CatalogHarvest\Domain\HtmlContentExtractor\HtmlContentExtractor;
 use CatalogHarvest\Domain\ActivityEmbeddingGenerator\ActivityEmbeddingGenerator;
 use CatalogHarvest\Domain\ValueObject\ActivityId;
