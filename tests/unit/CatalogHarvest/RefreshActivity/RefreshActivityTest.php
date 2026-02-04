@@ -9,6 +9,8 @@ use CatalogHarvest\Domain\Entity\Activity;
 use CatalogHarvest\Domain\ActivityDataStorage\ActivityRepository;
 use CatalogHarvest\Domain\ActivityDataStorage\ActivitySnapshotRepository;
 use CatalogHarvest\Domain\ActivityDataStorage\PriceSnapshotRepository;
+use CatalogHarvest\Domain\ActivityDataStorage\HtmlFetcher;
+use CatalogHarvest\Domain\HtmlContentExtractor\HtmlContentExtractor;
 use CatalogHarvest\Domain\ValueObject\ActivityId;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
@@ -22,6 +24,7 @@ final class RefreshActivityTest extends TestCase
     private \PHPUnit\Framework\MockObject\MockObject $snapshotRepository;
     private \PHPUnit\Framework\MockObject\MockObject $priceSnapshotRepository;
     private \PHPUnit\Framework\MockObject\MockObject $htmlFetcher;
+    private \PHPUnit\Framework\MockObject\MockObject $contentExtractor;
 
     private RefreshActivity $useCase;
 
@@ -31,13 +34,15 @@ final class RefreshActivityTest extends TestCase
         $this->activityRepository = $this->createMock(ActivityRepository::class);
         $this->snapshotRepository = $this->createMock(ActivitySnapshotRepository::class);
         $this->priceSnapshotRepository = $this->createMock(PriceSnapshotRepository::class);
-        $this->htmlFetcher = $this->createMock(\CatalogHarvest\Domain\Port\HtmlFetcher::class);
+        $this->htmlFetcher = $this->createMock(HtmlFetcher::class);
+        $this->contentExtractor = $this->createMock(HtmlContentExtractor::class);
 
         $this->useCase = new RefreshActivity(
             $this->htmlFetcher,
             $this->activityRepository,
             $this->snapshotRepository,
             $this->priceSnapshotRepository,
+            $this->contentExtractor,
         );
     }
 
