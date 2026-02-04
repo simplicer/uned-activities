@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Auth\Application\RequestMagicLink;
 
 use Auth\Domain\Entity\MagicLinkToken;
-use Auth\Domain\Port\MagicTokenRepository;
+use Auth\Domain\AuthenticationTokenStorage\MagicTokenRepository;
 use Auth\Domain\ValueObject\MagicToken;
 use Shared\Infrastructure\Email\SmtpEmailService;
 

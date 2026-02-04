@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace UserProfile\Domain\Port;
+namespace UserProfile\Domain\UserDataStorage;
 
 use UserProfile\Domain\Entity\SavedSearch;
 use UserProfile\Domain\ValueObject\UserId;

@@ -9,7 +9,7 @@ use Auth\Application\VerifyMagicLink\VerifyMagicLink;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Shared\Infrastructure\Auth\JwtService;
-use UserProfile\Domain\Port\UserRepository;
+use UserProfile\Domain\UserDataStorage\UserRepository;
 
 /**
  * Authentication controller for magic link auth.

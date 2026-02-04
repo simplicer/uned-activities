@@ -6,7 +6,7 @@ namespace UserProfile\Infrastructure\Persistence;
 
 use PDO;
 use UserProfile\Domain\Entity\User;
-use UserProfile\Domain\Port\UserRepository;
+use UserProfile\Domain\UserDataStorage\UserRepository;
 use UserProfile\Domain\ValueObject\UserId;
 
 /**

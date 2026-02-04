@@ -6,7 +6,7 @@ namespace UserProfile\Infrastructure\Persistence;
 
 use PDO;
 use UserProfile\Domain\Entity\SavedSearch;
-use UserProfile\Domain\Port\SavedSearchRepository;
+use UserProfile\Domain\UserDataStorage\SavedSearchRepository;
 use UserProfile\Domain\ValueObject\UserId;
 
 /**

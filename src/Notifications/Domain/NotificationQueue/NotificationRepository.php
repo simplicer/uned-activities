@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Notifications\Domain\Port;
+namespace Notifications\Domain\NotificationQueue;
 
 use Notifications\Domain\Entity\Notification;
 use Notifications\Domain\ValueObject\NotificationId;

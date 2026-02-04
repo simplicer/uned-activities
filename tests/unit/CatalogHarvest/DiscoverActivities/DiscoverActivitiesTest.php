@@ -6,8 +6,8 @@ namespace Tests\Unit\CatalogHarvest\DiscoverActivities;
 
 use CatalogHarvest\Application\DiscoverActivities\DiscoverActivities;
 use CatalogHarvest\Domain\Entity\Activity;
-use CatalogHarvest\Domain\Port\ActivityRepository;
-use CatalogHarvest\Domain\Port\HtmlFetcher;
+use CatalogHarvest\Domain\ActivityDataStorage\ActivityRepository;
+use CatalogHarvest\Domain\ActivityDataStorage\HtmlFetcher;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\TestDox;

@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace CatalogQuery\Application\FindSimilarActivities;
 
-use CatalogHarvest\Domain\Port\ActivityEmbeddingRepository;
-use CatalogHarvest\Domain\Port\ActivityRepository;
+use CatalogHarvest\Domain\ActivityDataStorage\ActivityEmbeddingRepository;
+use CatalogHarvest\Domain\ActivityDataStorage\ActivityRepository;
 use CatalogHarvest\Domain\ValueObject\ActivityId;
 
 /**

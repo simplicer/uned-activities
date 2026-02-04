@@ -6,7 +6,7 @@ namespace Notifications\Infrastructure\Persistence;
 
 use PDO;
 use Notifications\Domain\Entity\Notification;
-use Notifications\Domain\Port\NotificationRepository;
+use Notifications\Domain\NotificationQueue\NotificationRepository;
 use Notifications\Domain\ValueObject\NotificationId;
 use UserProfile\Domain\ValueObject\UserId;
 

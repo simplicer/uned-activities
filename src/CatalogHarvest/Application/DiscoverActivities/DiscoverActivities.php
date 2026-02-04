@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace CatalogHarvest\Application\DiscoverActivities;
 
 use CatalogHarvest\Domain\Entity\Activity;
-use CatalogHarvest\Domain\Port\ActivityRepository;
-use CatalogHarvest\Domain\Port\HtmlFetcher;
+use CatalogHarvest\Domain\ActivityDataStorage\ActivityRepository;
+use CatalogHarvest\Domain\ActivityDataStorage\HtmlFetcher;
 use CatalogHarvest\Domain\ValueObject\ActivityId;
 
 /**

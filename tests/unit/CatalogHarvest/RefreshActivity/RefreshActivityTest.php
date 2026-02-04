@@ -6,9 +6,9 @@ namespace Tests\Unit\CatalogHarvest\RefreshActivity;
 
 use CatalogHarvest\Application\RefreshActivity\RefreshActivity;
 use CatalogHarvest\Domain\Entity\Activity;
-use CatalogHarvest\Domain\Port\ActivityRepository;
-use CatalogHarvest\Domain\Port\ActivitySnapshotRepository;
-use CatalogHarvest\Domain\Port\PriceSnapshotRepository;
+use CatalogHarvest\Domain\ActivityDataStorage\ActivityRepository;
+use CatalogHarvest\Domain\ActivityDataStorage\ActivitySnapshotRepository;
+use CatalogHarvest\Domain\ActivityDataStorage\PriceSnapshotRepository;
 use CatalogHarvest\Domain\ValueObject\ActivityId;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;

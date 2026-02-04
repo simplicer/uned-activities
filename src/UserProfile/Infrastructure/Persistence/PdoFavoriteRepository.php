@@ -6,7 +6,7 @@ namespace UserProfile\Infrastructure\Persistence;
 
 use PDO;
 use UserProfile\Domain\Entity\FavoriteActivity;
-use UserProfile\Domain\Port\FavoriteRepository;
+use UserProfile\Domain\UserDataStorage\FavoriteRepository;
 use UserProfile\Domain\ValueObject\UserId;
 
 /**

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace CatalogQuery\Application\Dto;
 
 use CatalogHarvest\Domain\Entity\Activity;
-use CatalogHarvest\Domain\Port\PriceSnapshot;
+use CatalogHarvest\Domain\ActivityDataStorage\PriceSnapshot;
 
 /**
  * Result DTO for activity detail with price history.

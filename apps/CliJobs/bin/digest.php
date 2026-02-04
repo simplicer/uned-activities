@@ -5,7 +5,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../../../vendor/autoload.php';
 
-use CatalogHarvest\Domain\Port\ActivityRepository;
+use CatalogHarvest\Domain\ActivityDataStorage\ActivityRepository;
 use Notifications\Application\Digest\DigestJob;
 use Notifications\Infrastructure\Persistence\PdoNotificationRepository;
 use UserProfile\Infrastructure\Persistence\PdoSavedSearchRepository;

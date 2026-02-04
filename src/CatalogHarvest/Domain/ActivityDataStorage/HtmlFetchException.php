@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace CatalogHarvest\Domain\Port;
+namespace CatalogHarvest\Domain\ActivityDataStorage;
 
 /**
  * Exception thrown when HTML fetch fails.

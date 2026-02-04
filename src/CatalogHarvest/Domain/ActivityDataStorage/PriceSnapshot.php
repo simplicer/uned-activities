@@ -2,21 +2,20 @@
 
 declare(strict_types=1);
 
-namespace CatalogHarvest\Domain\Port;
+namespace CatalogHarvest\Domain\ActivityDataStorage;
 
 use CatalogHarvest\Domain\ValueObject\ActivityId;
 
 /**
- * Value object representing an activity snapshot.
+ * Value object representing a price snapshot.
  */
-final readonly class ActivitySnapshot
+final readonly class PriceSnapshot
 {
     public function __construct(
         public ActivityId $activityId,
         public \DateTimeImmutable $capturedAt,
-        public array $data,
-        public string $hash,
-        public ?string $changeType,
+        public ?int $priceAmount,
+        public ?string $priceCurrency,
     ) {
     }
 }

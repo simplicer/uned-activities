@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace CatalogQuery\Application\ListActivities;
 
-use CatalogHarvest\Domain\Port\ActivityRepository;
+use CatalogHarvest\Domain\ActivityDataStorage\ActivityRepository;
 use CatalogQuery\Application\Dto\ActivityFilters;
 use CatalogQuery\Application\Dto\ActivityListResult;
 

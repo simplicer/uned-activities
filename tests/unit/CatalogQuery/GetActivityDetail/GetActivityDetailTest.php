@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Tests\Unit\CatalogQuery\GetActivityDetail;
 
 use CatalogHarvest\Domain\Entity\Activity;
-use CatalogHarvest\Domain\Port\ActivityRepository;
-use CatalogHarvest\Domain\Port\PriceSnapshot;
-use CatalogHarvest\Domain\Port\PriceSnapshotRepository;
+use CatalogHarvest\Domain\ActivityDataStorage\ActivityRepository;
+use CatalogHarvest\Domain\ActivityDataStorage\PriceSnapshot;
+use CatalogHarvest\Domain\ActivityDataStorage\PriceSnapshotRepository;
 use CatalogHarvest\Domain\ValueObject\ActivityId;
 use CatalogQuery\Application\GetActivityDetail\GetActivityDetail;
 use PHPUnit\Framework\Attributes\CoversClass;

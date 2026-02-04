@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit\CatalogQuery\ListActivities;
 
 use CatalogHarvest\Domain\Entity\Activity;
-use CatalogHarvest\Domain\Port\ActivityRepository;
+use CatalogHarvest\Domain\ActivityDataStorage\ActivityRepository;
 use CatalogHarvest\Domain\ValueObject\ActivityId;
 use CatalogQuery\Application\Dto\ActivityFilters;
 use CatalogQuery\Application\ListActivities\ListActivities;

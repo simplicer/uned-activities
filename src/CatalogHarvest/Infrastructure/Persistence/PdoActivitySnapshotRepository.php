@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace CatalogHarvest\Infrastructure\Persistence;
 
-use CatalogHarvest\Domain\Port\ActivitySnapshot;
-use CatalogHarvest\Domain\Port\ActivitySnapshotRepository;
+use CatalogHarvest\Domain\ActivityDataStorage\ActivitySnapshot;
+use CatalogHarvest\Domain\ActivityDataStorage\ActivitySnapshotRepository;
 use CatalogHarvest\Domain\ValueObject\ActivityId;
 
 /**

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace CatalogHarvest\Domain\Port;
+namespace CatalogHarvest\Domain\ActivityDataStorage;
 
 /**
  * Port for fetching HTML content from URLs.

@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace CatalogQuery\Application\GetActivityDetail;
 
-use CatalogHarvest\Domain\Port\ActivityRepository;
-use CatalogHarvest\Domain\Port\PriceSnapshotRepository;
+use CatalogHarvest\Domain\ActivityDataStorage\ActivityRepository;
+use CatalogHarvest\Domain\ActivityDataStorage\PriceSnapshotRepository;
 use CatalogHarvest\Domain\ValueObject\ActivityId;
 use CatalogQuery\Application\Dto\ActivityDetailResult;
 

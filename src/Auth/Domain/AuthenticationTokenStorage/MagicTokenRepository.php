@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Auth\Domain\Port;
+namespace Auth\Domain\AuthenticationTokenStorage;
 
 use Auth\Domain\Entity\MagicLinkToken;
 use Auth\Domain\ValueObject\MagicToken;

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace CatalogHarvest\Application\Embeddings;
 
 use CatalogHarvest\Domain\Entity\Activity;
-use CatalogHarvest\Domain\Port\ActivityEmbeddingRepository;
+use CatalogHarvest\Domain\ActivityDataStorage\ActivityEmbeddingRepository;
 use Shared\Infrastructure\AI\EmbeddingClient;
 
 /**

@@ -8,11 +8,11 @@ use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Slim\App;
 use UserProfile\Application\SaveSearch\SaveSearch;
-use UserProfile\Domain\Port\FavoriteRepository;
-use UserProfile\Domain\Port\SavedSearchRepository;
-use UserProfile\Domain\Port\UserRepository;
+use UserProfile\Domain\UserDataStorage\FavoriteRepository;
+use UserProfile\Domain\UserDataStorage\SavedSearchRepository;
+use UserProfile\Domain\UserDataStorage\UserRepository;
 use UserProfile\Domain\ValueObject\UserId;
-use Notifications\Domain\Port\NotificationRepository;
+use Notifications\Domain\NotificationQueue\NotificationRepository;
 use Notifications\Domain\ValueObject\NotificationId;
 
 /**

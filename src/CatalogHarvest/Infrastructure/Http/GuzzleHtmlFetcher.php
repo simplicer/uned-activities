@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace CatalogHarvest\Infrastructure\Http;
 
-use CatalogHarvest\Domain\Port\HtmlFetchException;
-use CatalogHarvest\Domain\Port\HtmlFetcher;
+use CatalogHarvest\Domain\ActivityDataStorage\HtmlFetchException;
+use CatalogHarvest\Domain\ActivityDataStorage\HtmlFetcher;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Promise\Utils;

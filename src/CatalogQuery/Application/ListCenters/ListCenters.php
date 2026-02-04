@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace CatalogQuery\Application\ListCenters;
 
-use CatalogHarvest\Domain\Port\ActivityRepository;
+use CatalogHarvest\Domain\ActivityDataStorage\ActivityRepository;
 
 /**
  * List distinct activity centers.

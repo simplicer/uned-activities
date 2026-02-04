@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace CatalogHarvest\Domain\Port;
+namespace CatalogHarvest\Domain\ActivityDataStorage;
 
 use CatalogHarvest\Domain\Entity\Activity;
 use CatalogHarvest\Domain\ValueObject\ActivityId;

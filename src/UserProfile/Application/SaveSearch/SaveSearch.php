@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace UserProfile\Application\SaveSearch;
 
 use UserProfile\Domain\Entity\SavedSearch;
-use UserProfile\Domain\Port\SavedSearchRepository;
+use UserProfile\Domain\UserDataStorage\SavedSearchRepository;
 use UserProfile\Domain\ValueObject\UserId;
 
 /**

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Auth\Infrastructure\Persistence;
 
 use Auth\Domain\Entity\MagicLinkToken;
-use Auth\Domain\Port\MagicTokenRepository;
+use Auth\Domain\AuthenticationTokenStorage\MagicTokenRepository;
 use Auth\Domain\ValueObject\MagicToken;
 use PDO;
 

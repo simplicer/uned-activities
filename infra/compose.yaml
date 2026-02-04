@@ -41,8 +41,6 @@ services:
       context: ..
       dockerfile: infra/Dockerfile.backend
     restart: unless-stopped
-    env_file:
-      - ./env/local.env
     environment:
       - APP_ENV=production
       - APP_DEBUG=false
@@ -83,8 +81,6 @@ services:
       context: ..
       dockerfile: infra/Dockerfile.backend
     restart: unless-stopped
-    env_file:
-      - ./env/local.env
     environment:
       - APP_ENV=production
       - APP_DEBUG=false

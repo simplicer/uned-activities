@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace CatalogHarvest\Infrastructure\Persistence;
 
-use CatalogHarvest\Domain\Port\ActivityEmbeddingRepository;
+use CatalogHarvest\Domain\ActivityDataStorage\ActivityEmbeddingRepository;
 use CatalogHarvest\Domain\ValueObject\ActivityId;
 use PDO;
 

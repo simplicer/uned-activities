@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Auth\Application\VerifyMagicLink;
 
-use Auth\Domain\Port\MagicTokenRepository;
+use Auth\Domain\AuthenticationTokenStorage\MagicTokenRepository;
 use Auth\Domain\ValueObject\MagicToken;
 use UserProfile\Domain\Entity\User;
-use UserProfile\Domain\Port\UserRepository;
+use UserProfile\Domain\UserDataStorage\UserRepository;
 use UserProfile\Domain\ValueObject\UserId;
 
 /**

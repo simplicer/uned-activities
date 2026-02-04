@@ -6,9 +6,9 @@ namespace CatalogHarvest\Application\Notifications;
 
 use CatalogHarvest\Domain\Entity\Activity;
 use Notifications\Domain\Entity\Notification;
-use Notifications\Domain\Port\NotificationRepository;
+use Notifications\Domain\NotificationQueue\NotificationRepository;
 use Shared\Infrastructure\Email\SmtpEmailService;
-use UserProfile\Domain\Port\FavoriteRepository;
+use UserProfile\Domain\UserDataStorage\FavoriteRepository;
 use UserProfile\Domain\ValueObject\UserId;
 
 /**

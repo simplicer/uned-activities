@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace CatalogHarvest\Infrastructure\Persistence;
 
-use CatalogHarvest\Domain\Port\PriceSnapshot;
-use CatalogHarvest\Domain\Port\PriceSnapshotRepository;
+use CatalogHarvest\Domain\ActivityDataStorage\PriceSnapshot;
+use CatalogHarvest\Domain\ActivityDataStorage\PriceSnapshotRepository;
 use CatalogHarvest\Domain\ValueObject\ActivityId;
 
 /**

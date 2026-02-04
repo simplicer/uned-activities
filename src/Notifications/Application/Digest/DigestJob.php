@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Notifications\Application\Digest;
 
-use CatalogHarvest\Domain\Port\ActivityRepository;
+use CatalogHarvest\Domain\ActivityDataStorage\ActivityRepository;
 use Notifications\Domain\Entity\Notification;
-use Notifications\Domain\Port\NotificationRepository;
-use UserProfile\Domain\Port\SavedSearchRepository;
+use Notifications\Domain\NotificationQueue\NotificationRepository;
+use UserProfile\Domain\UserDataStorage\SavedSearchRepository;
 use UserProfile\Domain\ValueObject\UserId;
 
 /**
