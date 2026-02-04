@@ -1,0 +1,1208 @@
+You are an expert CI/CD automation agent executing a complete repository remediation workflow for UNED Activities Finder. Execute ALL tasks sequentially WITHOUT any pauses or asking for confirmation. Each task is an "Iteración Automática" (Automatic Iteration). Process, test, verify, commit, then move to next task.
+
+**Repository Context:**
+- Path: /home/antonio/CODE/anvius-uned-extension-finder
+- Languages: PHP 8.3, React, TypeScript
+- Current Version: 0.10.1-alpha
+- Commits expected: 40+ before completion
+- Total time estimate: 8-10 hours
+
+**Reference Files for Full Context:**
+@README.md
+@doc/api-specs/openapi.yaml
+@package.json
+@composer.json
+@infra/compose.yaml
+@infra/Dockerfile.backend
+@infra/Dockerfile.frontend
+@infra/scripts/harvest-loop.sh
+@apps/HttpApi/public/index.php
+@src/CatalogHarvest/Application/RefreshActivity/RefreshActivity.php
+@src/CatalogHarvest/Application/DiscoverActivities/DiscoverActivities.php
+
+---
+
+## PHASE 0: POST-AUDIT SETUP (5 Iteraciones)
+
+### ITERACIÓN AUTOMÁTICA 1: Add MIT LICENSE
+**Objective:** Create LICENSE file with MIT license text
+**File:** `/LICENSE` (new, at repo root)
+**Action:** Create standard MIT license
+**Content:** Use standard MIT license from opensource.org
+**Commit Message:** `feat: add MIT license`
+**Verification:**
+```bash
+[ -f LICENSE ] && grep -q "Permission is hereby granted" LICENSE && echo "✓"
+```
+
+---
+
+### ITERACIÓN AUTOMÁTICA 2: Create VERSION.md
+**Objective:** Document version strategy
+**File:** `/VERSION.md` (new)
+**Content Structure:**
+```markdown
+# Version Management
+
+## Current Version: 0.10.1-alpha
+
+### Semantic Versioning Strategy
+- MAJOR: Breaking changes
+- MINOR: New features (feat: commits) → Currently 10
+- PATCH: Bug fixes (fix: commits) → Currently 1
+- Status: -alpha (pre-production)
+
+### Calculation
+From git history: 10 feat + 1 fix = 0.10.1-alpha
+```
+**Commit Message:** `chore: add version file with semver strategy`
+**Verification:** `grep -q "0.10.1-alpha" VERSION.md && echo "✓"`
+
+---
+
+### ITERACIÓN AUTOMÁTICA 3: Update README Headers
+**Objective:** Add version to README main title
+**File:** `/README.md` (modify)
+**Changes:**
+- Change `# UNED Activities Finder` to `# UNED Activities Finder v0.10.1-alpha`
+- Add new "License" section: `## License\n\nThis project is licensed under the **MIT License** - see [LICENSE](LICENSE) file.`
+**Commit Message:** `docs: update README with version and license info`
+**Verification:**
+```bash
+grep -q "# UNED Activities Finder v0.10.1-alpha" README.md && \
+grep -q "## License" README.md && echo "✓"
+```
+
+---
+
+### ITERACIÓN AUTOMÁTICA 4: Update openapi.yaml Version
+**Objective:** Bump API version to match project version
+**File:** `/doc/api-specs/openapi.yaml` (modify)
+**Change:** In `info:` section, change `version: 1.0.0` to `version: 0.10.1-alpha`
+**Commit Message:** `chore: bump API version to 0.10.1-alpha`
+**Verification:**
+```bash
+grep "version: 0.10.1-alpha" doc/api-specs/openapi.yaml && \
+python3 -c "import yaml; yaml.safe_load(open('doc/api-specs/openapi.yaml'))" && echo "✓"
+```
+
+---
+
+### ITERACIÓN AUTOMÁTICA 5: Rewrite README for End-Users
+**Objective:** Create complete end-user manual
+**File:** `/README.md` (complete rewrite)
+**Key Requirements:**
+- ✓ Written for END USERS only (no developers)
+- ✓ NO technical jargon: no "DDD", "Hexagonal", "bounded contexts", "ports", "adapters"
+- ✓ Includes version v0.10.1-alpha in header
+- ✓ All sections: Header, What is it?, Features, Getting Started, How to Use, FAQ, License
+- ✓ Professional and friendly tone
+
+**Full Content to write:**
+```markdown
+# UNED Activities Finder v0.10.1-alpha
+
+![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
+![Status: Alpha](https://img.shields.io/badge/Status-Alpha-red.svg)
+![Languages: 6](https://img.shields.io/badge/Languages-6-blue.svg)
+
+Find and stay updated on UNED extension activities in your language of choice.
+
+## 🎯 What is UNED Activities Finder?
+
+A free, multilingual platform that helps you discover, search, and stay informed about UNED (Universidad Nacional de Educación a Distancia) extension courses and activities.
+
+### Why You Need It
+
+UNED offers hundreds of extension activities each year, but they're scattered across multiple pages and hard to find. This platform:
+- Centralizes all UNED activities in one searchable place
+- Supports 6 languages (Spanish, English, Catalan, Valencian, Basque, Galician)
+- Lets you filter by price, topic, schedule, and location
+- Notifies you about new activities matching your interests
+
+### Who Should Use It?
+- Students looking for extension courses
+- Professionals seeking continuous education
+- Anyone interested in UNED learning opportunities
+
+## ✨ Features
+
+- 🌍 **6 Languages:** Spanish, English, Catalan, Valencian, Basque, Galician
+- 🔍 **Advanced Search & Filters:** Topic, price, schedule, location, format
+- 🔔 **Smart Notifications:** Alerts for activities matching your interests
+- 💰 **Price Transparency:** See all costs upfront
+- 💾 **Save Searches:** Keep track of what interests you
+- ⚡ **Fast & Mobile-Friendly:** Optimized for all devices
+- 🆓 **100% Free:** Open source, no ads, no paywalls
+
+## 🚀 Getting Started
+
+### Option 1: Use Online (Recommended)
+1. Visit https://activities.uned.es
+2. Browse or search for activities
+3. (Optional) Create account for saved searches and notifications
+
+### Option 2: Run Locally (Self-Hosted)
+
+**Requirements:**
+- Docker and Docker Compose (download from docker.com)
+- 4GB RAM minimum
+- ~10 minutes for first setup
+
+**Installation:**
+```bash
+# 1. Clone repository
+git clone https://github.com/your-org/anvius-uned-extension-finder.git
+cd anvius-uned-extension-finder
+
+# 2. Setup environment
+cp infra/env/local.env .env
+
+# 3. Start services
+docker compose -f infra/compose.yaml up -d
+
+# 4. Open in browser
+open http://localhost:5173
+```
+
+The system will start downloading activities (5-10 minutes on first run).
+
+**Check it's working:**
+- Frontend: http://localhost:5173
+- API Status: http://localhost:8080/status
+
+## 📖 How to Use
+
+### Searching Activities
+1. Go to Activities tab
+2. Enter keywords or use filters
+3. Filter by price, language, format, duration
+4. Click activity for full details
+5. Register on UNED's official site
+
+### Saving Searches (Login Required)
+1. Create search with favorite filters
+2. Click "Save Search"
+3. Give it a name
+4. Access anytime from your account
+
+### Getting Notifications
+1. Sign in to account
+2. Go to Settings → Notifications
+3. Choose frequency:
+   - Immediate (instant notifications)
+   - Daily digest (once per day)
+   - Weekly digest (once per week)
+
+### Understanding Activity Details
+- Activity description from UNED
+- Dates & time
+- Prices for different participant types
+- Instructor information
+- Format (online/in-person/hybrid)
+- Language
+- Direct enrollment link
+
+## ❓ FAQ
+
+**Is this official UNED?**
+No, this is a community search tool. UNED is not affiliated.
+
+**Is it free?**
+Yes, completely free and open source (MIT License).
+
+**Do I need an account?**
+No to browse. Yes for saved searches and notifications.
+
+**How current is the data?**
+Activities refresh every hour from UNED sources.
+
+**Why can't I register here?**
+This is a search tool only. Registration on UNED's site.
+
+**What languages are supported?**
+Spanish, English, Catalan, Valencian, Basque, Galician.
+
+**How do I report bugs?**
+Create issue on GitHub or email support@example.com
+
+**Can I self-host it?**
+Yes, it's open source. Just Docker Compose needed.
+
+## 📄 License
+
+This project is licensed under the **MIT License** - see [LICENSE](LICENSE) file.
+
+## 🤝 Support
+
+- **Website:** https://example.com
+- **Email:** support@example.com
+- **GitHub:** Issues and Discussions
+- **Social:** @UNEDActivities
+
+---
+
+**Last Updated:** February 4, 2026
+**Version:** 0.10.1-alpha
+**Status:** Pre-production (alpha testing)
+**License:** MIT
+```
+
+**Commit Message:** `docs: rewrite README for end-users with installation guide`
+**Verification:**
+```bash
+! grep -iE "hexagonal|ddd|bounded|aggregate|port.*adapter" README.md && \
+grep -q "v0.10.1-alpha" README.md && echo "✓"
+```
+
+---
+
+## PHASE 1: CRITICAL ARCHITECTURE CORRECTIONS (6 Iteraciones)
+
+### ITERACIÓN AUTOMÁTICA 6: Create HtmlParser Port
+**Objective:** Define Port interface for HTML parsing
+**File:** `/src/CatalogHarvest/Domain/Port/HtmlParser.php` (new)
+**Content:**
+```php
+<?php
+namespace Anvius\CatalogHarvest\Domain\Port;
+
+interface HtmlParser
+{
+    /**
+     * Parse HTML content from activity page
+     * 
+     * @param string $html Raw HTML content
+     * @param string $url Source URL for context
+     * @return array Parsed activity data with keys: name, description, price, schedule, etc
+     */
+    public function parse(string $html, string $url): array;
+}
+```
+**Commit Message:** `feat(domain): add HtmlParser port interface for catalog harvesting`
+**Verification:** `[ -f src/CatalogHarvest/Domain/Port/HtmlParser.php ] && grep -q "interface HtmlParser" src/CatalogHarvest/Domain/Port/HtmlParser.php && echo "✓"`
+
+---
+
+### ITERACIÓN AUTOMÁTICA 7: Create ActivityEmbedder Port
+**Objective:** Define Port interface for activity embeddings
+**File:** `/src/CatalogHarvest/Domain/Port/ActivityEmbedder.php` (new)
+**Content:**
+```php
+<?php
+namespace Anvius\CatalogHarvest\Domain\Port;
+
+interface ActivityEmbedder
+{
+    /**
+     * Generate semantic embeddings for activity
+     * 
+     * @param string $activityText Combined title + description
+     * @return array Float vector for similarity search
+     */
+    public function embed(string $activityText): array;
+}
+```
+**Commit Message:** `feat(domain): add ActivityEmbedder port for semantic search capability`
+**Verification:** `grep -q "interface ActivityEmbedder" src/CatalogHarvest/Domain/Port/ActivityEmbedder.php && echo "✓"`
+
+---
+
+### ITERACIÓN AUTOMÁTICA 8: Create UserNotifier Port
+**Objective:** Define Port interface for notifications
+**File:** `/src/Notifications/Domain/Port/UserNotifier.php` (new)
+**Content:**
+```php
+<?php
+namespace Anvius\Notifications\Domain\Port;
+
+interface UserNotifier
+{
+    /**
+     * Send notification to user
+     * 
+     * @param string $userId User identifier
+     * @param string $subject Notification subject
+     * @param string $message Notification message
+     * @param string $type Type: 'immediate' | 'digest' | 'weekly'
+     * @return bool Success status
+     */
+    public function notify(string $userId, string $subject, string $message, string $type = 'immediate'): bool;
+}
+```
+**Commit Message:** `feat(domain): add UserNotifier port for notification system abstraction`
+**Verification:** `grep -q "interface UserNotifier" src/Notifications/Domain/Port/UserNotifier.php && echo "✓"`
+
+---
+
+### ITERACIÓN AUTOMÁTICA 9: Refactor RefreshActivity (Fix Dependency Inversion)
+**Objective:** Make RefreshActivity depend on Ports, not Infrastructure
+**File:** `/src/CatalogHarvest/Application/RefreshActivity/RefreshActivity.php` (modify)
+**Current Problem:** Lines 15-16 import concrete classes
+```php
+use Anvius\CatalogHarvest\Infrastructure\Html\ActivityDetailParser;
+use Anvius\CatalogHarvest\Infrastructure\Html\AIActivityParser;
+```
+**Fix:** Replace constructor to accept Port interfaces:
+```php
+<?php
+namespace Anvius\CatalogHarvest\Application\RefreshActivity;
+
+use Anvius\CatalogHarvest\Domain\Port\HtmlParser;
+use Anvius\CatalogHarvest\Domain\Port\ActivityEmbedder;
+use Anvius\CatalogHarvest\Domain\Repository\ActivityRepository;
+
+class RefreshActivity
+{
+    public function __construct(
+        private HtmlParser $htmlParser,
+        private ActivityEmbedder $embedder,
+        private ActivityRepository $activityRepository,
+    ) {}
+
+    public function execute(string $activityId, string $htmlContent, string $sourceUrl): void
+    {
+        // Parse using Port
+        $parsed = $this->htmlParser->parse($htmlContent, $sourceUrl);
+        
+        // Embed using Port
+        $embedding = $this->embedder->embed($parsed['name'] . ' ' . $parsed['description']);
+        
+        // Update repository
+        $this->activityRepository->updateWithEmbedding($activityId, $parsed, $embedding);
+    }
+}
+```
+**Commit Message:** `refactor(application): make RefreshActivity depend on Domain Ports instead of Infrastructure`
+**Verification:** `grep -q "HtmlParser \$htmlParser" src/CatalogHarvest/Application/RefreshActivity/RefreshActivity.php && ! grep -q "ActivityDetailParser" src/CatalogHarvest/Application/RefreshActivity/RefreshActivity.php && echo "✓"`
+
+---
+
+### ITERACIÓN AUTOMÁTICA 10: Centralize DI Configuration
+**Objective:** Move DI setup from index.php to ContainerFactory
+**File:** `/apps/Bootstrap/ContainerFactory.php` (new)
+**Content:**
+```php
+<?php
+namespace Anvius\Apps\Bootstrap;
+
+use DI\Container;
+use DI\ContainerBuilder;
+use Anvius\CatalogHarvest\Infrastructure\Html\ActivityDetailParser;
+use Anvius\CatalogHarvest\Domain\Port\HtmlParser;
+
+class ContainerFactory
+{
+    public static function create(): Container
+    {
+        $builder = new ContainerBuilder();
+        
+        // DI Definitions
+        $builder->addDefinitions([
+            // Ports → Infrastructure implementations
+            HtmlParser::class => \DI\create(ActivityDetailParser::class),
+            
+            // Environment-based configuration
+            'jwt_secret' => \DI\env('JWT_SECRET', 'dev-secret-change-in-prod'),
+            'cors_origins' => \DI\env('CORS_ALLOWED_ORIGINS', 'http://localhost:5173'),
+            'api_version' => '0.10.1-alpha',
+            
+            // Database connection
+            PDO::class => function () {
+                $host = \DI\env('DB_HOST', 'localhost');
+                $name = \DI\env('DB_NAME', 'anvius');
+                $user = \DI\env('DB_USER', 'postgres');
+                $pass = \DI\env('DB_PASSWORD', 'postgres');
+                $dsn = "pgsql:host=$host;dbname=$name";
+                return new PDO($dsn, $user, $pass, [
+                    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                    PDO::ATTR_TIMEOUT => 5,
+                ]);
+            },
+        ]);
+        
+        return $builder->build();
+    }
+}
+```
+**Simplify index.php:** Replace all DI setup (lines 75-130) with:
+```php
+$container = \Anvius\Apps\Bootstrap\ContainerFactory::create();
+$app = $container->get(Slim\App::class);
+```
+**Commit Message:** `refactor(bootstrap): centralize DI configuration in ContainerFactory`
+**Verification:** `grep -q "class ContainerFactory" apps/Bootstrap/ContainerFactory.php && echo "✓"`
+
+---
+
+### ITERACIÓN AUTOMÁTICA 11: Create Infrastructure Implementations
+**Objective:** Implement Port interfaces in Infrastructure layer
+**File:** `/src/CatalogHarvest/Infrastructure/Html/ActivityDetailParserAdapter.php` (create)
+**Content:**
+```php
+<?php
+namespace Anvius\CatalogHarvest\Infrastructure\Html;
+
+use Anvius\CatalogHarvest\Domain\Port\HtmlParser;
+
+class ActivityDetailParserAdapter implements HtmlParser
+{
+    public function parse(string $html, string $url): array
+    {
+        // Your existing parsing logic here
+        $dom = new \DOMDocument();
+        @$dom->loadHTML($html);
+        $xpath = new \DOMXPath($dom);
+        
+        return [
+            'name' => $this->extractName($xpath),
+            'description' => $this->extractDescription($xpath),
+            'price' => $this->extractPrice($xpath),
+            'schedule' => $this->extractSchedule($xpath),
+            'instructor' => $this->extractInstructor($xpath),
+            'format' => $this->extractFormat($xpath),
+        ];
+    }
+    
+    private function extractName(\DOMXPath $xpath): string { /* ... */ }
+    private function extractDescription(\DOMXPath $xpath): string { /* ... */ }
+    private function extractPrice(\DOMXPath $xpath): ?string { /* ... */ }
+    private function extractSchedule(\DOMXPath $xpath): ?string { /* ... */ }
+    private function extractInstructor(\DOMXPath $xpath): ?string { /* ... */ }
+    private function extractFormat(\DOMXPath $xpath): ?string { /* ... */ }
+}
+```
+**Commit Message:** `feat(infrastructure): implement ActivityDetailParserAdapter for HtmlParser port`
+**Verification:** `grep -q "implements HtmlParser" src/CatalogHarvest/Infrastructure/Html/ActivityDetailParserAdapter.php && echo "✓"`
+
+---
+
+## PHASE 2: DEPLOYMENT CORRECTIONS (5 Iteraciones)
+
+### ITERACIÓN AUTOMÁTICA 12: Fix Docker Compose Volumes
+**Objective:** Use named volume strategy for backup
+**File:** `/infra/compose.yaml` (modify critical section)
+**Change volumes section from:**
+```yaml
+volumes:
+  postgres_data:
+  redis_data:
+```
+**To:**
+```yaml
+volumes:
+  uned_data:
+    name: uned_data
+    driver: local
+```
+**And update services:**
+```yaml
+services:
+  postgres:
+    volumes:
+      - uned_data:/data/postgres
+  redis:
+    volumes:
+      - uned_data:/data/redis
+  api:
+    volumes:
+      - uned_data:/data/logs
+```
+**Commit Message:** `fix(infra): implement named volume strategy for disaster recovery`
+**Verification:** `grep -q "uned_data:" infra/compose.yaml && grep -q "/data/postgres" infra/compose.yaml && echo "✓"`
+
+---
+
+### ITERACIÓN AUTOMÁTICA 13: Replace PHP Built-in Server with PHP-FPM
+**Objective:** Use production-ready PHP-FPM instead of built-in server
+**File:** `/infra/Dockerfile.backend` (modify)
+**Replace lines with:**
+```dockerfile
+FROM php:8.3-fpm
+
+WORKDIR /app
+
+# Install dependencies
+RUN apt-get update && apt-get install -y \
+    postgresql-client \
+    git \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install PHP extensions
+RUN docker-php-ext-install pdo_pgsql
+
+# Copy composer
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+
+# Copy application
+COPY . .
+
+# Install dependencies
+RUN composer install --no-dev --optimize-autoloader
+
+# Create non-root user
+RUN useradd -m -u 1000 php && chown -R php:php /app
+USER php
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
+    CMD php -r "exit((int)(!file_exists('/app/apps/HttpApi/public/index.php')));"
+```
+
+**Create `/infra/nginx.conf` (add/update):**
+```nginx
+upstream php {
+    server api:9000;
+}
+
+server {
+    listen 8080;
+    root /app/apps/HttpApi/public;
+    
+    location ~ \.php$ {
+        fastcgi_pass php;
+        fastcgi_index index.php;
+        include fastcgi_params;
+        fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
+    }
+    
+    location / {
+        try_files $uri $uri/ /index.php?$query_string;
+    }
+}
+```
+
+**Update compose.yaml to include Nginx:**
+```yaml
+nginx:
+  image: nginx:alpine
+  ports:
+    - "8080:8080"
+  volumes:
+    - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+  depends_on:
+    - api
+```
+
+**Commit Message:** `refactor(infra): migrate from PHP built-in to production PHP-FPM + Nginx`
+**Verification:** `grep -q "php:8.3-fpm" infra/Dockerfile.backend && grep -q "fastcgi_pass" infra/nginx.conf && echo "✓"`
+
+---
+
+### ITERACIÓN AUTOMÁTICA 14: Improve Harvest Loop with Retry Logic
+**Objective:** Add exponential backoff and error handling
+**File:** `/infra/scripts/harvest-loop.sh` (rewrite)
+**Content:**
+```bash
+#!/bin/bash
+
+set -euo pipefail
+
+LOG_FILE="/data/logs/harvest.log"
+mkdir -p "$(dirname "$LOG_FILE")"
+
+# Configuration
+HARVEST_URL="${HARVEST_URL:-http://api:8080/v1/jobs/harvest}"
+MAX_RETRIES=5
+INITIAL_DELAY=5
+MAX_DELAY=3600
+
+# Logging function
+log_message() {
+    local level=$1
+    local message=$2
+    echo "[$(date -u +'%Y-%m-%dT%H:%M:%SZ')] [$level] $message" | tee -a "$LOG_FILE"
+}
+
+# Retry with exponential backoff
+retry_harvest() {
+    local attempt=1
+    local delay=$INITIAL_DELAY
+    
+    while [ $attempt -le $MAX_RETRIES ]; do
+        log_message "INFO" "Harvest attempt $attempt/$MAX_RETRIES"
+        
+        if curl -f -X POST "$HARVEST_URL" \
+            -H "Content-Type: application/json" \
+            -d '{"force":true}' \
+            --connect-timeout 10 \
+            --max-time 600 \
+            >> "$LOG_FILE" 2>&1; then
+            
+            log_message "INFO" "Harvest completed successfully"
+            return 0
+        fi
+        
+        if [ $attempt -lt $MAX_RETRIES ]; then
+            log_message "WARN" "Harvest failed, retrying in ${delay}s (attempt $attempt/$MAX_RETRIES)"
+            sleep "$delay"
+            
+            # Exponential backoff: min 5s, max 1h
+            delay=$((delay * 2))
+            if [ $delay -gt $MAX_DELAY ]; then
+                delay=$MAX_DELAY
+            fi
+        fi
+        
+        attempt=$((attempt + 1))
+    done
+    
+    log_message "ERROR" "Harvest failed after $MAX_RETRIES attempts"
+    return 1
+}
+
+# Main loop
+log_message "INFO" "Harvest loop started"
+
+while true; do
+    retry_harvest || log_message "ERROR" "Giving up on this cycle"
+    
+    # Sleep 1 hour before next harvest attempt
+    log_message "INFO" "Sleeping 1 hour until next harvest cycle"
+    sleep 3600
+done
+```
+
+**Commit Message:** `feat(infra): add exponential backoff retry logic to harvest loop`
+**Verification:** `grep -q "exponential\|exponential backoff\|MAX_RETRIES" infra/scripts/harvest-loop.sh && echo "✓"`
+
+---
+
+### ITERACIÓN AUTOMÁTICA 15: Add Frontend Dockerfile Labels & Validation
+**Objective:** Add metadata and build-time validation
+**File:** `/infra/Dockerfile.frontend` (enhance)
+**Add at top:**
+```dockerfile
+FROM node:20-alpine AS builder
+
+LABEL maintainer="UNED Activities Team"
+LABEL version="0.10.1-alpha"
+LABEL description="React frontend for UNED Activities Finder"
+
+WORKDIR /app
+
+# Install dependencies
+COPY web/package*.json ./
+RUN npm ci
+
+# Build with validation
+COPY web ./
+ARG VITE_API_URL
+RUN if [ -z "$VITE_API_URL" ]; then \
+      echo "ERROR: VITE_API_URL build arg required"; \
+      exit 1; \
+    fi
+
+ENV VITE_API_URL=$VITE_API_URL
+RUN npm run build
+
+# Production stage
+FROM nginx:alpine
+COPY --from=builder /app/dist /usr/share/nginx/html
+COPY infra/nginx-static.conf /etc/nginx/conf.d/default.conf
+
+HEALTHCHECK --interval=30s --timeout=3s --start-period=10s \
+    CMD wget --quiet --tries=1 --spider http://localhost/ || exit 1
+```
+
+**Commit Message:** `feat(infra): add labels and validation to frontend Dockerfile`
+**Verification:** `grep -q "LABEL version=\"0.10.1-alpha\"" infra/Dockerfile.frontend && grep -q "VITE_API_URL" infra/Dockerfile.frontend && echo "✓"`
+
+---
+
+## PHASE 3: DATABASE & MIGRATION SYSTEM (3 Iteraciones)
+
+### ITERACIÓN AUTOMÁTICA 16: Create Incremental Migration System
+**Objective:** Replace SQL dump with proper migrations
+**File:** `/infra/init-scripts/00_init.sql` (new)
+```sql
+-- Migration: 001_init
+-- Date: 2026-02-04
+-- Description: Initialize database schema for UNED Activities
+
+CREATE SCHEMA IF NOT EXISTS harvest;
+CREATE SCHEMA IF NOT EXISTS query;
+CREATE SCHEMA IF NOT EXISTS users;
+CREATE SCHEMA IF NOT EXISTS notifications;
+
+-- Activities table
+CREATE TABLE harvest.activities (
+    id UUID PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    price DECIMAL(10,2),
+    schedule VARCHAR(255),
+    format VARCHAR(50),
+    instructor VARCHAR(255),
+    embedding vector(768),
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW(),
+    source_url TEXT,
+    UNIQUE(source_url)
+);
+
+-- Indexes for performance
+CREATE INDEX idx_activities_title ON harvest.activities USING GIN(to_tsvector('spanish', title));
+CREATE INDEX idx_activities_embedding ON harvest.activities USING ivfflat(embedding vector_cosine_ops);
+
+-- Users table
+CREATE TABLE users.profiles (
+    id UUID PRIMARY KEY,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    name VARCHAR(255),
+    language VARCHAR(10) DEFAULT 'es',
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Saved searches
+CREATE TABLE query.saved_searches (
+    id UUID PRIMARY KEY,
+    user_id UUID NOT NULL REFERENCES users.profiles(id) ON DELETE CASCADE,
+    filters JSONB,
+    created_at TIMESTAMP DEFAULT NOW(),
+    UNIQUE(user_id, filters)
+);
+
+-- Notifications
+CREATE TABLE notifications.subscriptions (
+    id UUID PRIMARY KEY,
+    user_id UUID NOT NULL REFERENCES users.profiles(id) ON DELETE CASCADE,
+    frequency VARCHAR(50) DEFAULT 'daily',
+    topics TEXT[],
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Grant permissions
+GRANT ALL ON SCHEMA harvest TO postgres;
+GRANT ALL ON SCHEMA query TO postgres;
+GRANT ALL ON SCHEMA users TO postgres;
+GRANT ALL ON SCHEMA notifications TO postgres;
+```
+
+**File:** `/infra/migrations/001_init.down.sql` (new)
+```sql
+-- Rollback migration: 001_init
+
+DROP TABLE IF EXISTS notifications.subscriptions;
+DROP TABLE IF EXISTS query.saved_searches;
+DROP TABLE IF EXISTS users.profiles;
+DROP TABLE IF EXISTS harvest.activities;
+
+DROP SCHEMA IF EXISTS notifications;
+DROP SCHEMA IF EXISTS query;
+DROP SCHEMA IF EXISTS users;
+DROP SCHEMA IF EXISTS harvest;
+```
+
+**Commit Message:** `feat(infra): create incremental migration system with up/down scripts`
+**Verification:** `[ -f infra/init-scripts/00_init.sql ] && [ -f infra/migrations/001_init.down.sql ] && echo "✓"`
+
+---
+
+### ITERACIÓN AUTOMÁTICA 17: Create Migration Runner Script
+**Objective:** PHP script to manage migrations
+**File:** `/infra/scripts/migrate.php` (rewrite for idempotency)
+```php
+<?php
+// Migration runner - idempotent
+// Usage: php migrate.php [up|down]
+
+$direction = $argv[1] ?? 'up';
+$migrationsDir = __DIR__ . '/../migrations';
+
+$pdo = new PDO(
+    "pgsql:host={$_ENV['DB_HOST']};dbname={$_ENV['DB_NAME']}",
+    $_ENV['DB_USER'],
+    $_ENV['DB_PASSWORD']
+);
+
+// Create migrations table if not exists
+$pdo->exec("
+    CREATE TABLE IF NOT EXISTS migrations (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(255) UNIQUE NOT NULL,
+        executed_at TIMESTAMP DEFAULT NOW()
+    )
+");
+
+if ($direction === 'up') {
+    // Get all migration files
+    $files = glob("$migrationsDir/*.up.sql");
+    sort($files);
+    
+    foreach ($files as $file) {
+        $name = basename($file);
+        
+        // Check if already executed
+        $stmt = $pdo->prepare("SELECT id FROM migrations WHERE name = ?");
+        if ($stmt->execute([$name])->fetch()) {
+            echo "[SKIP] $name (already executed)\n";
+            continue;
+        }
+        
+        // Execute migration
+        $sql = file_get_contents($file);
+        $pdo->exec($sql);
+        
+        // Record execution
+        $pdo->prepare("INSERT INTO migrations (name) VALUES (?)")->execute([$name]);
+        echo "[OK] $name\n";
+    }
+} elseif ($direction === 'down') {
+    // Get last executed migration
+    $stmt = $pdo->query("SELECT name FROM migrations ORDER BY id DESC LIMIT 1");
+    if ($row = $stmt->fetch()) {
+        $migration = $row['name'];
+        $rollbackFile = str_replace('.up.sql', '.down.sql', "$migrationsDir/$migration");
+        
+        if (file_exists($rollbackFile)) {
+            $sql = file_get_contents($rollbackFile);
+            $pdo->exec($sql);
+            $pdo->prepare("DELETE FROM migrations WHERE name = ?")->execute([$migration]);
+            echo "[OK] Rolled back: $migration\n";
+        } else {
+            echo "[ERROR] No rollback script for $migration\n";
+            exit(1);
+        }
+    }
+}
+```
+
+**Commit Message:** `feat(infra): create idempotent migration runner script`
+**Verification:** `grep -q "CREATE TABLE IF NOT EXISTS migrations" infra/scripts/migrate.php && echo "✓"`
+
+---
+
+### ITERACIÓN AUTOMÁTICA 18: Add PDO Connection Timeouts
+**Objective:** Prevent indefinite database hangs
+**File:** `/src/Shared/Infrastructure/Database/PdoConnection.php` (create)
+```php
+<?php
+namespace Anvius\Shared\Infrastructure\Database;
+
+class PdoConnection
+{
+    public static function create(string $dsn, string $user, string $password): \PDO
+    {
+        return new \PDO($dsn, $user, $password, [
+            \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
+            \PDO::ATTR_TIMEOUT => 5, // Connection timeout
+            \PDO::ATTR_EMULATE_PREPARES => false,
+            \PDO::ATTR_DEFAULT_FETCH_MODE => \PDO::FETCH_ASSOC,
+        ]);
+    }
+}
+```
+
+**Update ContainerFactory to use it:**
+```php
+PDO::class => function () {
+    $dsn = "pgsql:host=" . \DI\env('DB_HOST') . ";dbname=" . \DI\env('DB_NAME');
+    return \Anvius\Shared\Infrastructure\Database\PdoConnection::create(
+        $dsn,
+        \DI\env('DB_USER'),
+        \DI\env('DB_PASSWORD')
+    );
+}
+```
+
+**Commit Message:** `feat(shared): add PDO connection with timeout protection`
+**Verification:** `grep -q "ATTR_TIMEOUT" src/Shared/Infrastructure/Database/PdoConnection.php && echo "✓"`
+
+---
+
+## PHASE 4: TESTING & VALIDATION (4 Iteraciones)
+
+### ITERACIÓN AUTOMÁTICA 19: Run PHPStan Static Analysis
+**Objective:** Verify no type errors
+**Action:** Execute PHPStan
+```bash
+cd /home/antonio/CODE/anvius-uned-extension-finder
+./vendor/bin/phpstan analyse src --level=8 --memory-limit=-1 2>&1 | tee /tmp/phpstan.log
+# Should show: "0 errors found"
+```
+**Commit Message:** `chore: verify code quality with PHPStan (0 errors)`
+**Verification:** `grep -q "0 errors found" /tmp/phpstan.log && echo "✓"`
+
+---
+
+### ITERACIÓN AUTOMÁTICA 20: Run Unit Tests
+**Objective:** Verify all unit tests pass
+**Action:** Execute test suite
+```bash
+cd /home/antonio/CODE/anvius-uned-extension-finder
+./vendor/bin/phpunit tests/unit --testdox 2>&1 | tee /tmp/phpunit.log
+# Check for failures
+grep -i "failure\|error" /tmp/phpunit.log && exit 1 || echo "✓ All tests pass"
+```
+**Commit Message:** `chore: verify all unit tests pass`
+**Verification:** `tail -5 /tmp/phpunit.log`
+
+---
+
+### ITERACIÓN AUTOMÁTICA 21: Validate Docker Compose
+**Objective:** Ensure compose.yaml is valid
+**Action:**
+```bash
+cd /home/antonio/CODE/anvius-uned-extension-finder
+docker compose -f infra/compose.yaml config > /dev/null 2>&1 && echo "✓ Docker Compose valid"
+```
+**Commit Message:** `chore: validate Docker Compose configuration`
+**Verification:** `docker compose -f infra/compose.yaml config > /dev/null && echo "✓"`
+
+---
+
+### ITERACIÓN AUTOMÁTICA 22: Verify No Security Issues
+**Objective:** Check for hardcoded secrets
+**Action:**
+```bash
+cd /home/antonio/CODE/anvius-uned-extension-finder
+# Check for hardcoded secrets
+! grep -r "api_key\|secret\|password" src/ | grep -v "\.example\|test" && \
+! grep -r "JWT_SECRET.*=" infra/env/ | grep -v ".example" && \
+echo "✓ No hardcoded secrets"
+```
+**Commit Message:** `chore: verify no hardcoded secrets in committed code`
+**Verification:** `echo "✓"`
+
+---
+
+## PHASE 5: DOCUMENTATION UPDATES (2 Iteraciones)
+
+### ITERACIÓN AUTOMÁTICA 23: Update Architecture Documentation
+**Objective:** Document corrected architecture
+**File:** `/doc/architecture/AGENTS.md` (update to reflect corrections)
+**Add section:**
+```markdown
+## Corrected Architecture (Post-Audit)
+
+### Dependency Graph (Fixed)
+
+```
+Infrastructure Layer
+        ↑
+     Ports (Domain)
+        ↑
+Application Layer
+        ↑
+     Domain Layer
+```
+
+All Application use-cases now depend ONLY on Domain Ports, never directly on Infrastructure.
+
+### Port Definitions
+
+1. **HtmlParser** - Parse HTML pages into structured data
+2. **ActivityEmbedder** - Generate semantic embeddings
+3. **UserNotifier** - Send notifications
+
+### Volume Strategy
+
+Named volume `uned_data` with subdirectories:
+- `/data/postgres` - Database backups
+- `/data/redis` - Cache snapshots
+- `/data/logs` - Application logs (Loki format)
+```
+
+**Commit Message:** `docs: update architecture documentation to reflect corrections`
+**Verification:** `grep -q "Corrected Architecture" doc/architecture/AGENTS.md && echo "✓"`
+
+---
+
+### ITERACIÓN AUTOMÁTICA 24: Create Deployment Runbook
+**Objective:** Document production deployment
+**File:** `/doc/runbooks/deployment-corrected.md` (new)
+```markdown
+# Production Deployment Runbook (Corrected)
+
+## Prerequisites
+- Docker and Docker Compose v2+
+- Named volume `uned_data` exists
+- Environment variables configured (JWT_SECRET, CORS_ORIGINS, etc)
+
+## Pre-Deployment Checks
+```bash
+# 1. Validate configuration
+docker compose config
+
+# 2. Run migrations
+php infra/scripts/migrate.php up
+
+# 3. Run tests
+phpunit tests/unit
+
+# 4. Verify static analysis
+phpstan analyse src --level=8
+```
+
+## Deployment
+```bash
+# 1. Pull latest code
+git pull origin main
+
+# 2. Start services
+docker compose -f infra/compose.yaml up -d
+
+# 3. Verify health
+curl http://localhost:8080/status
+
+# 4. Monitor logs
+docker compose logs -f api nginx
+```
+
+## Rollback (if needed)
+```bash
+# 1. Revert migrations
+php infra/scripts/migrate.php down
+
+# 2. Stop services
+docker compose down
+
+# 3. Restore from backup
+rsnapshot restore
+```
+```
+
+**Commit Message:** `docs: create corrected deployment runbook`
+**Verification:** `[ -f doc/runbooks/deployment-corrected.md ] && grep -q "Prerequisites" doc/runbooks/deployment-corrected.md && echo "✓"`
+
+---
+
+## PHASE 6: FINAL VERIFICATION & CLEANUP (2 Iteraciones)
+
+### ITERACIÓN AUTOMÁTICA 25: Comprehensive Final Checks
+**Objective:** Verify all corrections are in place
+**Action:** Execute verification script
+```bash
+#!/bin/bash
+echo "=== FINAL VERIFICATION ==="
+
+# Check 1: All Ports exist
+echo "1. Checking Port definitions..."
+[ -f src/CatalogHarvest/Domain/Port/HtmlParser.php ] || exit 1
+[ -f src/CatalogHarvest/Domain/Port/ActivityEmbedder.php ] || exit 1
+[ -f src/Notifications/Domain/Port/UserNotifier.php ] || exit 1
+echo "   ✓ All Ports defined"
+
+# Check 2: No dependency violations
+echo "2. Checking for dependency violations..."
+! grep -r "use.*Infrastructure" src/*/Application/ 2>/dev/null && echo "   ✓ No violations" || exit 1
+
+# Check 3: Docker config valid
+echo "3. Checking Docker Compose..."
+docker compose -f infra/compose.yaml config > /dev/null && echo "   ✓ Valid" || exit 1
+
+# Check 4: Migrations exist
+echo "4. Checking migrations..."
+[ -f infra/migrations/001_init.up.sql ] && [ -f infra/migrations/001_init.down.sql ] && echo "   ✓ Present" || exit 1
+
+# Check 5: Version consistency
+echo "5. Checking version consistency..."
+grep -q "0.10.1-alpha" VERSION.md README.md doc/api-specs/openapi.yaml && echo "   ✓ Consistent" || exit 1
+
+# Check 6: No secrets in code
+echo "6. Checking for hardcoded secrets..."
+! grep -r "JWT_SECRET.*=" infra/env/ | grep -v ".example" && echo "   ✓ Secure" || exit 1
+
+# Check 7: Git status
+echo "7. Checking git status..."
+[ -z "$(git status --short)" ] && echo "   ✓ Clean" || exit 1
+
+echo ""
+echo "=== ✓ ALL CHECKS PASSED ==="
+```
+
+**Commit Message:** `chore: complete final verification of all corrections`
+**Verification:** Run checks script
+
+---
+
+### ITERACIÓN AUTOMÁTICA 26: Final Git Status & Summary
+**Objective:** Complete all work and document summary
+**Action:**
+```bash
+# Get final statistics
+echo "=== REMEDIATION COMPLETE ===" > /tmp/remediation_summary.txt
+echo "" >> /tmp/remediation_summary.txt
+echo "Git Commits:" >> /tmp/remediation_summary.txt
+git log --oneline -20 >> /tmp/remediation_summary.txt
+echo "" >> /tmp/remediation_summary.txt
+echo "Files Modified:" >> /tmp/remediation_summary.txt
+git diff --name-only HEAD~25 HEAD >> /tmp/remediation_summary.txt
+echo "" >> /tmp/remediation_summary.txt
+echo "Status:" >> /tmp/remediation_summary.txt
+git status >> /tmp/remediation_summary.txt
+```
+
+**Final commit:**
+**Commit Message:** `chore: complete full remediation - 26 iterations, architecture fixed, deployment ready`
+
+---
+
+## EXECUTION PROTOCOL
+
+For each Iteración Automática:
+
+1. **READ:** Current file state and requirements
+2. **CREATE/MODIFY:** Make exact changes specified
+3. **TEST:** Run verification commands
+4. **COMMIT:**
+   ```bash
+   cd /home/antonio/CODE/anvius-uned-extension-finder
+   git add [files]
+   git commit -m "[EXACT MESSAGE FROM SPECIFICATION]"
+   git log -1 --oneline
+   ```
+5. **VERIFY:** Commit succeeded
+6. **CONTINUE:** Next iteration without pause
+
+---
+
+## OVERALL SUCCESS CRITERIA
+
+After all 26 Iteraciones:
+- ✅ 26 conventional commits in git log
+- ✅ No dependency violations in Application layer
+- ✅ All Domain Ports defined and implemented
+- ✅ Docker Compose uses named volumes
+- ✅ PHP-FPM + Nginx instead of built-in server
+- ✅ Migrations are idempotent with rollback
+- ✅ All tests passing
+- ✅ PHPStan: 0 errors
+- ✅ Documentation updated
+- ✅ Git status: clean
+- ✅ Version: 0.10.1-alpha consistently applied
+
+---
+
+## TOTAL PROJECT STATS
+
+```
+Phase 0 (Post-Audit Setup): 5 iterations
+Phase 1 (Architecture):      6 iterations
+Phase 2 (Deployment):        4 iterations
+Phase 3 (Database):          3 iterations
+Phase 4 (Testing):           4 iterations
+Phase 5 (Documentation):     2 iterations
+Phase 6 (Verification):      2 iterations
+─────────────────────────────────────────
+TOTAL:                      26 iterations
+
+Estimated time: 8-10 hours
+Files created: ~10
+Files modified: ~8
+Git commits: 26
+Code quality: Production-ready
+Status: ✅ Deployment approved
+```
+
+---
+
+## START NOW
+
+Execute Iteración Automática 1 and continue through all 26 without pausing.
+
+**GO!**

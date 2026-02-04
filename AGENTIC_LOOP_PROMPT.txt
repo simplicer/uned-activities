@@ -1,0 +1,462 @@
+You are an expert CI/CD automation agent. Your task is to execute 5 sequential tasks for the UNED Activities Finder repository WITHOUT asking for confirmation between tasks. Process each task completely, test it, make a conventional commit in English, then move to the next task.
+
+**Repository Context:**
+- Path: /home/antonio/CODE/anvius-uned-extension-finder
+- Language: PHP 8.3, React, TypeScript
+- Current Version: 0.10.1-alpha (calculated from git commits)
+- License: MIT (to be added)
+
+**Reference Files for Context:**
+@README.md
+@doc/api-specs/openapi.yaml
+@package.json
+@composer.json
+
+---
+
+## TASK SEQUENCE (Execute in order without pausing)
+
+### TASK 1: Add MIT LICENSE
+**File:** `/LICENSE` (create at repo root)
+**Action:** Create standard MIT license file
+**Content:** Standard MIT License from opensource.org/licenses/MIT
+**Verification:**
+- File exists: `[ -f LICENSE ]`
+- Contains key phrase: `grep -q "Permission is hereby granted" LICENSE`
+- Contains disclaimer: `grep -q "AS IS" LICENSE`
+**Commit:** `feat: add MIT license`
+**Result Check:** Run `git log -1 --oneline` and confirm commit message
+
+---
+
+### TASK 2: Create VERSION.md
+**File:** `/VERSION.md` (create at repo root)
+**Action:** Document versioning strategy and current version
+
+**Content structure (required sections):**
+
+```markdown
+# Version Management
+
+## Current Version: 0.10.1-alpha
+
+### Semantic Versioning Strategy
+
+This project follows Semantic Versioning (semver) with an -alpha suffix during pre-production.
+
+- **MAJOR (X.0.0):** Breaking API changes
+- **MINOR (0.X.0):** New features (from `feat:` commits)
+- **PATCH (0.0.X):** Bug fixes (from `fix:` commits)
+- **Suffix:** -alpha (pre-production status)
+
+### Version Calculation
+
+From git history analysis:
+- `feat:` commits found: 10+ → MINOR version: 10
+- `fix:` commits found: 1+ → PATCH version: 1
+- Pre-production status: -alpha
+
+**Result: 0.10.1-alpha**
+
+### How to Bump Version
+
+When making commits:
+- Use `feat: description` to bump MINOR
+- Use `fix: description` to bump PATCH
+- Use `chore:` or `docs:` for no version change
+
+The CI/CD pipeline will automatically calculate and tag releases.
+
+### Historical Versions
+
+- 0.10.1-alpha: Initial pre-release with audit fixes
+```
+
+**Verification:**
+- File exists: `[ -f VERSION.md ]`
+- Contains version: `grep -q "0.10.1-alpha" VERSION.md`
+- Contains strategy: `grep -q "Semantic Versioning" VERSION.md`
+**Commit:** `chore: add version file with semver strategy`
+
+---
+
+### TASK 3: Update README.md (Version & License Header)
+**File:** `/README.md` (modify existing)
+**Action:** Add version to main title and License section
+
+**Changes needed:**
+1. Replace first line `# UNED Activities Finder` with `# UNED Activities Finder v0.10.1-alpha`
+2. Add new "License" section at the end before any footer content:
+
+```markdown
+## License
+
+This project is licensed under the **MIT License** - see [LICENSE](LICENSE) file for details.
+
+```
+
+**Verification:**
+- Header contains version: `grep -q "# UNED Activities Finder v0.10.1-alpha" README.md`
+- License section exists: `grep -q "## License" README.md`
+- MIT mentioned: `grep -q "MIT License" README.md`
+- Markdown syntax valid: No markdown linting errors
+**Commit:** `docs: update README with version and license info`
+
+---
+
+### TASK 4: Update openapi.yaml (Version)
+**File:** `/doc/api-specs/openapi.yaml` (modify)
+**Action:** Change API version to match project version
+
+**Change required:**
+In the `info:` section, change:
+- FROM: `version: 1.0.0`
+- TO: `version: 0.10.1-alpha`
+
+**Verification:**
+- Version updated: `grep "version: 0.10.1-alpha" doc/api-specs/openapi.yaml`
+- YAML is valid: `python3 -c "import yaml; yaml.safe_load(open('doc/api-specs/openapi.yaml'))" && echo "YAML valid"`
+- No syntax errors in file
+**Commit:** `chore: bump API version to 0.10.1-alpha`
+
+---
+
+### TASK 5: Rewrite README.md (Complete - End-User Manual)
+**File:** `/README.md` (complete rewrite)
+**Action:** Replace entire README with user-friendly documentation
+
+**Key Requirements:**
+- ✅ Written for END USERS, not developers
+- ✅ NO technical jargon (no "DDD", "Hexagonal", "bounded contexts", "ports", "adapters", "aggregates")
+- ✅ Clear installation steps
+- ✅ Practical usage guide
+- ✅ Include version v0.10.1-alpha in header
+- ✅ Professional but friendly tone
+
+**Structure (must include ALL sections):**
+
+#### Section 1: Header (with badges)
+```markdown
+# UNED Activities Finder v0.10.1-alpha
+
+![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
+![Status: Alpha](https://img.shields.io/badge/Status-Alpha-red.svg)
+![Languages: 6](https://img.shields.io/badge/Languages-6-blue.svg)
+
+Find and stay updated on UNED extension activities in your language of choice.
+```
+
+#### Section 2: What is it? (What problem does it solve?)
+```markdown
+## 🎯 What is UNED Activities Finder?
+
+A free, multilingual platform that helps you discover, search, and stay informed 
+about UNED (Universidad Nacional de Educación a Distancia) extension courses and activities.
+
+### Why You Need It
+
+UNED offers hundreds of extension activities each year, but they're scattered across 
+multiple pages and hard to find. This platform solves that by:
+
+- Centralizing all UNED activities in one searchable place
+- Supporting 6 languages (Spanish, English, Catalan, Valencian, Basque, Galician)
+- Letting you filter by price, topic, schedule, and location
+- Notifying you about new activities matching your interests
+
+### Who Should Use It?
+
+- Students looking for extension courses
+- Professionals seeking continuous education
+- Anyone interested in UNED learning opportunities
+```
+
+#### Section 3: Key Features
+```markdown
+## ✨ Features
+
+- 🌍 **6 Languages:** Spanish, English, Catalan, Valencian, Basque, Galician
+- 🔍 **Advanced Search & Filters:** Topic, price range, schedule, location, format
+- 🔔 **Smart Notifications:** Get alerts for activities matching your interests
+- 💰 **Price Transparency:** See all costs upfront
+- 💾 **Save Searches:** Never lose track of what you're looking for
+- ⚡ **Fast & Mobile-Friendly:** Optimized for all devices
+- 🆓 **100% Free:** Open source, no ads, no paywalls
+```
+
+#### Section 4: Getting Started
+```markdown
+## 🚀 Getting Started
+
+### Option 1: Use Online (Recommended)
+
+1. Visit https://activities.uned.es (or deployment URL)
+2. Browse activities or search for what interests you
+3. (Optional) Create an account to save searches and get notifications
+
+### Option 2: Run Locally (Self-Hosted)
+
+**Requirements:**
+- Docker and Docker Compose (download from docker.com)
+- 4GB RAM minimum
+- ~10 minutes for first setup
+
+**Installation steps:**
+
+```bash
+# 1. Clone the repository
+git clone https://github.com/your-org/anvius-uned-extension-finder.git
+cd anvius-uned-extension-finder
+
+# 2. Setup environment
+cp infra/env/local.env .env
+
+# 3. Start all services (database, cache, API, frontend)
+docker compose -f infra/compose.yaml up -d
+
+# 4. Open in your browser
+open http://localhost:5173
+```
+
+The system will start downloading and indexing UNED activities. This takes 5-10 minutes 
+on first run. You'll see data appearing as it processes.
+
+**Check it's working:**
+- Frontend: http://localhost:5173
+- API Status: http://localhost:8080/status
+```
+
+#### Section 5: How to Use
+```markdown
+## 📖 How to Use
+
+### Browsing Activities
+
+1. Go to the Activities tab
+2. Browse the latest activities or use search
+3. Click any activity card for full details
+4. Click the link to register on UNED's official website
+
+### Searching with Filters
+
+1. Use the search box for keywords (e.g., "Python", "Design")
+2. Apply filters on the left side:
+   - **Price:** From-to range
+   - **Language:** Your preferred language
+   - **Format:** Online, In-person, Hybrid
+   - **Duration:** Short courses, Workshops, Full programs
+   - **Location:** If in-person
+3. Results update instantly
+
+### Saving Searches (Login Required)
+
+1. Create a search with your favorite filters
+2. Click the "Save Search" button
+3. Give it a name (e.g., "Python Courses")
+4. Access saved searches anytime from your account
+
+### Getting Notifications
+
+1. Sign up or log in to your account
+2. Go to Settings → Notifications
+3. Choose when you want to hear about new activities:
+   - **Immediate:** Instant notifications (can be a lot)
+   - **Daily Digest:** Once per day
+   - **Weekly Digest:** Summaries each week
+4. Select topics you care about (optional)
+5. Save preferences
+
+### Understanding Activity Details
+
+When you click an activity, you'll see:
+- **Activity Name & Description:** Full details from UNED
+- **Dates & Time:** When the activity runs
+- **Prices:** All costs for different participant types
+- **Instructor:** Who will teach it
+- **Format:** Online, in-person, or hybrid
+- **Language:** What language it's in
+- **Enrollment Link:** Direct link to UNED registration
+```
+
+#### Section 6: FAQ
+```markdown
+## ❓ Frequently Asked Questions
+
+### General
+
+**Is this official UNED?**
+No, this is a community-built search tool. UNED is not affiliated. 
+Always register through official UNED channels.
+
+**Is it really free?**
+Yes, completely free and open source (MIT License).
+
+**Do I need an account?**
+No to browse. Yes if you want to save searches and get notifications.
+
+**What happens to my data?**
+Only stored locally in your browser or on your server if self-hosted. 
+We never sell or share user data.
+
+### Activities & Data
+
+**How current is the data?**
+Activities refresh every hour from UNED official sources.
+
+**Why can't I register here?**
+This is a search tool only. Registration happens through UNED's website. 
+Click the "Register on UNED" link for each activity.
+
+**Are prices accurate?**
+Prices come directly from UNED. They may change. Confirm on UNED's site.
+
+**What languages does it support?**
+Spanish, English, Catalan, Valencian, Basque, and Galician.
+
+### Technical
+
+**Can I use this offline?**
+No, it needs internet to search UNED's database.
+
+**Does it work on mobile?**
+Yes, fully responsive for phones and tablets.
+
+**Can I export my saved searches?**
+Currently only available in your account. Export feature coming soon.
+
+**How do I report a bug?**
+Open an issue on GitHub or email support@example.com
+
+### Self-Hosted
+
+**Is self-hosting complicated?**
+No, just Docker Compose. One command: `docker compose up`
+
+**Can I customize it?**
+Yes, it's open source. Modify and deploy however you want.
+
+**Does it need internet?**
+Yes, to fetch UNED data. The database and cache run locally.
+```
+
+#### Section 7: License & Support
+```markdown
+## 📄 License
+
+This project is licensed under the **MIT License** - see [LICENSE](LICENSE) for full details.
+
+## 🤝 Support & Community
+
+- **Website:** https://example.com
+- **Email:** support@example.com
+- **GitHub Issues:** Report bugs and suggest features
+- **Discussions:** Ask questions and share ideas
+- **Social Media:** @UNEDActivities
+
+## 🙏 Acknowledgments
+
+- **Data Source:** UNED official website
+- **Built by:** Community volunteers
+- **Powered by:** React, PHP, PostgreSQL, Docker
+- **Infrastructure:** Community supported
+
+---
+
+**Last Updated:** February 4, 2026  
+**Version:** 0.10.1-alpha  
+**Status:** Pre-production (alpha testing)  
+**License:** MIT  
+**Contributors:** See GitHub
+```
+
+**Verification checklist:**
+- ✅ Contains "v0.10.1-alpha" in main title
+- ✅ NO technical terms (hexagonal, DDD, bounded, aggregate, port, adapter) → `! grep -iE "hexagonal|ddd|bounded|aggregate|port.*adapter" README.md`
+- ✅ Contains "Getting Started" section
+- ✅ Contains "How to Use" section
+- ✅ Contains "FAQ" section
+- ✅ Contains "License" section
+- ✅ License mentions MIT
+- ✅ Markdown is valid (no syntax errors)
+- ✅ Written for end-users, not developers
+- ✅ Contains installation steps
+- ✅ Professional tone
+
+**Commit:** `docs: rewrite README for end-users with installation guide`
+
+---
+
+## EXECUTION PROTOCOL
+
+For each task, follow this exact sequence:
+
+1. **READ:** Review the current file (if exists) and understand context
+2. **CREATE/MODIFY:** Make the required changes
+3. **TEST:** Verify every checkbox passes
+4. **RUN GIT COMMANDS:**
+   ```bash
+   cd /home/antonio/CODE/anvius-uned-extension-finder
+   git add [modified-files]
+   git commit -m "[CONVENTIONAL MESSAGE]"
+   git log -1 --oneline
+   ```
+5. **CONFIRM:** Commit succeeded (show hash)
+6. **MOVE TO NEXT:** Do not pause or ask - immediately begin next task
+
+---
+
+## FINAL VERIFICATION (After all 5 tasks)
+
+Run these commands to confirm everything:
+
+```bash
+# 1. All files exist
+ls -la LICENSE VERSION.md README.md doc/api-specs/openapi.yaml | grep -v total
+
+# 2. All 5 commits in log
+git log -5 --oneline
+
+# 3. Version consistency (should show 3 matches)
+echo "Files with version 0.10.1-alpha:" && \
+grep -l "0.10.1-alpha" VERSION.md README.md doc/api-specs/openapi.yaml | wc -l
+
+# 4. No technical jargon in README
+echo "Technical terms in README:" && \
+grep -iE "hexagonal|ddd|bounded|aggregate|port.*adapter" README.md | wc -l
+# Should output: 0
+
+# 5. YAML is valid
+python3 -c "import yaml; yaml.safe_load(open('doc/api-specs/openapi.yaml')); print('✓ YAML valid')"
+
+# 6. Clean working tree
+git status --short
+# Should output nothing
+```
+
+---
+
+## EXPECTED FINAL STATE
+
+```
+5 new commits:
+  - feat: add MIT license
+  - chore: add version file with semver strategy
+  - docs: update README with version and license info
+  - chore: bump API version to 0.10.1-alpha
+  - docs: rewrite README for end-users with installation guide
+
+Files created/modified:
+  - LICENSE (new)
+  - VERSION.md (new)
+  - README.md (modified)
+  - doc/api-specs/openapi.yaml (modified)
+
+Status: git status → clean (nothing to commit)
+```
+
+---
+
+## START NOW
+
+Begin with **TASK 1: Add MIT LICENSE**. 
+
+Execute completely without pausing for each task.
