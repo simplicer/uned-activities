@@ -18,8 +18,11 @@ use HttpApi\Controller\ContactController;
 use Shared\Infrastructure\Email\SmtpEmailService;
 use Shared\Infrastructure\Auth\JwtService;
 use Shared\Infrastructure\Middleware\CorsMiddleware;
+use Shared\Infrastructure\Middleware\RequestLoggerMiddleware;
 use Shared\Infrastructure\Middleware\RateLimiterMiddleware;
 use Shared\Infrastructure\Middleware\WebTokenGateMiddleware;
+use Shared\Infrastructure\Logging\LoggerFactory;
+use Monolog\Level;
 use Shared\Infrastructure\Routing\ActivityRoutes;
 use Shared\Infrastructure\Routing\AuthRoutes;
 use Shared\Infrastructure\Routing\ContactRoutes;
@@ -140,6 +143,17 @@ $allowedOrigins = array_filter(array_map('trim', explode(',', $_ENV['CORS_ALLOWE
 $app->add(new CorsMiddleware($allowedOrigins === [] ? ['*'] : $allowedOrigins));
 $app->add(new RateLimiterMiddleware($rateLimit, $rateWindow, $redis));
 $app->add(new WebTokenGateMiddleware($jwtSecret, $jwtIssuer, $jwtAudience, $appEnv === 'production'));
+
+$logLevel = strtolower((string) ($_ENV['LOG_LEVEL'] ?? 'info'));
+$level = match ($logLevel) {
+    'debug' => Level::Debug,
+    'warning' => Level::Warning,
+    'error' => Level::Error,
+    'critical' => Level::Critical,
+    default => Level::Info,
+};
+$httpLogger = LoggerFactory::create('http', 'php://stdout', $level);
+$app->add(new RequestLoggerMiddleware($httpLogger));
 
 // Error handling
 $errorMiddleware = $app->addErrorMiddleware(

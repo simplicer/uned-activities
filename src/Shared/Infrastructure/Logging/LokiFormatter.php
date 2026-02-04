@@ -10,7 +10,7 @@ use Monolog\LogRecord;
 /**
  * Loki JSON formatter for Monolog.
  *
- * Formats log entries in Grafana Loki JSON format.
+ * Formats log entries as Loki-friendly JSON lines.
  */
 final class LokiFormatter extends JsonFormatter
 {
@@ -23,26 +23,26 @@ final class LokiFormatter extends JsonFormatter
     public function format(LogRecord $record): string
     {
         $entry = [
-            'streams' => [
-                [
-                    'stream' => $this->buildStreamLabels($record),
-                    'values' => [
-                        [
-                            $record->datetime->format('U'), // Unix timestamp
-                            $record->formatted,
-                        ],
-                    ],
-                ],
-            ],
+            'timestamp' => $record->datetime->format(DATE_ATOM),
+            'level' => $record->level->getName(),
+            'message' => $record->message,
+            'logger' => $record->channel,
+            'app' => 'uned-activities-finder',
+            'context' => $record->context,
         ];
+
+        $labels = $this->buildStreamLabels($record);
+        if (!empty($labels)) {
+            $entry['labels'] = $labels;
+        }
 
         $result = json_encode($entry, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
 
         if ($result === false) {
-            return '{"streams":[]}';
+            return '{"message":"log_format_error"}';
         }
 
-        return $result;
+        return $result . "\n";
     }
 
     /**
