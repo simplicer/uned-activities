@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<ruleset name="UNED Extension Finder">
+    <description>PHP Code Sniffer configuration for UNED Extension Finder</description>
+
+    <!-- Use PSR-12 coding standard -->
+    <rule ref="PSR12"/>
+
+    <!-- Paths to check -->
+    <file>src/</file>
+    <file>apps/</file>
+    <file>tests/</file>
+
+    <!-- Exclude patterns -->
+    <exclude-pattern>*/vendor/*</exclude-pattern>
+    <exclude-pattern>*/node_modules/*</exclude-pattern>
+    <exclude-pattern>*/web/*</exclude-pattern>
+    <exclude-pattern>*/infra/*</exclude-pattern>
+
+    <!-- Show progress and use colors -->
+    <arg name="colors"/>
+    <arg value="p"/>
+
+    <!-- PHP version -->
+    <config name="php_version" value="80400"/>
+</ruleset>
