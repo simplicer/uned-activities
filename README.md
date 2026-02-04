@@ -1,4 +1,4 @@
-# UNED Activities Finder
+# UNED Activities Finder v0.10.1-alpha
 
 A monorepo project that scrapes UNED extension activities, stores normalized data in Supabase/Postgres, exposes a Zalando-compliant REST API, and provides a React UI in 6 languages.
 
@@ -130,4 +130,4 @@ See [CLAUDE.md](CLAUDE.md) for quick start with AI agents.
 
 ## License
 
-MIT
+This project is licensed under the **MIT License** - see [LICENSE](LICENSE) file.
