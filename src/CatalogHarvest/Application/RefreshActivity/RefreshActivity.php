@@ -5,15 +5,15 @@ declare(strict_types=1);
 namespace CatalogHarvest\Application\RefreshActivity;
 
 use CatalogHarvest\Domain\Entity\Activity;
-use CatalogHarvest\Domain\Port\ActivityRepository;
-use CatalogHarvest\Domain\Port\ActivitySnapshotRepository;
-use CatalogHarvest\Domain\Port\ActivitySnapshot;
-use CatalogHarvest\Domain\Port\PriceSnapshotRepository;
-use CatalogHarvest\Domain\Port\PriceSnapshot;
-use CatalogHarvest\Domain\Port\HtmlFetcher;
+use CatalogHarvest\Domain\ActivityRepository;
+use CatalogHarvest\Domain\ActivitySnapshotRepository;
+use CatalogHarvest\Domain\ActivitySnapshot;
+use CatalogHarvest\Domain\PriceSnapshotRepository;
+use CatalogHarvest\Domain\PriceSnapshot;
+use CatalogHarvest\Domain\HtmlFetcher;
+use CatalogHarvest\Domain\HtmlContentExtractor\HtmlContentExtractor;
+use CatalogHarvest\Domain\ActivityEmbeddingGenerator\ActivityEmbeddingGenerator;
 use CatalogHarvest\Domain\ValueObject\ActivityId;
-use CatalogHarvest\Infrastructure\Http\ActivityDetailParser;
-use CatalogHarvest\Infrastructure\AI\AIActivityParser;
 use CatalogHarvest\Application\Embeddings\GenerateActivityEmbedding;
 use CatalogHarvest\Application\Notifications\NotifyFavoriteUsers;
 
@@ -30,8 +30,8 @@ final readonly class RefreshActivity
         private ActivityRepository $activityRepository,
         private ActivitySnapshotRepository $snapshotRepository,
         private PriceSnapshotRepository $priceSnapshotRepository,
-        private ActivityDetailParser $parser = new ActivityDetailParser(),
-        private ?AIActivityParser $aiParser = null,
+        private HtmlContentExtractor $contentExtractor,
+        private ?ActivityEmbeddingGenerator $embeddingGenerator = null,
         private ?GenerateActivityEmbedding $embeddingService = null,
         private ?NotifyFavoriteUsers $favoriteNotifier = null,
     ) {
@@ -54,8 +54,8 @@ final readonly class RefreshActivity
         // Fetch HTML from detail page
         $html = $this->htmlFetcher->fetch($activity->url);
 
-        // Use XPath parser as primary (more reliable), AI as fallback
-        $data = $this->parser->parse($html);
+        // Use domain interface for content extraction
+        $data = $this->contentExtractor->extract($html, $activity->url);
 
         // Calculate new hash
         $newHash = $this->calculateHash($data);
@@ -63,7 +63,7 @@ final readonly class RefreshActivity
         // Check if changed
         $hasChanged = $activity->hasChanged($newHash);
 
-        // Extract credits and extended fields from AI parser
+        // Extract credits and extended fields
         $credits = $data['credits'] ?? null;
         $hasLive = $data['hasLive'] ?? null;
         $hasRecorded = $data['hasRecorded'] ?? null;
