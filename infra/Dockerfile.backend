@@ -1,29 +1,37 @@
-FROM php:8.4-cli
+FROM php:8.3-fpm
+
+LABEL maintainer="UNED Activities Team"
+LABEL version="0.10.1-alpha"
+
+WORKDIR /app
 
 # Install dependencies
 RUN apt-get update && apt-get install -y \
+    postgresql-client \
     git \
-    unzip \
+    curl \
     libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Install PostgreSQL extension
-RUN docker-php-ext-install pdo pdo_pgsql
+# Install PHP extensions
+RUN docker-php-ext-install pdo_pgsql
 
 # Install Redis extension
 RUN pecl install redis && docker-php-ext-enable redis
 
-# Install Composer
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+# Copy Composer
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-WORKDIR /app
-
-# Copy project files
-COPY . /app/
+# Copy application
+COPY . .
 
 # Install dependencies
 RUN composer install --no-dev --optimize-autoloader
 
-EXPOSE 8080
+# Create non-root user
+RUN useradd -m -u 1000 php && chown -R php:php /app
+USER php
 
-CMD ["php", "-S", "0.0.0.0:8080", "-t", "apps/HttpApi/public"]
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
+    CMD php -r "exit((int)(!file_exists('/app/apps/HttpApi/public/index.php')));"
