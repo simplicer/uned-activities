@@ -11,6 +11,7 @@ use CatalogHarvest\Domain\ActivityDataStorage\ActivityRepository;
 use CatalogHarvest\Domain\ActivityDataStorage\ActivitySnapshotRepository;
 use CatalogHarvest\Domain\ActivityDataStorage\HtmlFetcher;
 use CatalogHarvest\Domain\ActivityDataStorage\PriceSnapshotRepository;
+use CatalogHarvest\Domain\HtmlContentExtractor\HtmlContentExtractor;
 use CatalogHarvest\Domain\ValueObject\ActivityId;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
@@ -35,6 +36,7 @@ final class HarvestingTest extends TestCase
         $this->activityRepository = $this->createMock(ActivityRepository::class);
         $this->snapshotRepository = $this->createMock(ActivitySnapshotRepository::class);
         $this->priceSnapshotRepository = $this->createMock(PriceSnapshotRepository::class);
+        $contentExtractor = $this->createMock(HtmlContentExtractor::class);
 
         $this->discoverActivities = new DiscoverActivities(
             $this->htmlFetcher,
@@ -46,6 +48,7 @@ final class HarvestingTest extends TestCase
             $this->activityRepository,
             $this->snapshotRepository,
             $this->priceSnapshotRepository,
+            $contentExtractor
         );
     }
 

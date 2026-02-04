@@ -63,12 +63,12 @@ final readonly class RefreshActivity
         // Check if changed
         $hasChanged = $activity->hasChanged($newHash);
 
-        // Extract credits and extended fields
-        $credits = $data['credits'] ?? null;
-        $hasLive = $data['hasLive'] ?? null;
-        $hasRecorded = $data['hasRecorded'] ?? null;
-
-        // Extended fields
+        // Extended fields with type conversions
+        $credits = isset($data['credits']) && is_numeric($data['credits']) 
+            ? (int) $data['credits'] 
+            : null;
+        $hasLive = isset($data['hasLive']) ? (bool) $data['hasLive'] : null;
+        $hasRecorded = isset($data['hasRecorded']) ? (bool) $data['hasRecorded'] : null;
         $pricingTable = $data['pricingTable'] ?? null;
         $staff = $data['staff'] ?? null;
         $sessions = $data['sessions'] ?? null;
@@ -81,20 +81,20 @@ final readonly class RefreshActivity
 
         // Update activity with refresh data
         $updatedActivity = $activity->withRefreshData(
-            title: $data['title'],
-            description: $data['description'],
-            startDate: $data['startDate'],
-            endDate: $data['endDate'],
-            modality: $data['modality'],
-            center: $data['center'],
-            typology: $data['typology'],
-            area: $data['area'],
-            priceAmount: $data['priceAmount'],
-            priceCurrency: $data['priceCurrency'],
+            title: $data['title'] ?? null,
+            description: $data['description'] ?? null,
+            startDate: $data['startDate'] ?? null,
+            endDate: $data['endDate'] ?? null,
+            modality: $data['modality'] ?? null,
+            center: $data['center'] ?? null,
+            typology: $data['typology'] ?? null,
+            area: $data['area'] ?? null,
+            priceAmount: $data['priceAmount'] ?? null,
+            priceCurrency: $data['priceCurrency'] ?? null,
             isFree: $data['isFree'] ?? false,
-            enrollmentOpen: $data['enrollmentOpen'],
-            enrollmentStartDate: $data['enrollmentStartDate'],
-            enrollmentEndDate: $data['enrollmentEndDate'],
+            enrollmentOpen: $data['enrollmentOpen'] ?? null,
+            enrollmentStartDate: $data['enrollmentStartDate'] ?? null,
+            enrollmentEndDate: $data['enrollmentEndDate'] ?? null,
             enrollmentLink: $enrollmentLink,
             newHash: $newHash,
             credits: $credits,
