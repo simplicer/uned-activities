@@ -1,5 +1,5 @@
-# Docker Compose - Producción (Dokploy + Traefik)
-# Traefik gestiona SSL y enrutado; no se exponen puertos públicos aquí.
+# Docker Compose - Production (Dokploy + Traefik)
+# Traefik manages SSL and routing; no public ports exposed here.
 
 services:
   # PostgreSQL 17
@@ -16,7 +16,7 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-uned_activities}
       POSTGRES_USER: postgres
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - uned_data:/var/lib/postgresql/data
       - ./init-scripts:/docker-entrypoint-initdb.d:ro
     networks:
       - app_network
@@ -31,11 +31,11 @@ services:
       timeout: 3s
       retries: 5
     volumes:
-      - redis_data:/data
+      - uned_data:/data/redis
     networks:
       - app_network
 
-  # Backend PHP API - interno
+  # Backend PHP API - internal
   backend:
     build:
       context: ..
@@ -55,8 +55,24 @@ services:
       - REDIS_PORT=6379
       - RATE_LIMIT=100
       - RATE_WINDOW=60
+    volumes:
+      - uned_data:/data/logs
+    expose:
+      - "9000"
+    networks:
+      - app_network
+      - dokploy-network
+
+  # Nginx reverse proxy for PHP
+  nginx:
+    image: nginx:alpine
+    restart: unless-stopped
+    volumes:
+      - ./infra/nginx.conf:/etc/nginx/conf.d/default.conf:ro
     expose:
       - "8080"
+    depends_on:
+      - backend
     networks:
       - app_network
       - dokploy-network
@@ -81,6 +97,8 @@ services:
       - REDIS_PORT=6379
       - RATE_LIMIT=100
       - RATE_WINDOW=60
+    volumes:
+      - uned_data:/data/logs
     command: ["/bin/sh", "/app/infra/scripts/harvest-loop.sh"]
     depends_on:
       - db
@@ -88,7 +106,7 @@ services:
     networks:
       - app_network
 
-  # Frontend estático (Traefik enruta lexemas.com)
+  # Frontend static (Traefik routes to frontend)
   frontend:
     build:
       context: ..
@@ -102,8 +120,9 @@ services:
       - dokploy-network
 
 volumes:
-  postgres_data:
-  redis_data:
+  uned_data:
+    name: uned_data
+    driver: local
 
 networks:
   app_network:
