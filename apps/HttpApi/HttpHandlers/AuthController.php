@@ -31,6 +31,16 @@ final readonly class AuthController
     public function request(Request $request, Response $response): Response
     {
         $body = $request->getParsedBody();
+        
+        if (!is_array($body)) {
+            $response->getBody()->write(json_encode([
+                'error' => 'validation_error',
+                'message' => 'Invalid request body',
+            ], JSON_THROW_ON_ERROR));
+
+            return $response->withStatus(400)->withHeader('Content-Type', 'application/json');
+        }
+
         $email = $body['email'] ?? '';
 
         if ($email === '') {
@@ -79,6 +89,16 @@ final readonly class AuthController
     public function verify(Request $request, Response $response): Response
     {
         $body = $request->getParsedBody();
+        
+        if (!is_array($body)) {
+            $response->getBody()->write(json_encode([
+                'error' => 'validation_error',
+                'message' => 'Invalid request body',
+            ], JSON_THROW_ON_ERROR));
+
+            return $response->withStatus(400)->withHeader('Content-Type', 'application/json');
+        }
+
         $token = $body['token'] ?? '';
 
         if ($token === '') {
@@ -124,6 +144,15 @@ final readonly class AuthController
             ], JSON_THROW_ON_ERROR));
 
             return $response->withStatus(500)->withHeader('Content-Type', 'application/json');
+        }
+
+        if ($result->user === null) {
+            $response->getBody()->write(json_encode([
+                'error' => 'invalid_token',
+                'message' => 'User not found',
+            ], JSON_THROW_ON_ERROR));
+
+            return $response->withStatus(401)->withHeader('Content-Type', 'application/json');
         }
 
         // Store session token in user metadata or separate sessions table
@@ -175,6 +204,16 @@ final readonly class AuthController
     public function password(Request $request, Response $response): Response
     {
         $body = $request->getParsedBody();
+        
+        if (!is_array($body)) {
+            $response->getBody()->write(json_encode([
+                'error' => 'validation_error',
+                'message' => 'Invalid request body',
+            ], JSON_THROW_ON_ERROR));
+
+            return $response->withStatus(400)->withHeader('Content-Type', 'application/json');
+        }
+
         $email = isset($body['email']) ? strtolower(trim((string) $body['email'])) : '';
         $password = isset($body['password']) ? (string) $body['password'] : '';
 
@@ -187,7 +226,8 @@ final readonly class AuthController
             return $response->withStatus(400)->withHeader('Content-Type', 'application/json');
         }
 
-        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $emailValidation = filter_var($email, FILTER_VALIDATE_EMAIL);
+        if ($emailValidation === false) {
             $response->getBody()->write(json_encode([
                 'error' => 'validation_error',
                 'message' => 'Email inválido',
