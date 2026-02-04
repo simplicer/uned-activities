@@ -14,23 +14,23 @@ use CatalogHarvest\Infrastructure\Persistence\PdoActivitySnapshotRepository;
 use CatalogHarvest\Infrastructure\Http\GuzzleHtmlFetcher;
 use CatalogHarvest\Domain\HtmlContentExtractor\HtmlContentExtractor;
 use CatalogHarvest\Domain\ActivityEmbeddingGenerator\ActivityEmbeddingGenerator;
-use CatalogHarvest\Domain\ActivityRepository;
-use CatalogHarvest\Domain\ActivityEmbeddingRepository;
-use CatalogHarvest\Domain\PriceSnapshotRepository;
-use CatalogHarvest\Domain\ActivitySnapshotRepository;
-use CatalogHarvest\Domain\HtmlFetcher;
+use CatalogHarvest\Domain\ActivityDataStorage\ActivityRepository;
+use CatalogHarvest\Domain\ActivityDataStorage\ActivityEmbeddingRepository;
+use CatalogHarvest\Domain\ActivityDataStorage\PriceSnapshotRepository;
+use CatalogHarvest\Domain\ActivityDataStorage\ActivitySnapshotRepository;
+use CatalogHarvest\Domain\ActivityDataStorage\HtmlFetcher;
 use UserProfile\Infrastructure\Persistence\PdoUserRepository;
 use UserProfile\Infrastructure\Persistence\PdoSavedSearchRepository;
 use UserProfile\Infrastructure\Persistence\PdoFavoriteRepository;
-use UserProfile\Domain\UserRepository;
-use UserProfile\Domain\SavedSearchRepository;
-use UserProfile\Domain\FavoriteRepository;
+use UserProfile\Domain\UserDataStorage\UserRepository;
+use UserProfile\Domain\UserDataStorage\SavedSearchRepository;
+use UserProfile\Domain\UserDataStorage\FavoriteRepository;
 use Notifications\Infrastructure\Persistence\PdoNotificationRepository;
-use Notifications\Domain\NotificationRepository;
+use Notifications\Domain\NotificationQueue\NotificationRepository;
 use Shared\Infrastructure\Email\SmtpEmailService;
 use Shared\Infrastructure\Auth\JwtService;
 use Auth\Infrastructure\Persistence\PdoMagicTokenRepository;
-use Auth\Domain\MagicTokenRepository;
+use Auth\Domain\AuthenticationTokenStorage\MagicTokenRepository;
 
 /**
  * ContainerFactory.
