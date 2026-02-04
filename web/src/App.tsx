@@ -208,12 +208,10 @@ function AppContent() {
           <div className="grid gap-10 md:grid-cols-[1.2fr_1.4fr]">
             {/* Brand */}
             <div>
-              <div className="mt-4 text-xs text-muted-foreground">
-                <div className="font-simplicer text-[#c02626] text-3xl font-bold tracking-wide">simplicer</div>
-                <span className="mt-1 inline-flex items-center gap-2">
-                  <Heart className="w-3.5 h-3.5 text-rose-500" />
-                  {t('footer.madeWithLove')}
-                </span>
+              <div className="mt-4 text-2xl text-muted-foreground flex items-center gap-2">
+                <span className="font-simplicer text-[#c02626] font-bold tracking-wide">simplicer</span>
+                <Heart className="w-5 h-5 text-rose-500 fill-current" />
+                <span>Hecho con amor, desde Mojácar</span>
               </div>
               <p className="mt-3 text-xs text-muted-foreground">
                 {t('footer.disclaimer')}

@@ -138,7 +138,7 @@ final class ActivityDetailParser
                         if ($phone === null) {
                             foreach ($lines as $line) {
                                 $candidate = $this->extractPhoneCandidate($line);
-                                if ($candidate !== null && preg_match('/\\d{4,}/', $candidate) === 1) {
+                                if ($candidate !== null) {
                                     $phone = $candidate;
                                     break;
                                 }
@@ -1086,11 +1086,16 @@ final class ActivityDetailParser
             return null;
         }
 
-        if (strlen($digits) < 8) {
+        $digitCount = strlen($digits);
+        if ($digitCount < 8) {
             return null;
         }
 
-        if (strlen($digits) === 5) {
+        if ($digitCount === 5) {
+            return null;
+        }
+
+        if (preg_match('/\\b(calle|rua|rúa|avenida|av\\.|plaza|c\\/|km)\\b/i', $text) === 1) {
             return null;
         }
 

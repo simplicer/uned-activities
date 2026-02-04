@@ -98,10 +98,7 @@ final class RateLimiterMiddleware
             return substr($auth, 7);
         }
 
-        // Check query parameter
-        $params = $request->getQueryParams();
-
-        return $params['token'] ?? $params['api_key'] ?? null;
+        return null;
     }
 
     /**

@@ -16,7 +16,7 @@ final class MagicLinkToken
     private function __construct(
         public string $id,
         public string $email,
-        public MagicToken $token,
+        public string $tokenHash,
         public DateTimeImmutable $expiresAt,
         public ?DateTimeImmutable $usedAt,
         public DateTimeImmutable $createdAt,
@@ -28,7 +28,7 @@ final class MagicLinkToken
         return new self(
             id: Uuid::uuid4()->toString(),
             email: strtolower(trim($email)),
-            token: $token,
+            tokenHash: self::hashToken($token->toString()),
             expiresAt: $expiresAt,
             usedAt: null,
             createdAt: new DateTimeImmutable(),
@@ -46,7 +46,7 @@ final class MagicLinkToken
         return new self(
             id: $id,
             email: strtolower(trim($email)),
-            token: MagicToken::fromString($token),
+            tokenHash: $token,
             expiresAt: $expiresAt,
             usedAt: $usedAt,
             createdAt: $createdAt,
@@ -76,5 +76,10 @@ final class MagicLinkToken
     public function isUsed(): bool
     {
         return $this->usedAt !== null;
+    }
+
+    public static function hashToken(string $token): string
+    {
+        return hash('sha256', $token);
     }
 }

@@ -1,10 +1,9 @@
-# Docker Compose - Producción
-# Nginx sirve frontend estático y hace proxy de la API PHP
+# Docker Compose - Producción (Dokploy + Traefik)
+# Traefik gestiona SSL y enrutado; no se exponen puertos públicos aquí.
 
 services:
   # PostgreSQL 17
   db:
-    container_name: uned-postgres
     image: supabase/postgres:17.6.1.079
     restart: unless-stopped
     healthcheck:
@@ -20,12 +19,11 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ./init-scripts:/docker-entrypoint-initdb.d:ro
     networks:
-      - uned_network
+      - app_network
 
   # Redis 7
   redis:
     image: redis:7-alpine
-    container_name: uned-redis
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
@@ -35,11 +33,10 @@ services:
     volumes:
       - redis_data:/data
     networks:
-      - uned_network
+      - app_network
 
   # Backend PHP API - interno
   backend:
-    container_name: uned-backend
     build:
       context: ..
       dockerfile: infra/Dockerfile.backend
@@ -58,12 +55,14 @@ services:
       - REDIS_PORT=6379
       - RATE_LIMIT=100
       - RATE_WINDOW=60
+    expose:
+      - "8080"
     networks:
-      - uned_network
+      - app_network
+      - dokploy-network
 
   # Harvest scheduler - refresh activities periodically
   harvester:
-    container_name: uned-harvester
     build:
       context: ..
       dockerfile: infra/Dockerfile.backend
@@ -87,27 +86,28 @@ services:
       - db
       - redis
     networks:
-      - uned_network
+      - app_network
 
-  # Nginx Proxy Inverso - Único puerto expuesto
-  nginx:
-    image: nginx:1.25-alpine
-    container_name: uned-nginx
+  # Frontend estático (Traefik enruta lexemas.com)
+  frontend:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile.frontend
+      args:
+        VITE_API_URL: ${VITE_API_URL:-https://api.lexemas.com}
     restart: unless-stopped
-    ports:
-      - "8080:80"
-    volumes:
-      - ./nginx-fixed.conf:/etc/nginx/nginx.conf:ro
-      - ../web/dist:/usr/share/nginx/html:ro
-    depends_on:
-      - backend
+    expose:
+      - "80"
     networks:
-      - uned_network
+      - dokploy-network
 
 volumes:
   postgres_data:
   redis_data:
 
 networks:
-  uned_network:
+  app_network:
     driver: bridge
+    internal: true
+  dokploy-network:
+    external: true

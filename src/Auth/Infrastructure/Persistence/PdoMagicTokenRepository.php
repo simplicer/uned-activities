@@ -33,7 +33,7 @@ final class PdoMagicTokenRepository implements MagicTokenRepository
         $stmt->execute([
             'id' => $token->id,
             'email' => $token->email,
-            'token' => $token->token->toString(),
+            'token' => $token->tokenHash,
             'expires_at' => $token->expiresAt->format('Y-m-d H:i:s'),
             'used_at' => $token->usedAt?->format('Y-m-d H:i:s'),
             'created_at' => $token->createdAt->format('Y-m-d H:i:s'),
@@ -48,7 +48,7 @@ final class PdoMagicTokenRepository implements MagicTokenRepository
         );
 
         $stmt = $this->connection->prepare($sql);
-        $stmt->execute(['token' => $token->toString()]);
+        $stmt->execute(['token' => MagicLinkToken::hashToken($token->toString())]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if (!$row) {
@@ -88,7 +88,7 @@ final class PdoMagicTokenRepository implements MagicTokenRepository
         );
 
         $stmt = $this->connection->prepare($sql);
-        $stmt->execute(['token' => $token->toString()]);
+        $stmt->execute(['token' => MagicLinkToken::hashToken($token->toString())]);
 
         return $stmt->rowCount() > 0;
     }

@@ -94,6 +94,24 @@ final readonly class PdoNotificationRepository implements NotificationRepository
     }
 
     #[\Override]
+    public function markAsReadForUser(NotificationId $id, UserId $userId): int
+    {
+        $stmt = $this->connection->prepare(
+            'UPDATE ' . self::TABLE . ' SET
+                is_read = true,
+                read_at = NOW()
+            WHERE id = :id AND user_id = :user_id'
+        );
+
+        $stmt->execute([
+            'id' => $id->toString(),
+            'user_id' => $userId->toString(),
+        ]);
+
+        return $stmt->rowCount();
+    }
+
+    #[\Override]
     public function countUnread(UserId $userId): int
     {
         $stmt = $this->connection->prepare(

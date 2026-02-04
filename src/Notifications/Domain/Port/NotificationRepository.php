@@ -17,5 +17,6 @@ interface NotificationRepository
     public function findById(NotificationId $id): ?Notification;
     public function findByUserId(UserId $userId, int $limit = 50, int $offset = 0): array;
     public function markAsRead(NotificationId $id): void;
+    public function markAsReadForUser(NotificationId $id, UserId $userId): int;
     public function countUnread(UserId $userId): int;
 }

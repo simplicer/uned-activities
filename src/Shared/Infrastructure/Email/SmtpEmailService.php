@@ -201,6 +201,9 @@ HTML;
     private function renderContactTemplate(string $email, string $name, string $message): string
     {
         $displayName = $name !== '' ? $name : $email;
+        $safeName = htmlspecialchars($displayName, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $safeEmail = htmlspecialchars($email, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $safeMessage = htmlspecialchars($message, ENT_QUOTES | ENT_HTML5, 'UTF-8');
 
         return <<<HTML
 <!DOCTYPE html>
@@ -220,10 +223,10 @@ HTML;
     <div class="container">
         <h2>Nuevo mensaje desde el formulario legal</h2>
         <div class="meta">
-            <p><strong>Remitente:</strong> $displayName</p>
-            <p><strong>Email:</strong> $email</p>
+            <p><strong>Remitente:</strong> $safeName</p>
+            <p><strong>Email:</strong> $safeEmail</p>
         </div>
-        <div class="message">$message</div>
+        <div class="message">$safeMessage</div>
     </div>
 </body>
 </html>

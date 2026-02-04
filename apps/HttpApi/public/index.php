@@ -139,7 +139,7 @@ $app->addRoutingMiddleware();
 $allowedOrigins = array_filter(array_map('trim', explode(',', $_ENV['CORS_ALLOWED_ORIGINS'] ?? '*')));
 $app->add(new CorsMiddleware($allowedOrigins === [] ? ['*'] : $allowedOrigins));
 $app->add(new RateLimiterMiddleware($rateLimit, $rateWindow, $redis));
-$app->add(new WebTokenGateMiddleware($jwtSecret, $jwtIssuer, $jwtAudience));
+$app->add(new WebTokenGateMiddleware($jwtSecret, $jwtIssuer, $jwtAudience, $appEnv === 'production'));
 
 // Error handling
 $errorMiddleware = $app->addErrorMiddleware(
@@ -156,7 +156,13 @@ $activityController = $container->get(ActivityController::class);
 (new ActivityRoutes())($app, $activityController);
 
 // Register auth routes
-$authController = $container->get(AuthController::class);
+$authController = new AuthController(
+    $container->get(RequestMagicLink::class),
+    $container->get(VerifyMagicLink::class),
+    $container->get(JwtService::class),
+    $container->get(UserRepository::class),
+    $appEnv === 'production',
+);
 (new AuthRoutes())($app, $authController);
 
 // Register contact routes

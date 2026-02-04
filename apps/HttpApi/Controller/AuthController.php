@@ -21,6 +21,7 @@ final readonly class AuthController
         private VerifyMagicLink $verifyMagicLink,
         private JwtService $jwtService,
         private UserRepository $userRepository,
+        private bool $hideDetails = false,
     ) {
     }
 
@@ -119,7 +120,7 @@ final readonly class AuthController
         } catch (\RuntimeException $e) {
             $response->getBody()->write(json_encode([
                 'error' => 'server_error',
-                'message' => $e->getMessage(),
+                'message' => $this->hideDetails ? 'Server error' : $e->getMessage(),
             ], JSON_THROW_ON_ERROR));
 
             return $response->withStatus(500)->withHeader('Content-Type', 'application/json');
@@ -225,7 +226,7 @@ final readonly class AuthController
         } catch (\RuntimeException $e) {
             $response->getBody()->write(json_encode([
                 'error' => 'server_error',
-                'message' => $e->getMessage(),
+                'message' => $this->hideDetails ? 'Server error' : $e->getMessage(),
             ], JSON_THROW_ON_ERROR));
 
             return $response->withStatus(500)->withHeader('Content-Type', 'application/json');

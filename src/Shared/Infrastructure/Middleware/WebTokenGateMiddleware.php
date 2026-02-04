@@ -37,6 +37,7 @@ final class WebTokenGateMiddleware
         private readonly string $jwtSecret,
         private readonly ?string $jwtIssuer = null,
         private readonly ?string $jwtAudience = null,
+        private readonly bool $hideDetails = false,
     ) {
     }
 
@@ -146,6 +147,9 @@ final class WebTokenGateMiddleware
 
     private function createUnauthorizedResponse(string $message): Response
     {
+        if ($this->hideDetails) {
+            $message = 'Unauthorized';
+        }
         $response = new SlimResponse(401);
 
         $response->getBody()->write(json_encode([

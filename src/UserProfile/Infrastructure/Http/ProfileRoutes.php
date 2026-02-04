@@ -381,7 +381,11 @@ class ProfileRoutes
             }
 
             $notificationId = NotificationId::fromString($id);
-            $notificationRepository->markAsRead($notificationId);
+            $updated = $notificationRepository->markAsReadForUser($notificationId, $userId);
+
+            if ($updated === 0) {
+                return $self->notFoundResponse($response, 'Notification not found');
+            }
 
             $response->getBody()->write(json_encode(['data' => ['updated' => true]], JSON_THROW_ON_ERROR));
 
