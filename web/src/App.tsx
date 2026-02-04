@@ -208,14 +208,11 @@ function AppContent() {
           <div className="grid gap-10 md:grid-cols-[1.2fr_1.4fr]">
             {/* Brand */}
             <div>
-              <div className="mt-4 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                <span className="inline-flex items-center gap-2">
+              <div className="mt-4 text-xs text-muted-foreground">
+                <div className="font-simplicer text-[#c02626] text-3xl font-bold tracking-wide">simplicer</div>
+                <span className="mt-1 inline-flex items-center gap-2">
                   <Heart className="w-3.5 h-3.5 text-rose-500" />
-                  <span>
-                    {t('footer.madeWithLove')},{' '}
-                    <span>por</span>{' '}
-                    <span className="font-simplicer text-[#c02626] tracking-wide relative -top-px">simplicer</span>
-                  </span>
+                  {t('footer.madeWithLove')}
                 </span>
               </div>
               <p className="mt-3 text-xs text-muted-foreground">
