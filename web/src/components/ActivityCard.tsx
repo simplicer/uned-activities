@@ -32,6 +32,24 @@ export function ActivityCard({ activity, isFavorite, onToggleFavorite }: Activit
     return `${value.toLocaleString(localeCode, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}${symbol}`;
   };
 
+  const getPriceRange = () => {
+    if (activity.pricingTable && activity.pricingTable.length > 0) {
+      const amounts = activity.pricingTable
+        .map((row) => row.amount)
+        .filter((value) => Number.isFinite(value)) as number[];
+      if (amounts.length > 0) {
+        const min = Math.min(...amounts);
+        const max = Math.max(...amounts);
+        const currency = activity.pricingTable.find((row) => row.currency)?.currency ?? activity.priceCurrency ?? 'EUR';
+        return { min, max, currency };
+      }
+    }
+    if (activity.priceAmount !== null && activity.priceAmount !== undefined) {
+      return { min: activity.priceAmount, max: activity.priceAmount, currency: activity.priceCurrency ?? 'EUR' };
+    }
+    return null;
+  };
+
   const formatCredits = (credits: number) => {
     if (!Number.isFinite(credits)) {
       return '—';
@@ -166,14 +184,35 @@ export function ActivityCard({ activity, isFavorite, onToggleFavorite }: Activit
         <div className="card-footer pt-4 border-t">
           <div className="flex items-center justify-between w-full">
             {/* Price */}
-            {activity.priceAmount !== null || activity.priceDisplay !== null ? (
+            {activity.priceAmount !== null || activity.priceDisplay !== null || (activity.pricingTable && activity.pricingTable.length > 0) ? (
               <div className="flex flex-col">
                 <span className="text-xs text-muted-foreground">{t('activity.price')}</span>
-                <span className="text-lg font-bold text-primary">
-                  {activity.priceAmount !== null
-                    ? formatPrice(activity.priceAmount, activity.priceCurrency)
-                    : renderText(activity.priceDisplay)}
-                </span>
+                {(() => {
+                  const range = getPriceRange();
+                  if (range) {
+                    const minLabel = t('activity.priceFrom');
+                    const maxLabel = t('activity.priceTo');
+                    if (range.min === range.max) {
+                      return (
+                        <span className="text-lg font-bold text-primary">
+                          {formatPrice(range.min, range.currency)}
+                        </span>
+                      );
+                    }
+                    return (
+                      <span className="text-sm font-semibold text-primary">
+                        {minLabel} {formatPrice(range.min, range.currency)} · {maxLabel} {formatPrice(range.max, range.currency)}
+                      </span>
+                    );
+                  }
+                  return (
+                    <span className="text-lg font-bold text-primary">
+                      {activity.priceAmount !== null
+                        ? formatPrice(activity.priceAmount, activity.priceCurrency)
+                        : renderText(activity.priceDisplay)}
+                    </span>
+                  );
+                })()}
               </div>
             ) : (
               <div className="flex flex-col">

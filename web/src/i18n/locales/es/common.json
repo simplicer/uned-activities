@@ -85,6 +85,8 @@
   "activity.typology": "Tipología",
   "activity.area": "Área",
   "activity.price": "Precio",
+  "activity.priceFrom": "Desde",
+  "activity.priceTo": "Hasta",
   "activity.priceConsult": "Consultar",
   "activity.favorite": "Favorita",
   "activity.modalityOnlineLive": "Online en directo",

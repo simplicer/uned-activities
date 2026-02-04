@@ -84,6 +84,8 @@
   "activity.typology": "Tipologia",
   "activity.area": "Area",
   "activity.price": "Prezioa",
+  "activity.priceFrom": "Hasieratik",
+  "activity.priceTo": "Gehienez",
   "activity.priceConsult": "Kontsultatu",
   "activity.favorite": "Gogokoa",
   "activity.modalityOnlineLive": "Online zuzenean",
