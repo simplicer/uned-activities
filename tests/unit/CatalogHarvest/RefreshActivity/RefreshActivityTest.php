@@ -76,6 +76,39 @@ final class RefreshActivityTest extends TestCase
             ->with('https://example.com/course')
             ->willReturn($html);
 
+        $this->contentExtractor
+            ->expects($this->once())
+            ->method('extract')
+            ->with($html, 'https://example.com/course')
+            ->willReturn([
+                'title' => 'Photography Digital Complete',
+                'description' => 'Course description',
+                'startDate' => '2025-03-01',
+                'endDate' => '2025-06-30',
+                'modality' => 'online',
+                'center' => 'Madrid',
+                'typology' => 'Course',
+                'area' => 'Arts',
+                'priceAmount' => 15000,
+                'priceCurrency' => 'EUR',
+                'isFree' => false,
+                'enrollmentOpen' => true,
+                'enrollmentStartDate' => '2025-02-01',
+                'enrollmentEndDate' => '2025-02-28',
+                'enrollmentLink' => 'https://example.com/enroll',
+                'credits' => 6.0,
+                'hoursCount' => 150,
+                'duration' => '4 months',
+                'pricingTable' => null,
+                'staff' => null,
+                'sessions' => null,
+                'targetAudience' => null,
+                'requirements' => null,
+                'locationDetails' => null,
+                'scheduleDetails' => null,
+                'imageUrl' => null,
+            ]);
+
         $this->activityRepository
             ->expects($this->once())
             ->method('save')
@@ -116,6 +149,37 @@ final class RefreshActivityTest extends TestCase
         $this->htmlFetcher
             ->method('fetch')
             ->willReturn($html);
+
+        $this->contentExtractor
+            ->method('extract')
+            ->willReturn([
+                'title' => 'Photography Digital Complete',
+                'description' => 'Course description',
+                'startDate' => '2025-03-01',
+                'endDate' => '2025-06-30',
+                'modality' => 'online',
+                'center' => 'Madrid',
+                'typology' => 'Course',
+                'area' => 'Arts',
+                'priceAmount' => 18000,
+                'priceCurrency' => 'EUR',
+                'isFree' => false,
+                'enrollmentOpen' => true,
+                'enrollmentStartDate' => '2025-02-01',
+                'enrollmentEndDate' => '2025-02-28',
+                'enrollmentLink' => 'https://example.com/enroll',
+                'credits' => 6.0,
+                'hoursCount' => 150,
+                'duration' => '4 months',
+                'pricingTable' => null,
+                'staff' => null,
+                'sessions' => null,
+                'targetAudience' => null,
+                'requirements' => null,
+                'locationDetails' => null,
+                'scheduleDetails' => null,
+                'imageUrl' => null,
+            ]);
 
         $this->priceSnapshotRepository
             ->expects($this->once())
@@ -168,6 +232,34 @@ final class RefreshActivityTest extends TestCase
 
         $this->activityRepository->method('findById')->willReturn($existingActivity);
         $this->htmlFetcher->method('fetch')->willReturn($html);
+        $this->contentExtractor->method('extract')->willReturn([
+            'title' => 'Photography Digital Complete',
+            'description' => 'Course description',
+            'startDate' => '2025-03-01',
+            'endDate' => '2025-06-30',
+            'modality' => 'online',
+            'center' => 'Madrid',
+            'typology' => 'Course',
+            'area' => 'Arts',
+            'priceAmount' => 15000,
+            'priceCurrency' => 'EUR',
+            'isFree' => false,
+            'enrollmentOpen' => true,
+            'enrollmentStartDate' => '2025-02-01',
+            'enrollmentEndDate' => '2025-02-28',
+            'enrollmentLink' => 'https://example.com/enroll',
+            'credits' => 6.0,
+            'hoursCount' => 150,
+            'duration' => '4 months',
+            'pricingTable' => null,
+            'staff' => null,
+            'sessions' => null,
+            'targetAudience' => null,
+            'requirements' => null,
+            'locationDetails' => null,
+            'scheduleDetails' => null,
+            'imageUrl' => null,
+        ]);
 
         $savedActivity = null;
         $this->activityRepository->method('save')->willReturnCallback(
