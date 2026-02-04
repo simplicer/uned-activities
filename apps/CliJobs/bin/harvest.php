@@ -10,6 +10,7 @@ use CatalogHarvest\Application\Notifications\NotifyFavoriteUsers;
 use CatalogHarvest\Domain\ValueObject\ActivityId;
 use CatalogHarvest\Infrastructure\AI\AIActivityParser;
 use CatalogHarvest\Infrastructure\Http\GuzzleHtmlFetcher;
+use CatalogHarvest\Infrastructure\Http\ActivityDetailParser;
 use CatalogHarvest\Infrastructure\Persistence\PdoActivityRepository;
 use CatalogHarvest\Infrastructure\Persistence\PdoActivitySnapshotRepository;
 use CatalogHarvest\Infrastructure\Persistence\PdoPriceSnapshotRepository;
@@ -140,12 +141,15 @@ final class HarvestCommand extends Command
         $frontendUrl = $_ENV['FRONTEND_URL'] ?? 'http://localhost:8080';
         $favoriteNotifier = new NotifyFavoriteUsers($favoriteRepo, $notificationRepo, $emailService, $frontendUrl);
 
+        $contentExtractor = new ActivityDetailParser();
+
         $refresh = new RefreshActivity(
             $fetcher,
             $activityRepo,
             $snapshotRepo,
             $priceRepo,
-            aiParser: $aiParser,
+            $contentExtractor,
+            embeddingGenerator: $aiParser,
             embeddingService: $embeddingService,
             favoriteNotifier: $favoriteNotifier
         );

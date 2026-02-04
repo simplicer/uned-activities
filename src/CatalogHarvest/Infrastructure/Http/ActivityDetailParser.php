@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace CatalogHarvest\Infrastructure\Http;
 
+use CatalogHarvest\Domain\HtmlContentExtractor\HtmlContentExtractor;
 use DOMXPath;
 
 /**
@@ -12,7 +13,7 @@ use DOMXPath;
  * Extracts all fields from the HTML of a UNED course detail page.
  * Optimized for the specific HTML structure of extension.uned.es
  */
-final class ActivityDetailParser
+final class ActivityDetailParser implements HtmlContentExtractor
 {
     /**
      * Parse activity detail page HTML.
@@ -20,6 +21,18 @@ final class ActivityDetailParser
      * @return array<string, mixed> Parsed activity data compatible with RefreshActivity
      */
     public function parse(string $html): array
+    {
+        return $this->extract($html, '');
+    }
+
+    /**
+     * Extract activity data from HTML content.
+     *
+     * @param string $html Raw HTML content
+     * @param string $url Source URL for context (unused in this implementation)
+     * @return array Parsed activity data with keys: name, description, price, schedule, etc
+     */
+    public function extract(string $html, string $url): array
     {
         libxml_use_internal_errors(true);
         $dom = new \DOMDocument();
