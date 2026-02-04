@@ -445,3 +445,61 @@ Additional:
 - NO PHP file exceeds 300 lines
 - NO Doctrine dependencies in composer.json
 - All new code has corresponding tests
+
+---
+
+## Corrected Architecture (Post-Audit 2026-02-04)
+
+### Dependency Graph (Fixed)
+
+```
+Infrastructure Layer
+        ↑
+  Domain Interfaces (Functional Naming)
+        ↑
+Application Layer
+        ↑
+     Domain Layer
+```
+
+All Application use-cases now depend ONLY on Domain interfaces, never directly on Infrastructure.
+
+### Interface Naming (Screaming Architecture)
+
+**Before (Pattern-based - WRONG):**
+- `Port/HtmlParser` - Describes the pattern
+- `Port/ActivityEmbedder` - Describes the pattern
+
+**After (Functional - CORRECT):**
+- `HtmlContentExtractor/HtmlContentExtractor` - Describes what it does
+- `ActivityEmbeddingGenerator/ActivityEmbeddingGenerator` - Describes what it does
+- `NotificationSender/NotificationSender` - Describes what it does
+
+### Volume Strategy
+
+Named volume `uned_data` with subdirectories:
+- `/data/postgres` - Database backups
+- `/data/redis` - Cache snapshots  
+- `/data/logs` - Application logs (Loki format)
+
+### PHP-FPM + Nginx (Production Ready)
+
+Migrated from PHP built-in server to:
+- PHP 8.3-FPM with non-root user
+- Nginx reverse proxy with FastCGI
+- Health checks on both services
+- Security headers enabled
+
+### Migration System
+
+Idempotent SQL migrations with up/down scripts:
+- `infra/migrations/001_init.up.sql`
+- `infra/migrations/001_init.down.sql`
+- `infra/scripts/migrate.php [up|down]`
+
+### DI Container
+
+Centralized in `apps/Bootstrap/ContainerFactory.php`:
+- Domain → Infrastructure bindings
+- Environment-based configuration
+- PDO with timeout protection

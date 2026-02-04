@@ -1,155 +1,82 @@
-# Deployment Runbook
+# Production Deployment Runbook
 
-Este documento describe los pasos para desplegar UNED Activities Finder en producción.
+## Prerequisites
+- Docker and Docker Compose v2+
+- Named volume `uned_data` exists
+- Environment variables configured
+- SSH access to production server
 
-## Prerrequisitos
-
-- Servidor con Ubuntu 22.04+ o similar
-- Docker y Docker Compose instalados
-- Dominio configurado con DNS apuntando al servidor
-- SSL/TLS certificado (recomendado: Let's Encrypt)
-
-## Variables de Entorno
-
-Crear archivo `.env` con las siguientes variables:
+## Pre-Deployment Checks
 
 ```bash
-# Aplicación
-APP_DEBUG=false
-APP_VERSION=1.0.0
+# 1. Validate configuration
+docker-compose -f infra/compose.yaml config
 
-# Base de datos (Supabase/PostgreSQL)
-DB_HOST=postgres
-DB_PORT=5432
-DB_NAME=uned_activities
-DB_USER=postgres
-DB_PASSWORD=your_secure_password
+# 2. Run migrations
+php infra/scripts/migrate.php up
 
-# Supabase
-SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_ANON_KEY=your_anon_key
+# 3. Run tests
+composer phpunit
 
-# Redis (opcional, para rate limiting distribuido)
-REDIS_HOST=redis
-REDIS_PORT=6379
-REDIS_PASSWORD=your_redis_password
-
-# API
-RATE_LIMIT=100
-RATE_WINDOW=60
-JWT_SECRET=see-dokploy-panel
-
-# Frontend
-VITE_API_BASE=https://api.yourdomain.com
-VITE_SUPABASE_URL=https://your-project.supabase.co
-VITE_SUPABASE_ANON_KEY=your_anon_key
+# 4. Verify static analysis
+composer phpstan
 ```
 
-## Despliegue
-
-### 1. Clonar Repositorio
+## Deployment
 
 ```bash
-git clone https://github.com/your-org/anvius-uned-extension-finder.git
-cd anvius-uned-extension-finder
-```
+# 1. SSH into production server
+ssh user@production-server
 
-### 2. Construir Contenedores
+# 2. Navigate to project directory
+cd /var/www/uned-activities
 
-```bash
-make build
-# O individualmente:
-make build-backend
-make build-frontend
-```
-
-### 3. Ejecutar Migraciones
-
-```bash
-make infra-up
-docker compose up -d
-make migrate
-```
-
-### 4. Verificar Servicios
-
-```bash
-# Verificar que servicios están corriendo
-docker compose ps
-
-# Verificar API
-curl https://api.yourdomain.com/status
-
-# Verificar frontend
-curl https://www.yourdomain.com
-```
-
-## Despliegue Continuo
-
-### Configurar CI/CD (GitHub Actions)
-
-El workflow `.github/workflows/deploy.yml` se ejecutará en cada push a `main`.
-
-Para despliegue manual:
-
-```bash
-# Actualizar código
+# 3. Pull latest code
 git pull origin main
 
-# Reconstruir contenedores
-make build
+# 4. Install dependencies
+composer install --no-dev --optimize-autoloader
 
-# Reiniciar servicios
-make infra-restart
+# 5. Run migrations
+php infra/scripts/migrate.php up
+
+# 6. Rebuild containers
+docker-compose -f infra/compose.yaml up -d --build
+
+# 7. Verify health
+curl http://localhost:8080/health
+
+# 8. Monitor logs
+docker-compose logs -f --tail=100
 ```
 
-## Rollback
-
-Si algo sale mal:
+## Rollback (if needed)
 
 ```bash
-# Revertir a versión anterior
+# 1. Revert migrations
+php infra/scripts/migrate.php down
+
+# 2. Revert code
 git revert HEAD
-git push
 
-# O reset a commit específico
-git reset --hard <commit-hash>
-git push --force
+# 3. Rebuild containers
+docker-compose -f infra/compose.yaml up -d --build
 ```
 
-## Monitoreo
+## Troubleshooting
 
-### Ver Logs
-
+### Container not starting
 ```bash
-# Logs de todos los servicios
-make infra-logs
-
-# Logs de servicio específico
-docker compose logs -f php
-docker compose logs -f postgres
+docker-compose logs backend
+docker-compose ps
 ```
 
-### Health Checks
-
+### Database connection issues
 ```bash
-# Status de API
-curl https://api.yourdomain.com/status
-
-# Versión
-curl https://api.yourdomain.com/version
+docker-compose exec db psql -U postgres -d uned_activities
 ```
 
-## Backup
-
-Los datos persistentes están en `/data` para rsnapshot.
-
-Para backup manual:
-
+### Clear Redis cache
 ```bash
-# Dump de base de datos
-docker compose exec postgres pg_dump -U postgres uned_activities > backup.sql
-
-# Restaurar
-docker compose exec -T postgres psql -U postgres uned_activities < backup.sql
+docker-compose exec redis redis-cli FLUSHALL
 ```
