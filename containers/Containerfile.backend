@@ -1,0 +1,87 @@
+# Multi-stage build for smaller image
+FROM composer:2 AS composer
+
+FROM php:8.3-fpm-alpine AS builder
+
+LABEL maintainer="UNED Activities Team"
+LABEL version="0.19.0-alpha"
+
+# Install build dependencies and PHP extensions in one layer
+RUN apk add --no-cache --virtual .build-deps \
+    $PHPIZE_DEPS \
+    postgresql-dev \
+    libzip-dev \
+    && apk add --no-cache \
+    postgresql-client \
+    curl \
+    git \
+    zip \
+    unzip \
+    && pecl install redis \
+    && docker-php-ext-enable redis \
+    && docker-php-ext-install pdo pdo_pgsql zip opcache \
+    && docker-php-ext-opcache \
+    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+# Copy composer from composer image
+COPY --from=composer /usr/bin/composer /usr/bin/composer
+
+WORKDIR /app
+
+# Copy dependency files first for better caching
+COPY composer.json composer.lock ./
+
+# Install dependencies (only production)
+RUN composer install \
+    --no-dev \
+    --no-scripts \
+    --no-autoloader \
+    --no-progress \
+    --prefer-dist \
+    && composer dump-autoload --optimize --classmap-authoritative \
+    && rm -rf /root/.composer/cache
+
+# Copy application files
+COPY --chown=1000:1000 . .
+
+# Final stage - minimal image
+FROM php:8.3-fpm-alpine
+
+LABEL maintainer="UNED Activities Team"
+LABEL version="0.19.0-alpha"
+
+# Install only runtime dependencies
+RUN apk add --no-cache \
+    postgresql-client \
+    curl \
+    && rm -rf /var/cache/apk/*
+
+# Copy PHP extensions from builder
+COPY --from=builder --chown=1000:1000 /usr/local/etc/php/conf.d /usr/local/etc/php/conf.d
+COPY --from=builder --chown=1000:1000 /usr/local/lib/php/extensions /usr/local/lib/php/extensions
+COPY --from=builder --chown=1000:1000 /usr/local/bin/composer /usr/bin/composer
+
+# Copy application with vendor from builder
+COPY --from=builder --chown=1000:1000 /app /app
+
+WORKDIR /app
+
+# Create non-root user
+RUN addgroup -g 1000 php && \
+    adduser -D -u 1000 -G php php && \
+    chown -R php:php /app
+
+USER php
+
+# PHP-FPM configuration for production
+RUN echo "pm.max_children = 50" >> /usr/local/etc/php-fpm.conf && \
+    echo "pm.start_servers = 5" >> /usr/local/etc/php-fpm.conf && \
+    echo "pm.min_spare_servers = 5" >> /usr/local/etc/php-fpm.conf && \
+    echo "pm.max_spare_servers = 35" >> /usr/local/etc/php-fpm.conf && \
+    echo "pm.max_requests = 500" >> /usr/local/etc/php-fpm.conf && \
+    echo "clear_env = no" >> /usr/local/etc/php-fpm.conf
+
+EXPOSE 9000
+
+HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
+    CMD php -r "exit((int)(!file_exists('/app/apps/HttpApi/public/index.php')));"

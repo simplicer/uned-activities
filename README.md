@@ -1,4 +1,4 @@
-# UNED Activities Finder v0.10.1-alpha
+# UNED Activities Finder v0.19.0-alpha
 
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
 ![Status: Alpha](https://img.shields.io/badge/Status-Alpha-red.svg)
@@ -141,6 +141,6 @@ This project is licensed under the **MIT License** - see [LICENSE](LICENSE) file
 ---
 
 **Last Updated:** February 4, 2026
-**Version:** 0.10.1-alpha
+**Version:** 0.19.0-alpha
 **Status:** Pre-production (alpha testing)
 **License:** MIT

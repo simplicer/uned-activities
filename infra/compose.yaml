@@ -1,5 +1,5 @@
 # Docker Compose - Production (Dokploy + Traefik)
-# Traefik manages SSL and routing; no public ports exposed here.
+# Traefik manages SSL and routing using labels
 
 services:
   # PostgreSQL 17
@@ -35,11 +35,11 @@ services:
     networks:
       - app_network
 
-  # Backend PHP API - internal
+  # Backend PHP API
   backend:
     build:
       context: ..
-      dockerfile: infra/Dockerfile.backend
+      dockerfile: containers/Containerfile.backend
     restart: unless-stopped
     environment:
       - APP_ENV=production
@@ -60,26 +60,20 @@ services:
     networks:
       - app_network
       - dokploy-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=dokploy-network"
+      - "traefik.http.routers.backend.rule=Host(`api.lexemas.com`)"
+      - "traefik.http.routers.backend.entrypoints=websecure"
+      - "traefik.http.routers.backend.tls.certresolver=letsencrypt"
+      - "traefik.http.services.backend.loadbalancer.server.port=9000"
+      - "traefik.http.routers.backend.service=backend"
 
-  # Nginx reverse proxy for PHP
-  nginx:
-    image: nginx:alpine
-    restart: unless-stopped
-    volumes:
-      - ./infra/nginx.conf:/etc/nginx/conf.d/default.conf:ro
-    expose:
-      - "8080"
-    depends_on:
-      - backend
-    networks:
-      - app_network
-      - dokploy-network
-
-  # Harvest scheduler - refresh activities periodically
+  # Harvest scheduler
   harvester:
     build:
       context: ..
-      dockerfile: infra/Dockerfile.backend
+      dockerfile: containers/Containerfile.backend
     restart: unless-stopped
     environment:
       - APP_ENV=production
@@ -102,11 +96,11 @@ services:
     networks:
       - app_network
 
-  # Frontend static (Traefik routes to frontend)
+  # Frontend static
   frontend:
     build:
       context: ..
-      dockerfile: infra/Dockerfile.frontend
+      dockerfile: containers/Containerfile.frontend
       args:
         VITE_API_URL: ${VITE_API_URL:-https://api.lexemas.com}
     restart: unless-stopped
@@ -114,6 +108,13 @@ services:
       - "80"
     networks:
       - dokploy-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=dokploy-network"
+      - "traefik.http.routers.frontend.rule=Host(`lexemas.com`)"
+      - "traefik.http.routers.frontend.entrypoints=websecure"
+      - "traefik.http.routers.frontend.tls.certresolver=letsencrypt"
+      - "traefik.http.services.frontend.loadbalancer.server.port=80"
 
 volumes:
   uned_data:
