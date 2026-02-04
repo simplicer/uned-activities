@@ -1,133 +1,146 @@
 # UNED Activities Finder v0.10.1-alpha
 
-A monorepo project that scrapes UNED extension activities, stores normalized data in Supabase/Postgres, exposes a Zalando-compliant REST API, and provides a React UI in 6 languages.
+![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
+![Status: Alpha](https://img.shields.io/badge/Status-Alpha-red.svg)
+![Languages: 6](https://img.shields.io/badge/Languages-6-blue.svg)
 
-## Overview
+Find and stay updated on UNED extension activities in your language of choice.
 
-- **Backend:** PHP 8.3+ with Slim 4, following DDD + Clean Architecture
-- **Frontend:** React + Vite + TypeScript + shadcn/ui
-- **Database:** PostgreSQL via Supabase self-host
-- **Languages:** Spanish, English, Catalan, Valencian, Basque, Galician
+## What is UNED Activities Finder?
 
-## Project Structure
+A free, multilingual platform that helps you discover, search, and stay informed about UNED (Universidad Nacional de Educación a Distancia) extension courses and activities.
 
-```
-/                           # Monorepo root
-├── src/                    # PHP production code (PascalCase)
-│   ├── CatalogHarvest/     # Bounded contexts
-│   ├── CatalogQuery/
-│   ├── UserPreferences/
-│   ├── Notifications/
-│   └── Shared/
-├── apps/                   # Entry points
-│   ├── HttpApi/            # Slim 4 API
-│   ├── CliJobs/            # CLI commands
-│   └── Bootstrap/          # DI container
-├── tests/                  # Unit, Integration, Acceptance
-├── e2e/                    # End-to-end tests (Playwright)
-├── web/                    # React + Vite frontend
-├── infra/                  # Docker compose
-├── container/              # Containerfiles
-├── doc/                    # OpenAPI, architecture docs
-└── etc/                    # Versioned config
-```
+### Why You Need It
 
-## Quick Start
+UNED offers hundreds of extension activities each year, but they're scattered across multiple pages and hard to find. This platform:
+- Centralizes all UNED activities in one searchable place
+- Supports 6 languages (Spanish, English, Catalan, Valencian, Basque, Galician)
+- Lets you filter by price, topic, schedule, and location
+- Notifies you about new activities matching your interests
 
-### Prerequisites
+### Who Should Use It?
+- Students looking for extension courses
+- Professionals seeking continuous education
+- Anyone interested in UNED learning opportunities
 
-- Docker and Docker Compose
-- PHP 8.3+
-- Node.js 20+
-- Composer
+## Features
 
-### Start Services
+- **6 Languages:** Spanish, English, Catalan, Valencian, Basque, Galician
+- **Advanced Search & Filters:** Topic, price, schedule, location, format
+- **Smart Notifications:** Alerts for activities matching your interests
+- **Price Transparency:** See all costs upfront
+- **Save Searches:** Keep track of what interests you
+- **Fast & Mobile-Friendly:** Optimized for all devices
+- **100% Free:** Open source, no ads, no paywalls
 
+## Getting Started
+
+### Option 1: Use Online (Recommended)
+1. Visit https://activities.uned.es
+2. Browse or search for activities
+3. (Optional) Create account for saved searches and notifications
+
+### Option 2: Run Locally (Self-Hosted)
+
+**Requirements:**
+- Docker and Docker Compose (download from docker.com)
+- 4GB RAM minimum
+- ~10 minutes for first setup
+
+**Installation:**
 ```bash
-# Start Supabase and services
-make infra-up
+# 1. Clone repository
+git clone https://github.com/your-org/anvius-uned-extension-finder.git
+cd anvius-uned-extension-finder
 
-# Install backend dependencies
-make composer-install
+# 2. Setup environment
+cp infra/env/local.env .env
 
-# Install frontend dependencies
-make web-install
+# 3. Start services
+docker compose -f infra/compose.yaml up -d
 
-# Start backend dev server
-make server
-
-# Start frontend dev server
-make web-dev
+# 4. Open in browser
+open http://localhost:5173
 ```
 
-### Environment (important)
+The system will start downloading activities (5-10 minutes on first run).
 
-Ensure these variables are set (see `.env.example`):
+**Check it's working:**
+- Frontend: http://localhost:5173
+- API Status: http://localhost:8080/status
 
-- `JWT_SECRET` (required for auth)
-- `SMTP_HOST/SMTP_USER/SMTP_PASSWORD` (magic link emails)
-- `OPENROUTER_API_KEY` (AI extraction + embeddings)
-- `OPENROUTER_EMBEDDING_MODEL` (default `nomic-ai/nomic-embed-text-v1.5`)
-- `CORS_ALLOWED_ORIGINS` (frontend origin)
+## How to Use
 
-### Run Tests
+### Searching Activities
+1. Go to Activities tab
+2. Enter keywords or use filters
+3. Filter by price, language, format, duration
+4. Click activity for full details
+5. Register on UNED's official site
 
-```bash
-# Backend tests
-make test
+### Saving Searches (Login Required)
+1. Create search with favorite filters
+2. Click "Save Search"
+3. Give it a name
+4. Access anytime from your account
 
-# Frontend tests
-make web-test
+### Getting Notifications
+1. Sign in to account
+2. Go to Settings → Notifications
+3. Choose frequency:
+   - Immediate (instant notifications)
+   - Daily digest (once per day)
+   - Weekly digest (once per week)
 
-# Run harvest job
-make harvest
+### Understanding Activity Details
+- Activity description from UNED
+- Dates & time
+- Prices for different participant types
+- Instructor information
+- Format (online/in-person/hybrid)
+- Language
+- Direct enrollment link
 
-# Run notification digest
-make digest
-```
+## FAQ
 
-## API Documentation
+**Is this official UNED?**
+No, this is a community search tool. UNED is not affiliated.
 
-- **OpenAPI Spec:** `doc/api-specs/openapi.yaml`
-- **Status endpoint:** `GET /status`
-- **Version endpoint:** `GET /version`
-- **Activities:** `GET /v1/activities`
+**Is it free?**
+Yes, completely free and open source (MIT License).
 
-## Development
+**Do I need an account?**
+No to browse. Yes for saved searches and notifications.
 
-### Backend
+**How current is the data?**
+Activities refresh every hour from UNED sources.
 
-```bash
-# Run quality gates
-make quality
+**Why can't I register here?**
+This is a search tool only. Registration on UNED's site.
 
-# Format code
-make fmt
+**What languages are supported?**
+Spanish, English, Catalan, Valencian, Basque, Galician.
 
-# Static analysis
-make analyze
-```
+**How do I report bugs?**
+Create issue on GitHub or email support@example.com
 
-### Frontend
-
-```bash
-# Type check
-make web-typecheck
-
-# Lint
-make web-lint
-
-# Build for production
-make web-build
-```
-
-## Architecture
-
-See [CLAUDE.md](CLAUDE.md) for quick start with AI agents.
-
-- [AGENTS.md](doc/architecture/AGENTS.md) — Bounded contexts, ports, technology stack
-- [DOMAIN.md](doc/architecture/DOMAIN.md) — Domain model, entities, value objects
+**Can I self-host it?**
+Yes, it's open source. Just Docker Compose needed.
 
 ## License
 
 This project is licensed under the **MIT License** - see [LICENSE](LICENSE) file.
+
+## Support
+
+- **Website:** https://example.com
+- **Email:** support@example.com
+- **GitHub:** Issues and Discussions
+- **Social:** @UNEDActivities
+
+---
+
+**Last Updated:** February 4, 2026
+**Version:** 0.10.1-alpha
+**Status:** Pre-production (alpha testing)
+**License:** MIT
