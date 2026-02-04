@@ -74,7 +74,8 @@ function contrastRatio(a: [number, number, number], b: [number, number, number])
 }
 
 function ensureContrast(base: [number, number, number], target: [number, number, number], minRatio: number) {
-  let [h, s, l] = target;
+  const [h, s] = target;
+  let l = target[2];
   let ratio = contrastRatio(hslToRgb(base), hslToRgb([h, s, l]));
   let attempts = 0;
   while (ratio < minRatio && attempts < 24) {

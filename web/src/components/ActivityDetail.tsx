@@ -120,7 +120,7 @@ export function ActivityDetailPage() {
   });
 
   const activity = (data?.data || null) as ActivityDetail | null;
-  const isFavorite = !!id && favoriteIds?.includes(id);
+  const isFavorite = id ? favoriteIds?.includes(id) : false;
   const currentFavorite = !!id ? favorites?.find((item) => item.activity_id === id) : undefined;
   const isNotifying = currentFavorite ? Boolean(currentFavorite.notify_on_change) : false;
   const toggleFavorite = () => {
