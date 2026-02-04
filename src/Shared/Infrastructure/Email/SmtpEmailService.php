@@ -28,7 +28,7 @@ final class SmtpEmailService
      */
     public function sendMagicLink(string $toEmail, string $magicLink, string $userName = ''): bool
     {
-        $subject = 'Tu enlace de acceso - Buscador UNED';
+        $subject = 'Tu enlace de acceso - Lexemas';
         $message = $this->renderMagicLinkTemplate($magicLink, $userName);
 
         return $this->send($toEmail, $subject, $message);
@@ -39,13 +39,60 @@ final class SmtpEmailService
      */
     public function sendRegistrationConfirmation(string $toEmail, string $confirmLink): bool
     {
-        $subject = 'Confirma tu registro - Buscador UNED';
+        $subject = 'Confirma tu registro - Lexemas';
         $message = $this->renderRegistrationTemplate($confirmLink);
 
         return $this->send($toEmail, $subject, $message);
     }
 
+    /**
+     * Send contact form message.
+     */
+    public function sendContactMessage(
+        string $toEmail,
+        string $fromEmail,
+        string $fromName,
+        string $subject,
+        string $message
+    ): bool {
+        $safeSubject = $subject !== '' ? $subject : 'Formulario de contacto';
+        $body = $this->renderContactTemplate($fromEmail, $fromName, $message);
+
+        $mailer = $this->createMailer();
+        $mailer->addAddress($toEmail);
+        $mailer->addReplyTo($fromEmail, $fromName !== '' ? $fromName : $fromEmail);
+        $mailer->Subject = $safeSubject;
+        $mailer->isHTML(true);
+        $mailer->Body = $body;
+        $mailer->AltBody = strip_tags($body);
+
+        return $mailer->send();
+    }
+
+    /**
+     * Send activity update email.
+     */
+    public function sendActivityUpdate(string $toEmail, string $activityTitle, string $activityUrl, string $changeType): bool
+    {
+        $subject = 'Actividad actualizada en Lexemas';
+        $body = $this->renderActivityUpdateTemplate($activityTitle, $activityUrl, $changeType);
+
+        return $this->send($toEmail, $subject, $body);
+    }
+
     private function send(string $toEmail, string $subject, string $body): bool
+    {
+        $mailer = $this->createMailer();
+        $mailer->addAddress($toEmail);
+        $mailer->Subject = $subject;
+        $mailer->isHTML(true);
+        $mailer->Body = $body;
+        $mailer->AltBody = strip_tags($body);
+
+        return $mailer->send();
+    }
+
+    private function createMailer(): PHPMailer
     {
         $mailer = new PHPMailer(true);
         $mailer->isSMTP();
@@ -61,14 +108,9 @@ final class SmtpEmailService
 
         $mailer->CharSet = 'UTF-8';
         $mailer->setFrom($this->fromEmail, $this->fromName);
-        $mailer->addAddress($toEmail);
-        $mailer->Subject = $subject;
-        $mailer->isHTML(true);
-        $mailer->Body = $body;
-        $mailer->AltBody = strip_tags($body);
         $mailer->SMTPDebug = SMTP::DEBUG_OFF;
 
-        return $mailer->send();
+        return $mailer;
     }
 
     private function normalizeEncryption(string $value): string
@@ -98,13 +140,13 @@ final class SmtpEmailService
     <style>
         body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
         .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-        .button { display: inline-block; padding: 12px 30px; background-color: #008C45; color: white; text-decoration: none; border-radius: 5px; margin: 20px 0; }
+        .button { display: inline-block; padding: 12px 30px; background-color: #ffffff; color: #008C45; text-decoration: none; border-radius: 5px; margin: 20px 0; border: 2px solid #008C45; font-weight: 600; }
         .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; font-size: 12px; color: #888; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h2 style="color: #008C45;">Buscador de Actividades UNED</h2>
+        <h2 style="color: #008C45;">Lexemas</h2>
         <p>$greeting</p>
         <p>Haz clic en el siguiente botón para acceder a tu cuenta:</p>
         <p><a href="$magicLink" class="button">Acceder ahora</a></p>
@@ -113,7 +155,7 @@ final class SmtpEmailService
         <p style="color: #888; font-size: 14px;">Este enlace expirará en 15 minutos.</p>
         <div class="footer">
             <p>Si no solicitaste este enlace, puedes ignorar este correo.</p>
-            <p>&copy; 2026 <a href="https://simplicer.com" style="color: #008C45;">Simplicer SL</a> - Licencia MIT</p>
+            <p>&copy; 2026 <a href="https://simplicer.com" style="color: #008C45;">Simplicer SL</a></p>
         </div>
     </div>
 </body>
@@ -135,20 +177,91 @@ HTML;
     <style>
         body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
         .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-        .button { display: inline-block; padding: 12px 30px; background-color: #008C45; color: white; text-decoration: none; border-radius: 5px; margin: 20px 0; }
+        .button { display: inline-block; padding: 12px 30px; background-color: #ffffff; color: #008C45; text-decoration: none; border-radius: 5px; margin: 20px 0; border: 2px solid #008C45; font-weight: 600; }
         .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; font-size: 12px; color: #888; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h2 style="color: #008C45;">Buscador de Actividades UNED</h2>
-        <p>Gracias por registrarte en el Buscador de Actividades UNED.</p>
+        <h2 style="color: #008C45;">Lexemas</h2>
+        <p>Gracias por registrarte en Lexemas.</p>
         <p>Para completar tu registro, haz clic en el siguiente botón:</p>
         <p><a href="$confirmLink" class="button">Confirmar registro</a></p>
         <p>O copia y pega este enlace en tu navegador:</p>
         <p style="word-break: break-all; color: #666;">$confirmLink</p>
         <div class="footer">
-            <p>&copy; 2026 <a href="https://simplicer.com" style="color: #008C45;">Simplicer SL</a> - Licencia MIT</p>
+            <p>&copy; 2026 <a href="https://simplicer.com" style="color: #008C45;">Simplicer SL</a></p>
+        </div>
+    </div>
+</body>
+</html>
+HTML;
+    }
+
+    private function renderContactTemplate(string $email, string $name, string $message): string
+    {
+        $displayName = $name !== '' ? $name : $email;
+
+        return <<<HTML
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Nuevo mensaje de contacto</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .meta { margin-bottom: 20px; }
+        .meta p { margin: 4px 0; }
+        .message { white-space: pre-wrap; background: #f7f7f7; padding: 16px; border-radius: 6px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Nuevo mensaje desde el formulario legal</h2>
+        <div class="meta">
+            <p><strong>Remitente:</strong> $displayName</p>
+            <p><strong>Email:</strong> $email</p>
+        </div>
+        <div class="message">$message</div>
+    </div>
+</body>
+</html>
+HTML;
+    }
+
+    private function renderActivityUpdateTemplate(string $activityTitle, string $activityUrl, string $changeType): string
+    {
+        $reason = match ($changeType) {
+            'price-changed' => 'Se ha actualizado el precio.',
+            'updated' => 'Se ha actualizado la información.',
+            default => 'Hay cambios nuevos.',
+        };
+
+        return <<<HTML
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Actividad actualizada</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .button { display: inline-block; padding: 12px 30px; background-color: #ffffff; color: #008C45; text-decoration: none; border-radius: 5px; margin: 20px 0; border: 2px solid #008C45; font-weight: 600; }
+        .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; font-size: 12px; color: #888; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2 style="color: #008C45;">Lexemas</h2>
+        <p>Hola,</p>
+        <p>$reason</p>
+        <p><strong>$activityTitle</strong></p>
+        <p><a href="$activityUrl" class="button">Ver actividad</a></p>
+        <p>O copia y pega este enlace en tu navegador:</p>
+        <p style="word-break: break-all; color: #666;">$activityUrl</p>
+        <div class="footer">
+            <p>&copy; 2026 <a href="https://simplicer.com" style="color: #008C45;">Simplicer SL</a></p>
         </div>
     </div>
 </body>

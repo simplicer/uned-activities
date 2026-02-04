@@ -2,16 +2,20 @@
  * Activity Detail component.
  */
 
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useParams, Link } from 'react-router-dom';
 import { getActivity, getSimilarActivities, type ActivityDetail, type Staff, type PricingTable, type LocationDetails, type ScheduleDetails, type SimilarActivity } from '@/lib/api/activities';
-import { Loader2, ArrowLeft, Calendar, MapPin, ExternalLink, Clock, BookOpen, Users, GraduationCap, CheckCircle, XCircle } from 'lucide-react';
+import { Loader2, ArrowLeft, Calendar, MapPin, ExternalLink, Clock, BookOpen, Users, GraduationCap, CheckCircle, XCircle, Star, Bell, BellOff } from 'lucide-react';
 import { ActivityCard } from '@/components/ActivityCard';
 import { useTranslation } from 'react-i18next';
 import { useEffect } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { addFavorite, getFavoriteIds, getFavorites, removeFavorite, updateFavorite } from '@/lib/api/profile';
 
 export function ActivityDetailPage() {
   const { t, i18n } = useTranslation();
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
   const tr = (key: string): string => {
     const value = t(key);
     if (typeof value === 'string') return value;
@@ -48,7 +52,98 @@ export function ActivityDetailPage() {
     enabled: !!id,
   });
 
+  const { data: favoriteIds } = useQuery({
+    queryKey: ['favorite-ids'],
+    queryFn: () => getFavoriteIds(),
+    enabled: !!user,
+  });
+
+  const { data: favorites } = useQuery({
+    queryKey: ['favorites'],
+    queryFn: () => getFavorites(),
+    enabled: !!user,
+  });
+
+  const addFavoriteMutation = useMutation({
+    mutationFn: addFavorite,
+    onMutate: async (activityId: string) => {
+      await queryClient.cancelQueries({ queryKey: ['favorite-ids'] });
+      const previous = queryClient.getQueryData<string[]>(['favorite-ids']) || [];
+      if (!previous.includes(activityId)) {
+        queryClient.setQueryData(['favorite-ids'], [...previous, activityId]);
+      }
+      return { previous };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['favorite-ids'] });
+      queryClient.invalidateQueries({ queryKey: ['favorites'] });
+    },
+    onError: (_error, activityId, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(['favorite-ids'], context.previous);
+      } else {
+        queryClient.setQueryData(['favorite-ids'], (current: string[] | undefined) =>
+          (current || []).filter((id) => id !== activityId)
+        );
+      }
+    },
+  });
+
+  const removeFavoriteMutation = useMutation({
+    mutationFn: removeFavorite,
+    onMutate: async (activityId: string) => {
+      await queryClient.cancelQueries({ queryKey: ['favorite-ids'] });
+      const previous = queryClient.getQueryData<string[]>(['favorite-ids']) || [];
+      queryClient.setQueryData(
+        ['favorite-ids'],
+        previous.filter((id) => id !== activityId)
+      );
+      return { previous };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['favorite-ids'] });
+      queryClient.invalidateQueries({ queryKey: ['favorites'] });
+    },
+    onError: (_error, _activityId, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(['favorite-ids'], context.previous);
+      }
+    },
+  });
+
+  const updateFavoriteMutation = useMutation({
+    mutationFn: ({ activityId, data }: { activityId: string; data: { notifyOnChange?: boolean } }) =>
+      updateFavorite(activityId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['favorites'] });
+    },
+  });
+
   const activity = (data?.data || null) as ActivityDetail | null;
+  const isFavorite = !!id && favoriteIds?.includes(id);
+  const currentFavorite = !!id ? favorites?.find((item) => item.activity_id === id) : undefined;
+  const isNotifying = currentFavorite ? Boolean(currentFavorite.notify_on_change) : false;
+  const toggleFavorite = () => {
+    if (!user || !id) return;
+    if (isFavorite) {
+      removeFavoriteMutation.mutate(id);
+    } else {
+      addFavoriteMutation.mutate(id);
+    }
+  };
+
+  const toggleNotify = () => {
+    if (!user || !id) return;
+    if (!isFavorite) {
+      addFavoriteMutation.mutate(id, {
+        onSuccess: () => {
+          updateFavoriteMutation.mutate({ activityId: id, data: { notifyOnChange: true } });
+        },
+      });
+      return;
+    }
+    updateFavoriteMutation.mutate({ activityId: id, data: { notifyOnChange: !isNotifying } });
+  };
 
   useEffect(() => {
     if (typeof document === 'undefined') return;
@@ -235,9 +330,40 @@ export function ActivityDetailPage() {
         )}
 
         <div className="relative p-6 lg:p-8">
-          <h1 className="text-2xl lg:text-3xl font-bold text-white mb-6 leading-tight">
-            {renderText(activity.title) || tr('activity.noTitle')}
-          </h1>
+          <div className="flex items-start justify-between gap-4 mb-6">
+            <h1 className="text-2xl lg:text-3xl font-bold text-white leading-tight">
+              {renderText(activity.title) || tr('activity.noTitle')}
+            </h1>
+            {user && (
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={toggleNotify}
+                  aria-pressed={isNotifying}
+                  className={`flex items-center justify-center w-10 h-10 rounded-full border transition-colors ${
+                    isNotifying
+                      ? 'bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800'
+                      : 'bg-white/15 text-white border-white/30 hover:bg-white/25'
+                  }`}
+                  title={isNotifying ? tr('activity.notifyOn') : tr('activity.notifyOff')}
+                >
+                  {isNotifying ? <Bell className="w-4 h-4" /> : <BellOff className="w-4 h-4" />}
+                </button>
+                <button
+                  type="button"
+                  onClick={toggleFavorite}
+                  aria-pressed={isFavorite}
+                  className={`flex items-center justify-center w-10 h-10 rounded-full border transition-colors ${
+                    isFavorite
+                      ? 'bg-amber-50 text-amber-600 border-amber-200 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-800'
+                      : 'bg-white/15 text-white border-white/30 hover:bg-white/25'
+                  }`}
+                >
+                  <Star className={`w-4 h-4 ${isFavorite ? 'fill-current' : ''}`} />
+                </button>
+              </div>
+            )}
+          </div>
 
           <div className="flex flex-wrap gap-2">
             {activity.modality && (
@@ -584,7 +710,11 @@ export function ActivityDetailPage() {
             <section>
               <h2 className="text-lg font-semibold text-foreground mb-3">{tr('activity.moreInfo')}</h2>
               {contactText && (
-                <p className="text-muted-foreground leading-relaxed whitespace-pre-wrap">{renderText(contactText)}</p>
+                <div className="space-y-1 text-muted-foreground leading-relaxed">
+                  {renderText(contactText).split('\n').map((line, index) => (
+                    <p key={index}>{line}</p>
+                  ))}
+                </div>
               )}
               {(contactEmail || contactPhone) && (
                 <div className="mt-3 space-y-1 text-sm text-muted-foreground">

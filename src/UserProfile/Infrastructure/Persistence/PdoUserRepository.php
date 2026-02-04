@@ -66,6 +66,47 @@ final readonly class PdoUserRepository implements UserRepository
         return $this->mapToEntity($row);
     }
 
+    #[\Override]
+    public function deleteById(UserId $id): void
+    {
+        $stmt = $this->connection->prepare(
+            'DELETE FROM ' . self::TABLE . ' WHERE id = :id'
+        );
+
+        $stmt->execute(['id' => $id->toString()]);
+    }
+
+    #[\Override]
+    public function setPasswordHash(UserId $id, string $hash): void
+    {
+        $stmt = $this->connection->prepare(
+            'UPDATE ' . self::TABLE . ' SET password_hash = :hash, updated_at = :updated_at WHERE id = :id'
+        );
+
+        $stmt->execute([
+            'id' => $id->toString(),
+            'hash' => $hash,
+            'updated_at' => (new \DateTimeImmutable())->format('Y-m-d H:i:s'),
+        ]);
+    }
+
+    #[\Override]
+    public function getPasswordHashByEmail(string $email): ?string
+    {
+        $stmt = $this->connection->prepare(
+            'SELECT password_hash FROM ' . self::TABLE . ' WHERE email = :email'
+        );
+
+        $stmt->execute(['email' => $email]);
+        $hash = $stmt->fetchColumn();
+
+        if ($hash === false || $hash === null || $hash === '') {
+            return null;
+        }
+
+        return (string) $hash;
+    }
+
     private function existsById(UserId $id): bool
     {
         $stmt = $this->connection->prepare(
@@ -81,9 +122,9 @@ final readonly class PdoUserRepository implements UserRepository
     {
         $stmt = $this->connection->prepare(
             'INSERT INTO ' . self::TABLE . ' (
-                id, email, full_name, preferences, created_at, updated_at
+                id, email, full_name, preferences, password_hash, created_at, updated_at
             ) VALUES (
-                :id, :email, :full_name, :preferences, :created_at, :updated_at
+                :id, :email, :full_name, :preferences, :password_hash, :created_at, :updated_at
             )'
         );
 
@@ -92,6 +133,7 @@ final readonly class PdoUserRepository implements UserRepository
             'email' => $user->email,
             'full_name' => $user->fullName,
             'preferences' => json_encode($user->preferences),
+            'password_hash' => null,
             'created_at' => $user->createdAt->format('Y-m-d H:i:s'),
             'updated_at' => $user->updatedAt->format('Y-m-d H:i:s'),
         ]);

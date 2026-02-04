@@ -61,6 +61,35 @@ services:
     networks:
       - uned_qa_network
 
+  # Harvest scheduler - refresh activities periodically
+  harvester:
+    container_name: uned-harvester-qa
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile.backend
+    restart: unless-stopped
+    env_file:
+      - ./env/local.env
+    environment:
+      - APP_ENV=local
+      - APP_DEBUG=true
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_NAME=uned_activities
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - RATE_LIMIT=100
+      - RATE_WINDOW=60
+    command: ["/bin/sh", "/app/infra/scripts/harvest-loop.sh"]
+    depends_on:
+      - db
+      - redis
+    networks:
+      - uned_qa_network
+
+
   # Nginx Proxy Inverso - ÚnICO puerto expuesto
   nginx:
     image: nginx:1.25-alpine

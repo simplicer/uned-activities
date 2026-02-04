@@ -6,6 +6,7 @@ declare(strict_types=1);
 use CatalogHarvest\Application\DiscoverActivities\DiscoverActivities;
 use CatalogHarvest\Application\RefreshActivity\RefreshActivity;
 use CatalogHarvest\Application\Embeddings\GenerateActivityEmbedding;
+use CatalogHarvest\Application\Notifications\NotifyFavoriteUsers;
 use CatalogHarvest\Domain\ValueObject\ActivityId;
 use CatalogHarvest\Infrastructure\AI\AIActivityParser;
 use CatalogHarvest\Infrastructure\Http\GuzzleHtmlFetcher;
@@ -13,10 +14,12 @@ use CatalogHarvest\Infrastructure\Persistence\PdoActivityRepository;
 use CatalogHarvest\Infrastructure\Persistence\PdoActivitySnapshotRepository;
 use CatalogHarvest\Infrastructure\Persistence\PdoPriceSnapshotRepository;
 use CatalogHarvest\Infrastructure\Persistence\PdoActivityEmbeddingRepository;
+use Notifications\Infrastructure\Persistence\PdoNotificationRepository;
 use Shared\Infrastructure\AI\AIExtractor;
 use Shared\Infrastructure\AI\FallbackEmbeddingClient;
 use Shared\Infrastructure\AI\GeminiEmbeddingClient;
 use Shared\Infrastructure\AI\OpenRouterEmbeddingClient;
+use Shared\Infrastructure\Email\SmtpEmailService;
 use Shared\Infrastructure\Logging\LoggerFactory;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Command\Command;
@@ -24,6 +27,7 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
+use UserProfile\Infrastructure\Persistence\PdoFavoriteRepository;
 
 require_once __DIR__ . '/../../../vendor/autoload.php';
 
@@ -130,13 +134,20 @@ final class HarvestCommand extends Command
             }
         }
 
+        $notificationRepo = new PdoNotificationRepository($pdo);
+        $favoriteRepo = new PdoFavoriteRepository($pdo);
+        $emailService = $this->createEmailService();
+        $frontendUrl = $_ENV['FRONTEND_URL'] ?? 'http://localhost:8080';
+        $favoriteNotifier = new NotifyFavoriteUsers($favoriteRepo, $notificationRepo, $emailService, $frontendUrl);
+
         $refresh = new RefreshActivity(
             $fetcher,
             $activityRepo,
             $snapshotRepo,
             $priceRepo,
             aiParser: $aiParser,
-            embeddingService: $embeddingService
+            embeddingService: $embeddingService,
+            favoriteNotifier: $favoriteNotifier
         );
 
         $activities = $discoverResult->discovered;
@@ -193,6 +204,19 @@ final class HarvestCommand extends Command
         return new PDO($dsn, $user, $password, [
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
         ]);
+    }
+
+    private function createEmailService(): SmtpEmailService
+    {
+        $fromEmail = $_ENV['SMTP_FROM_EMAIL'] ?? 'noreply@example.com';
+        $fromName = $_ENV['SMTP_FROM_NAME'] ?? 'Lexemas';
+        $host = $_ENV['SMTP_HOST'] ?? 'smtp.gmail.com';
+        $port = (int) ($_ENV['SMTP_PORT'] ?? 587);
+        $user = $_ENV['SMTP_USER'] ?? ($_ENV['SMTP_USERNAME'] ?? '');
+        $password = $_ENV['SMTP_PASSWORD'] ?? '';
+        $encryption = $_ENV['SMTP_ENCRYPTION'] ?? 'tls';
+
+        return new SmtpEmailService($fromEmail, $fromName, $host, $port, $user, $password, $encryption);
     }
 }
 

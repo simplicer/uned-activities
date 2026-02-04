@@ -48,7 +48,7 @@ final readonly class RequestMagicLink
         $this->tokenRepository->save($magicLink);
 
         // Send email
-        $magicLinkUrl = sprintf('%s/auth/verify?token=%s', rtrim($this->frontendUrl, '/'), $token->toString());
+        $magicLinkUrl = sprintf('%s/?token=%s', rtrim($this->frontendUrl, '/'), $token->toString());
         $this->emailService->sendMagicLink($email, $magicLinkUrl);
     }
 }

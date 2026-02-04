@@ -6,6 +6,7 @@ import { createContext, useContext, useState, useEffect, ReactNode } from 'react
 import {
   requestMagicLink,
   verifyMagicLink,
+  loginWithPassword,
   storeAuthToken,
   clearAuthToken,
   getStoredUser,
@@ -19,6 +20,7 @@ interface AuthContextType {
   loading: boolean;
   isAuthenticated: boolean;
   signIn: (email: string) => Promise<void>;
+  signInWithPassword: (email: string, password: string) => Promise<void>;
   verifyToken: (token: string) => Promise<void>;
   signOut: () => Promise<void>;
   magicLinkSent: boolean;
@@ -71,6 +73,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const signInWithPassword = async (email: string, password: string) => {
+    const response = await loginWithPassword(email, password);
+    const authUser: AuthUser = {
+      id: response.user.id,
+      email: response.user.email,
+      token: response.token,
+    };
+    setUser(authUser);
+    storeAuthToken(response.token, response.user.id, response.user.email);
+    setMagicLinkSent(false);
+  };
+
   const signOut = async () => {
     setUser(null);
     clearAuthToken();
@@ -82,6 +96,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     loading,
     isAuthenticated: user !== null,
     signIn,
+    signInWithPassword,
     verifyToken,
     signOut,
     magicLinkSent,

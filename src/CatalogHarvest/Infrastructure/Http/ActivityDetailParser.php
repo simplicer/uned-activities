@@ -93,17 +93,69 @@ final class ActivityDetailParser
         $sections['assistance'] = $this->extractSectionText($xpath, 'Asistencia');
         $sections['virtualAssistance'] = $this->extractSectionText($xpath, 'Asistencia virtual');
 
-        // Contact / More info
-        $moreInfo = $this->extractSectionText($xpath, 'Más información');
-        if ($moreInfo) {
-            $contact = ['text' => $moreInfo];
-            if (preg_match('/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i', $moreInfo, $matches)) {
-                $contact['email'] = $matches[0];
+        // Contact / More info (preserve line breaks)
+        $moreInfoNodes = $xpath->query("//dt[contains(., 'Más información')]/following-sibling::dd[1]");
+        if ($moreInfoNodes !== false && $moreInfoNodes->length > 0) {
+            $node = $moreInfoNodes->item(0);
+            if ($node) {
+                $html = $node->ownerDocument?->saveHTML($node) ?? '';
+                if ($html !== '') {
+                    $html = preg_replace('#<br\\s*/?>#i', "\n", $html);
+                    $text = trim(preg_replace('/\\s+\\n/', "\n", strip_tags($html)));
+                    $text = html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+                    $text = preg_replace("/\\n{2,}/", "\n", $text);
+                    if ($text !== '') {
+                        $contact = ['text' => $text];
+                        $lines = array_values(array_filter(array_map('trim', preg_split('/\\n+/', $text))));
+                        $email = null;
+                        $phone = null;
+
+                        foreach ($lines as $line) {
+                            if ($email === null && preg_match('/[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}/i', $line, $matches)) {
+                                $email = $matches[0];
+                                $before = trim(str_replace($email, '', $line));
+                                if ($before !== '') {
+                                    $candidate = $this->extractPhoneCandidate($before);
+                                    if ($candidate !== null) {
+                                        $phone = $candidate;
+                                    }
+                                }
+                                continue;
+                            }
+
+                            if ($phone === null && preg_match('/\\b(tel|tlf|teléfono)\\b/i', $line) === 1) {
+                                $candidate = $this->extractPhoneCandidate($line);
+                                if ($candidate !== null) {
+                                    $phone = $candidate;
+                                }
+                            }
+                        }
+
+                        if ($email === null && preg_match('/[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}/i', $text, $matches)) {
+                            $email = $matches[0];
+                        }
+
+                        if ($phone === null) {
+                            foreach ($lines as $line) {
+                                $candidate = $this->extractPhoneCandidate($line);
+                                if ($candidate !== null && preg_match('/\\d{4,}/', $candidate) === 1) {
+                                    $phone = $candidate;
+                                    break;
+                                }
+                            }
+                        }
+
+                        if ($email !== null) {
+                            $contact['email'] = $email;
+                        }
+                        if ($phone !== null) {
+                            $contact['phone'] = $phone;
+                        }
+
+                        $sections['contact'] = $contact;
+                    }
+                }
             }
-            if (preg_match('/(?:\\+?\\d[\\d\\s\\-\\/\\.]{6,})/', $moreInfo, $matches)) {
-                $contact['phone'] = trim($matches[0]);
-            }
-            $sections['contact'] = $contact;
         }
 
         // Collaborators
@@ -1003,22 +1055,46 @@ final class ActivityDetailParser
         $nodes = $xpath->query("//dt[contains(text(), 'Más información')]/following-sibling::dd/address");
 
         if ($nodes !== false && $nodes->length > 0) {
-            $address = $xpath->query('.//br', $nodes->item(0));
-            $addressLines = [];
-
-            foreach ($address as $i => $br) {
-                $text = trim($br->textContent);
-                if ($text !== '') {
-                    $addressLines[] = $text;
+            $node = $nodes->item(0);
+            if ($node) {
+                $html = $node->ownerDocument?->saveHTML($node) ?? '';
+                if ($html !== '') {
+                    $html = preg_replace('#<br\\s*/?>#i', "\n", $html);
+                    $text = trim(preg_replace('/\\s+\\n/', "\n", strip_tags($html)));
+                    $text = html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+                    $text = preg_replace("/\\n{2,}/", "\n", $text);
+                    $lines = array_values(array_filter(array_map('trim', preg_split('/\\n+/', $text))));
+                    if (!empty($lines)) {
+                        $details['address'] = implode(', ', $lines);
+                    }
                 }
-            }
-
-            if (!empty($addressLines)) {
-                $details['address'] = implode(', ', $addressLines);
             }
         }
 
         return empty($details) ? null : $details;
+    }
+
+    private function extractPhoneCandidate(string $text): ?string
+    {
+        if (preg_match('/(?:\\+?\\d[\\d\\s\\-\\/\\.]{6,}\\d)/', $text, $matches) !== 1) {
+            return null;
+        }
+
+        $candidate = trim($matches[0]);
+        $digits = preg_replace('/\\D+/', '', $candidate);
+        if ($digits === null) {
+            return null;
+        }
+
+        if (strlen($digits) < 8) {
+            return null;
+        }
+
+        if (strlen($digits) === 5) {
+            return null;
+        }
+
+        return $candidate;
     }
 
     private function extractScheduleDetails(DOMXPath $xpath): ?array

@@ -14,8 +14,11 @@ dist-ssr/
 .env
 .env.local
 .env.*.local
+web/.env
 infra/env/*.local
 infra/env/local.env
+infra/.env
+infra/.migration-version
 
 # Local data / tooling
 infra/volumes/

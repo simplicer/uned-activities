@@ -15,6 +15,7 @@ use CatalogHarvest\Domain\ValueObject\ActivityId;
 use CatalogHarvest\Infrastructure\Http\ActivityDetailParser;
 use CatalogHarvest\Infrastructure\AI\AIActivityParser;
 use CatalogHarvest\Application\Embeddings\GenerateActivityEmbedding;
+use CatalogHarvest\Application\Notifications\NotifyFavoriteUsers;
 
 /**
  * RefreshActivity use case.
@@ -32,6 +33,7 @@ final readonly class RefreshActivity
         private ActivityDetailParser $parser = new ActivityDetailParser(),
         private ?AIActivityParser $aiParser = null,
         private ?GenerateActivityEmbedding $embeddingService = null,
+        private ?NotifyFavoriteUsers $favoriteNotifier = null,
     ) {
     }
 
@@ -129,6 +131,14 @@ final readonly class RefreshActivity
                 hash: $newHash,
                 changeType: $changeType,
             ));
+
+            if ($this->favoriteNotifier instanceof NotifyFavoriteUsers) {
+                try {
+                    $this->favoriteNotifier->notify($updatedActivity, $changeType);
+                } catch (\Throwable $e) {
+                    error_log('Favorite notification failed: ' . $e->getMessage());
+                }
+            }
         }
 
         // Store price snapshot if price changed

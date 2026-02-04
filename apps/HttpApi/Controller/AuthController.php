@@ -9,6 +9,7 @@ use Auth\Application\VerifyMagicLink\VerifyMagicLink;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Shared\Infrastructure\Auth\JwtService;
+use UserProfile\Domain\Port\UserRepository;
 
 /**
  * Authentication controller for magic link auth.
@@ -19,6 +20,7 @@ final readonly class AuthController
         private RequestMagicLink $requestMagicLink,
         private VerifyMagicLink $verifyMagicLink,
         private JwtService $jwtService,
+        private UserRepository $userRepository,
     ) {
     }
 
@@ -87,7 +89,17 @@ final readonly class AuthController
             return $response->withStatus(400)->withHeader('Content-Type', 'application/json');
         }
 
-        $result = $this->verifyMagicLink->execute($token);
+        try {
+            $result = $this->verifyMagicLink->execute($token);
+        } catch (\Exception $e) {
+            error_log('Magic link verify failed: ' . $e->getMessage());
+            $response->getBody()->write(json_encode([
+                'error' => 'server_error',
+                'message' => 'Unable to verify token',
+            ], JSON_THROW_ON_ERROR));
+
+            return $response->withStatus(500)->withHeader('Content-Type', 'application/json');
+        }
 
         if (!$result->success) {
             $response->getBody()->write(json_encode([
@@ -119,7 +131,7 @@ final readonly class AuthController
             'data' => [
                 'user' => [
                     'id' => $result->user->id->toString(),
-                    'email' => $result->user->email->toString(),
+                    'email' => $result->user->email,
                 ],
                 'token' => $sessionToken,
                 'message' => 'Authentication successful',
@@ -150,6 +162,83 @@ final readonly class AuthController
             'data' => [
                 'id' => $userId,
                 'email' => $email,
+            ],
+        ], JSON_THROW_ON_ERROR));
+
+        return $response->withHeader('Content-Type', 'application/json');
+    }
+
+    /**
+     * POST /auth/password - Authenticate with email and password.
+     */
+    public function password(Request $request, Response $response): Response
+    {
+        $body = $request->getParsedBody();
+        $email = isset($body['email']) ? strtolower(trim((string) $body['email'])) : '';
+        $password = isset($body['password']) ? (string) $body['password'] : '';
+
+        if ($email === '' || $password === '') {
+            $response->getBody()->write(json_encode([
+                'error' => 'validation_error',
+                'message' => 'Email y contraseña son obligatorios',
+            ], JSON_THROW_ON_ERROR));
+
+            return $response->withStatus(400)->withHeader('Content-Type', 'application/json');
+        }
+
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $response->getBody()->write(json_encode([
+                'error' => 'validation_error',
+                'message' => 'Email inválido',
+            ], JSON_THROW_ON_ERROR));
+
+            return $response->withStatus(400)->withHeader('Content-Type', 'application/json');
+        }
+
+        $hash = $this->userRepository->getPasswordHashByEmail($email);
+
+        if ($hash === null || !password_verify($password, $hash)) {
+            $response->getBody()->write(json_encode([
+                'error' => 'invalid_credentials',
+                'message' => 'Usuario o contraseña inválidos',
+            ], JSON_THROW_ON_ERROR));
+
+            return $response->withStatus(401)->withHeader('Content-Type', 'application/json');
+        }
+
+        $user = $this->userRepository->findByEmail($email);
+        if ($user === null) {
+            $response->getBody()->write(json_encode([
+                'error' => 'invalid_credentials',
+                'message' => 'Usuario o contraseña inválidos',
+            ], JSON_THROW_ON_ERROR));
+
+            return $response->withStatus(401)->withHeader('Content-Type', 'application/json');
+        }
+
+        try {
+            $sessionToken = $this->jwtService->issue([
+                'sub' => $user->id->toString(),
+                'email' => $user->email,
+                'role' => 'authenticated',
+            ]);
+        } catch (\RuntimeException $e) {
+            $response->getBody()->write(json_encode([
+                'error' => 'server_error',
+                'message' => $e->getMessage(),
+            ], JSON_THROW_ON_ERROR));
+
+            return $response->withStatus(500)->withHeader('Content-Type', 'application/json');
+        }
+
+        $response->getBody()->write(json_encode([
+            'data' => [
+                'user' => [
+                    'id' => $user->id->toString(),
+                    'email' => $user->email,
+                ],
+                'token' => $sessionToken,
+                'message' => 'Authentication successful',
             ],
         ], JSON_THROW_ON_ERROR));
 

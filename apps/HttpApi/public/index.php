@@ -14,6 +14,7 @@ use CatalogHarvest\Infrastructure\Persistence\PdoActivityEmbeddingRepository;
 use CatalogHarvest\Infrastructure\Persistence\PdoPriceSnapshotRepository;
 use HttpApi\Controller\ActivityController;
 use HttpApi\Controller\AuthController;
+use HttpApi\Controller\ContactController;
 use Shared\Infrastructure\Email\SmtpEmailService;
 use Shared\Infrastructure\Auth\JwtService;
 use Shared\Infrastructure\Middleware\CorsMiddleware;
@@ -21,11 +22,16 @@ use Shared\Infrastructure\Middleware\RateLimiterMiddleware;
 use Shared\Infrastructure\Middleware\WebTokenGateMiddleware;
 use Shared\Infrastructure\Routing\ActivityRoutes;
 use Shared\Infrastructure\Routing\AuthRoutes;
+use Shared\Infrastructure\Routing\ContactRoutes;
 use Shared\Infrastructure\Routing\MetaRoutes;
 use Slim\App;
+use Notifications\Domain\Port\NotificationRepository;
+use Notifications\Infrastructure\Persistence\PdoNotificationRepository;
+use UserProfile\Domain\Port\FavoriteRepository;
 use UserProfile\Domain\Port\SavedSearchRepository;
 use UserProfile\Domain\Port\UserRepository;
 use UserProfile\Infrastructure\Http\ProfileRoutes;
+use UserProfile\Infrastructure\Persistence\PdoFavoriteRepository;
 use UserProfile\Infrastructure\Persistence\PdoSavedSearchRepository;
 use UserProfile\Infrastructure\Persistence\PdoUserRepository;
 
@@ -88,6 +94,8 @@ $container->set(ActivityEmbeddingRepository::class, \DI\autowire(PdoActivityEmbe
 $container->set(PriceSnapshotRepository::class, \DI\autowire(PdoPriceSnapshotRepository::class));
 $container->set(UserRepository::class, \DI\autowire(PdoUserRepository::class));
 $container->set(SavedSearchRepository::class, \DI\autowire(PdoSavedSearchRepository::class));
+$container->set(FavoriteRepository::class, \DI\autowire(PdoFavoriteRepository::class));
+$container->set(NotificationRepository::class, \DI\autowire(PdoNotificationRepository::class));
 
 // Auth services
 $container->set(MagicTokenRepository::class, \DI\autowire(PdoMagicTokenRepository::class));
@@ -102,6 +110,12 @@ $smtpPassword = $_ENV['SMTP_PASSWORD'] ?? '';
 $smtpEncryption = $_ENV['SMTP_ENCRYPTION'] ?? 'tls';
 $container->set(SmtpEmailService::class, \DI\create(SmtpEmailService::class)
     ->constructor($smtpFromEmail, $smtpFromName, $smtpHost, $smtpPort, $smtpUser, $smtpPassword, $smtpEncryption));
+
+// Contact controller
+$contactRecipient = $_ENV['CONTACT_EMAIL'] ?? 'hola@lexemas.com';
+$container->set(ContactController::class, \DI\autowire(ContactController::class)
+    ->constructorParameter('recipient', $contactRecipient)
+    ->constructorParameter('context', 'Contacto'));
 
 // Auth use cases
 $frontendUrl = $_ENV['FRONTEND_URL'] ?? 'http://localhost:8080';
@@ -145,10 +159,16 @@ $activityController = $container->get(ActivityController::class);
 $authController = $container->get(AuthController::class);
 (new AuthRoutes())($app, $authController);
 
+// Register contact routes
+$contactController = $container->get(ContactController::class);
+(new ContactRoutes())($app, $contactController);
+
 // Register profile routes
 $userRepository = $container->get(UserRepository::class);
 $savedSearchRepository = $container->get(SavedSearchRepository::class);
-(new ProfileRoutes())($app, $userRepository, $savedSearchRepository);
+$favoriteRepository = $container->get(FavoriteRepository::class);
+$notificationRepository = $container->get(NotificationRepository::class);
+(new ProfileRoutes())($app, $userRepository, $savedSearchRepository, $favoriteRepository, $notificationRepository);
 
 // Run the application
 $app->run();

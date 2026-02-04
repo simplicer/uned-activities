@@ -15,4 +15,7 @@ interface UserRepository
     public function save(User $user): void;
     public function findById(UserId $id): ?User;
     public function findByEmail(string $email): ?User;
+    public function deleteById(UserId $id): void;
+    public function setPasswordHash(UserId $id, string $hash): void;
+    public function getPasswordHashByEmail(string $email): ?string;
 }

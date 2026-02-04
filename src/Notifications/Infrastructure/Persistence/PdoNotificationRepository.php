@@ -53,9 +53,14 @@ final readonly class PdoNotificationRepository implements NotificationRepository
     #[\Override]
     public function findByUserId(UserId $userId, int $limit = 50, int $offset = 0): array
     {
+        $cleanup = $this->connection->prepare(
+            'DELETE FROM ' . self::TABLE . ' WHERE created_at < (NOW() - INTERVAL \'30 days\')'
+        );
+        $cleanup->execute();
+
         $stmt = $this->connection->prepare(
             'SELECT * FROM ' . self::TABLE . ' ' .
-            'WHERE user_id = :user_id ' .
+            'WHERE user_id = :user_id AND created_at >= (NOW() - INTERVAL \'30 days\') ' .
             'ORDER BY created_at DESC ' .
             'LIMIT :limit OFFSET :offset'
         );

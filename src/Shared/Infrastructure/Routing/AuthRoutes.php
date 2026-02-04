@@ -20,6 +20,9 @@ class AuthRoutes
         // POST /v1/auth/verify - Verify magic link
         $app->post('/v1/auth/verify', fn($request, $response) => $controller->verify($request, $response));
 
+        // POST /v1/auth/password - Login with password
+        $app->post('/v1/auth/password', fn($request, $response) => $controller->password($request, $response));
+
         // GET /v1/auth/me - Get current user
         $app->get('/v1/auth/me', fn($request, $response) => $controller->me($request, $response));
     }

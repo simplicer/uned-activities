@@ -13,7 +13,7 @@ export function TermsPage() {
             <BookOpen className="w-7 h-7 text-white" />
           </div>
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Términos de Uso</h1>
+            <h1 className="text-3xl font-bold text-foreground">Condiciones del Servicio</h1>
             <p className="text-muted-foreground">Última actualización: Febrero 2026</p>
           </div>
         </div>
@@ -21,66 +21,92 @@ export function TermsPage() {
 
       <div className="bg-card rounded-xl shadow-sm border border-border p-8 space-y-8 prose prose-slate dark:prose-invert max-w-none">
         <section>
-          <h2 className="text-2xl font-bold text-foreground mb-4">1. Aceptación</h2>
+          <h2 className="text-2xl font-bold text-foreground mb-4">1. Titular del sitio</h2>
           <p className="text-muted-foreground">
-            Al acceder y utilizar este servicio aceptas estos Términos de Uso. Si no estás de acuerdo, no utilices el servicio.
+            El titular del sitio <strong>lexemas.com</strong> es <strong>SIMPLICER, S.L.</strong>, con domicilio en
+            Av. de la Libertad, 37, 04639, Turre, Almería, España. Este sitio no es la UNED ni está afiliado a dicha institución.
           </p>
         </section>
 
         <section>
-          <h2 className="text-2xl font-bold text-foreground mb-4">2. Descripción del servicio</h2>
+          <h2 className="text-2xl font-bold text-foreground mb-4">2. Objeto del servicio</h2>
           <p className="text-muted-foreground">
-            Este sitio es un buscador independiente de actividades de extensión de la UNED. La información se obtiene de fuentes
-            públicas y se ofrece tal cual, sin garantías de exactitud o actualización. No somos la UNED ni estamos afiliados a ella.
+            Este sitio ofrece un servicio informativo de agregación y consulta de actividades de extensión universitaria.
+            La información se proporciona exclusivamente con fines informativos.
           </p>
         </section>
 
         <section>
-          <h2 className="text-2xl font-bold text-foreground mb-4">3. Uso permitido</h2>
-          <ul className="list-disc list-inside text-muted-foreground space-y-2">
-            <li>Usar el servicio conforme a la legislación vigente y a estos términos.</li>
-            <li>No intentar interrumpir, degradar o comprometer la seguridad del servicio.</li>
-            <li>No realizar scraping masivo ni automatizado desde este sitio.</li>
-            <li>No suplantar identidad ni proporcionar datos falsos al registrarse.</li>
-          </ul>
+          <h2 className="text-2xl font-bold text-foreground mb-4">3. Origen y fiabilidad de los datos</h2>
+          <p className="text-muted-foreground">
+            Los datos se obtienen de la web pública de la UNED, en particular de <a className="text-primary hover:underline" href="https://extension.uned.es" target="_blank" rel="noopener noreferrer">extension.uned.es</a>.
+            La información puede contener errores o estar desactualizada, por lo que el usuario debe verificarla en la actividad original.
+            El sitio proporciona un enlace directo a la página de la UNED correspondiente.
+          </p>
         </section>
 
         <section>
-          <h2 className="text-2xl font-bold text-foreground mb-4">4. Propiedad intelectual</h2>
+          <h2 className="text-2xl font-bold text-foreground mb-4">4. Aceptación</h2>
+          <p className="text-muted-foreground">
+            El acceso y uso del sitio implica la aceptación plena de estas condiciones. Si no está de acuerdo, debe abstenerse
+            de utilizar el servicio.
+          </p>
+        </section>
+
+        <section>
+          <h2 className="text-2xl font-bold text-foreground mb-4">5. Exclusión de responsabilidad</h2>
+          <p className="text-muted-foreground">
+            El servicio se ofrece “tal cual”, sin garantías de ningún tipo. SIMPLICER, S.L. no garantiza la exactitud,
+            disponibilidad o actualidad de los datos, ni responde por daños directos o indirectos derivados del uso de este sitio.
+            El usuario acepta que el uso de la información se realiza bajo su exclusiva responsabilidad.
+          </p>
+        </section>
+
+        <section>
+          <h2 className="text-2xl font-bold text-foreground mb-4">6. Enlaces a terceros</h2>
+          <p className="text-muted-foreground">
+            Este sitio enlaza a páginas de terceros (UNED). SIMPLICER, S.L. no controla ni responde por dichos contenidos
+            o por las políticas de esos sitios.
+          </p>
+        </section>
+
+        <section>
+          <h2 className="text-2xl font-bold text-foreground mb-4">7. Propiedad intelectual</h2>
           <p className="text-muted-foreground">
             El software se distribuye bajo licencia MIT. Los contenidos y marcas de la UNED pertenecen a dicha institución.
-            Este sitio no reclama derechos sobre los contenidos de la UNED.
+            SIMPLICER, S.L. no reclama derechos sobre los contenidos de terceros.
           </p>
         </section>
 
         <section>
-          <h2 className="text-2xl font-bold text-foreground mb-4">5. Limitación de responsabilidad</h2>
-          <ul className="list-disc list-inside text-muted-foreground space-y-2">
-            <li>La información puede contener errores o estar desactualizada.</li>
-            <li>No garantizamos la disponibilidad continua del servicio.</li>
-            <li>No asumimos responsabilidad por daños derivados del uso del servicio.</li>
-          </ul>
-        </section>
-
-        <section>
-          <h2 className="text-2xl font-bold text-foreground mb-4">6. Protección de datos</h2>
+          <h2 className="text-2xl font-bold text-foreground mb-4">8. Cumplimiento legal</h2>
           <p className="text-muted-foreground">
-            El tratamiento de datos personales se regula en la Política de Privacidad. Al utilizar el servicio aceptas dicho tratamiento.
+            Este sitio cumple con la normativa española y europea aplicable, incluyendo la LSSI-CE, el RGPD y la LOPDGDD.
+            No se realizan actividades de comercio electrónico.
           </p>
         </section>
 
         <section>
-          <h2 className="text-2xl font-bold text-foreground mb-4">7. Modificaciones</h2>
+          <h2 className="text-2xl font-bold text-foreground mb-4">9. Modificaciones</h2>
           <p className="text-muted-foreground">
-            Estos términos pueden modificarse en cualquier momento. Las modificaciones entran en vigor desde su publicación en esta página.
+            SIMPLICER, S.L. podrá modificar estas condiciones en cualquier momento. Las modificaciones entran en vigor desde su
+            publicación en esta página.
           </p>
         </section>
 
         <section>
-          <h2 className="text-2xl font-bold text-foreground mb-4">8. Titular y contacto</h2>
+          <h2 className="text-2xl font-bold text-foreground mb-4">10. Contacto</h2>
           <p className="text-muted-foreground">
-            Titular del servicio: <strong>Antonio Villamarin</strong>. Para contacto, consulta los canales públicos del
-            repositorio en Codeberg.
+            Para comunicaciones legales, utiliza el <a className="text-primary hover:underline" href="/contact">formulario de contacto</a>
+            o la dirección postal indicada en el apartado “Titular del sitio”.
+          </p>
+        </section>
+
+        <section>
+          <h2 className="text-2xl font-bold text-foreground mb-4">11. Ley aplicable y jurisdicción</h2>
+          <p className="text-muted-foreground">
+            Estas condiciones se rigen por la legislación española. Las partes se someten a los Juzgados y Tribunales de
+            Almería (España), con renuncia a cualquier otro fuero.
           </p>
         </section>
       </div>

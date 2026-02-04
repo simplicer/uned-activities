@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Oxanium:wght@400;600;700&family=Signika+Negative:wght@400;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -39,6 +39,11 @@
     --ring: 152 100% 27%;
 
     --radius: 0.5rem;
+
+    --font-brand: 'Signika Negative', sans-serif;
+    --font-heading: 'Signika Negative', sans-serif;
+    --font-body: 'Signika Negative', system-ui, -apple-system, sans-serif;
+    --font-simplicer: 'Oxanium', 'Signika Negative', sans-serif;
   }
 
   .dark {
@@ -74,7 +79,15 @@
 
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-family: var(--font-body);
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading);
+  }
+
+  .font-simplicer {
+    font-family: var(--font-simplicer);
   }
 
   /* Smooth scrolling */
@@ -164,9 +177,14 @@
 }
 
 @layer utilities {
+  .font-brand {
+    font-family: var(--font-brand);
+  }
   /* Text gradients with UNED colors */
   .text-gradient {
     @apply bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent;
+    font-family: var(--font-brand);
+    letter-spacing: 0.04em;
   }
 
   /* Smooth transitions */

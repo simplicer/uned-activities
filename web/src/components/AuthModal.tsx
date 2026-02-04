@@ -15,8 +15,10 @@ interface AuthModalProps {
 
 export function AuthModal({ isOpen, onClose }: AuthModalProps) {
   const { t } = useTranslation();
-  const { signIn, verifyToken, magicLinkSent, setMagicLinkSent } = useAuth();
+  const { signIn, signInWithPassword, verifyToken, magicLinkSent, setMagicLinkSent } = useAuth();
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [authMode, setAuthMode] = useState<'magic' | 'password'>('magic');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
@@ -59,7 +61,20 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
     setIsSubmitting(true);
 
     try {
-      await signIn(email);
+      if (authMode === 'password') {
+        if (!password) {
+          setError(t('auth.passwordRequired'));
+          setIsSubmitting(false);
+          return;
+        }
+        await signInWithPassword(email, password);
+        onClose();
+        navigate('/', { replace: true });
+      } else {
+        await signIn(email);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t('auth.invalidCredentials'));
     } finally {
       setIsSubmitting(false);
     }
@@ -69,8 +84,21 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
     onClose();
     setMagicLinkSent(false);
     setEmail('');
+    setPassword('');
     setError('');
+    setAuthMode('magic');
   };
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        handleClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -98,7 +126,9 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
             <p className="text-muted-foreground mt-2">
               {magicLinkSent
                 ? t('auth.magicLinkSent')
-                : t('auth.withoutPasswords')}
+                : authMode === 'password'
+                  ? t('auth.signInWithPassword')
+                  : t('auth.withoutPasswords')}
             </p>
           </div>
 
@@ -120,6 +150,22 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
                   autoFocus
                 />
               </div>
+              {authMode === 'password' && (
+                <div>
+                  <label htmlFor="password" className="block text-sm font-medium text-foreground mb-2">
+                    {t('auth.password')}
+                  </label>
+                  <input
+                    id="password"
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder={t('auth.passwordPlaceholder')}
+                    className="input w-full"
+                    disabled={isSubmitting}
+                  />
+                </div>
+              )}
 
               {error && (
                 <div className="bg-destructive/10 text-destructive text-sm p-3 rounded-lg">
@@ -132,7 +178,21 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
                 disabled={isSubmitting}
                 className="w-full btn-primary py-3"
               >
-                {isSubmitting ? t('auth.sending') : t('auth.sendMagicLink')}
+                {isSubmitting
+                  ? t('auth.sending')
+                  : authMode === 'password'
+                    ? t('auth.signInWithPassword')
+                    : t('auth.sendMagicLink')}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setAuthMode(authMode === 'magic' ? 'password' : 'magic');
+                  setError('');
+                }}
+                className="w-full py-2 text-sm text-primary hover:underline"
+              >
+                {authMode === 'magic' ? t('auth.usePassword') : t('auth.useMagicLink')}
               </button>
             </form>
           ) : (

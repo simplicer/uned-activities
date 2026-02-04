@@ -22,12 +22,26 @@ async function authFetch<T>(endpoint: string, options?: RequestInit): Promise<T>
     },
   });
 
+  const raw = await response.text();
+  const parseJson = () => {
+    try {
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  };
+  const parsed = parseJson();
+
   if (!response.ok) {
-    const error: ApiError = await response.json();
-    throw new Error(error.message || 'API request failed');
+    const error = (parsed ?? {}) as ApiError;
+    throw new Error(error.message || response.statusText || 'API request failed');
   }
 
-  return response.json();
+  if (parsed === null) {
+    throw new Error('Unexpected response from server');
+  }
+
+  return parsed as T;
 }
 
 export interface MagicLinkRequest {
@@ -70,6 +84,17 @@ export async function verifyMagicLink(token: string): Promise<AuthResponse> {
   const response = await authFetch<{ data: AuthResponse }>('/auth/verify', {
     method: 'POST',
     body: JSON.stringify({ token }),
+  });
+  return response.data;
+}
+
+/**
+ * Login with email and password.
+ */
+export async function loginWithPassword(email: string, password: string): Promise<AuthResponse> {
+  const response = await authFetch<{ data: AuthResponse }>('/auth/password', {
+    method: 'POST',
+    body: JSON.stringify({ email, password }),
   });
   return response.data;
 }

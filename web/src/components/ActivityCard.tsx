@@ -4,14 +4,16 @@
 
 import { Activity } from '@/lib/api/activities';
 import { Link } from 'react-router-dom';
-import { MapPin, Calendar } from 'lucide-react';
+import { MapPin, Calendar, Star } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 interface ActivityCardProps {
   activity: Activity;
+  isFavorite?: boolean;
+  onToggleFavorite?: (activityId: string) => void;
 }
 
-export function ActivityCard({ activity }: ActivityCardProps) {
+export function ActivityCard({ activity, isFavorite, onToggleFavorite }: ActivityCardProps) {
   const { t, i18n } = useTranslation();
 
   const localeCode =
@@ -83,6 +85,24 @@ export function ActivityCard({ activity }: ActivityCardProps) {
                 {activity.title ? renderText(activity.title) : t('activity.noTitle')}
               </h3>
             </div>
+            {onToggleFavorite && (
+              <button
+                type="button"
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  onToggleFavorite(activity.id);
+                }}
+                aria-pressed={isFavorite}
+                className={`flex items-center justify-center w-9 h-9 rounded-full border transition-colors ${
+                  isFavorite
+                    ? 'bg-amber-50 text-amber-600 border-amber-200 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-800'
+                    : 'bg-muted/40 text-muted-foreground border-border hover:text-foreground'
+                }`}
+              >
+                <Star className={`w-4 h-4 ${isFavorite ? 'fill-current' : ''}`} />
+              </button>
+            )}
           </div>
 
           {/* Badges */}
@@ -90,6 +110,11 @@ export function ActivityCard({ activity }: ActivityCardProps) {
             {activity.modality && (
               <span className={`badge border ${modalityColors[activity.modality] || 'bg-primary/10 text-primary border-primary/20'}`}>
                 {modalityLabels[activity.modality] || renderText(activity.modality)}
+              </span>
+            )}
+            {isFavorite && (
+              <span className="badge bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-800">
+                ★ {t('activity.favorite')}
               </span>
             )}
             {activity.typology && (

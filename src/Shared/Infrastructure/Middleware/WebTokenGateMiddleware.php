@@ -29,6 +29,8 @@ final class WebTokenGateMiddleware
         '/v1/centers',
         '/v1/auth/request',
         '/v1/auth/verify',
+        '/v1/auth/password',
+        '/v1/contact',
     ];
 
     public function __construct(

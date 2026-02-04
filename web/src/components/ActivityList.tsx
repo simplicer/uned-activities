@@ -2,11 +2,13 @@
  * Activity List component with pagination.
  */
 
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { getActivities, type ActivityFilters } from '@/lib/api/activities';
 import { ActivityCard } from './ActivityCard';
 import { Loader2, Search, FileQuestion } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { addFavorite, getFavoriteIds, removeFavorite } from '@/lib/api/profile';
 
 interface ActivityListProps {
   filters: ActivityFilters;
@@ -14,10 +16,75 @@ interface ActivityListProps {
 
 export function ActivityList({ filters }: ActivityListProps) {
   const { t } = useTranslation();
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ['activities', filters],
     queryFn: () => getActivities(filters),
   });
+
+  const { data: favoriteIds } = useQuery({
+    queryKey: ['favorite-ids'],
+    queryFn: () => getFavoriteIds(),
+    enabled: !!user,
+  });
+
+  const addFavoriteMutation = useMutation({
+    mutationFn: addFavorite,
+    onMutate: async (activityId: string) => {
+      await queryClient.cancelQueries({ queryKey: ['favorite-ids'] });
+      const previous = queryClient.getQueryData<string[]>(['favorite-ids']) || [];
+      if (!previous.includes(activityId)) {
+        queryClient.setQueryData(['favorite-ids'], [...previous, activityId]);
+      }
+      return { previous };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['favorite-ids'] });
+      queryClient.invalidateQueries({ queryKey: ['favorites'] });
+    },
+    onError: (_error, activityId, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(['favorite-ids'], context.previous);
+      } else {
+        queryClient.setQueryData(['favorite-ids'], (current: string[] | undefined) =>
+          (current || []).filter((id) => id !== activityId)
+        );
+      }
+    },
+  });
+
+  const removeFavoriteMutation = useMutation({
+    mutationFn: removeFavorite,
+    onMutate: async (activityId: string) => {
+      await queryClient.cancelQueries({ queryKey: ['favorite-ids'] });
+      const previous = queryClient.getQueryData<string[]>(['favorite-ids']) || [];
+      queryClient.setQueryData(
+        ['favorite-ids'],
+        previous.filter((id) => id !== activityId)
+      );
+      return { previous };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['favorite-ids'] });
+      queryClient.invalidateQueries({ queryKey: ['favorites'] });
+    },
+    onError: (_error, _activityId, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(['favorite-ids'], context.previous);
+      }
+    },
+  });
+
+  const toggleFavorite = (activityId: string) => {
+    if (!user) return;
+    const isFavorite = favoriteIds?.includes(activityId);
+    if (isFavorite) {
+      removeFavoriteMutation.mutate(activityId);
+    } else {
+      addFavoriteMutation.mutate(activityId);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -55,6 +122,12 @@ export function ActivityList({ filters }: ActivityListProps) {
     );
   }
 
+  const total = data.meta?.total || 0;
+  const perPage = data.meta?.perPage || data.data.length || 1;
+  const page = data.meta?.page || 1;
+  const start = total === 0 ? 0 : (page - 1) * perPage + 1;
+  const end = total === 0 ? 0 : Math.min(page * perPage, total);
+
   return (
     <div className="space-y-6">
       {/* Results Summary */}
@@ -62,8 +135,8 @@ export function ActivityList({ filters }: ActivityListProps) {
         <div className="flex items-center gap-2">
           <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
           <p className="text-sm text-muted-foreground">
-            {t('page.showing')} <span className="font-semibold text-foreground">{data.data.length}</span> {t('page.of')}{' '}
-            <span className="font-semibold text-foreground">{data.meta?.total || 0}</span> {t('activities.title')}
+            {t('page.showing')} <span className="font-semibold text-foreground">{start}-{end}</span> {t('page.of')}{' '}
+            <span className="font-semibold text-foreground">{total}</span> {t('activities.title')}
           </p>
         </div>
         <div className="flex items-center gap-2 text-sm bg-muted/50 px-3 py-1.5 rounded-full">
@@ -77,7 +150,12 @@ export function ActivityList({ filters }: ActivityListProps) {
       {/* Activity Grid - Single column layout */}
       <div className="grid gap-6 grid-cols-1">
         {data.data.map((activity: any) => (
-          <ActivityCard key={activity.id} activity={activity} />
+          <ActivityCard
+            key={activity.id}
+            activity={activity}
+            isFavorite={favoriteIds?.includes(activity.id)}
+            onToggleFavorite={user ? toggleFavorite : undefined}
+          />
         ))}
       </div>
 
