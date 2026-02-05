@@ -495,10 +495,13 @@ final readonly class AIActivityParser
             $details['timeEnd'] = $schedule['timeEnd'];
         }
 
-        if (isset($schedule['timezone']) && $schedule['timezone'] !== '') {
-            $details['timezone'] = $schedule['timezone'];
-        } else {
-            $details['timezone'] = 'Europe/Madrid';
+        // Only add timezone if we have time details
+        if ($details !== []) {
+            if (isset($schedule['timezone']) && $schedule['timezone'] !== '') {
+                $details['timezone'] = $schedule['timezone'];
+            } else {
+                $details['timezone'] = 'Europe/Madrid';
+            }
         }
 
         return $details !== [] ? $details : null;
