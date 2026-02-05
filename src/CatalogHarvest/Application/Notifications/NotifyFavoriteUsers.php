@@ -34,7 +34,7 @@ final readonly class NotifyFavoriteUsers
 
         foreach ($users as $row) {
             $userId = UserId::fromString($row['user_id']);
-            $email = (string) ($row['email'] ?? '');
+            $email = $row['email'];
 
             if ($email === '') {
                 continue;
