@@ -29,7 +29,7 @@ final class DiscoverActivitiesIntegrationTest extends TestCase
         // Arrange - Use real HTML fetcher with mock response
         $html = file_get_contents($this->fixturesPath . '/uned-index-page.html');
 
-        $mockFetcher = new class ($html) implements \CatalogHarvest\Domain\Port\HtmlFetcher {
+        $mockFetcher = new class ($html) implements \CatalogHarvest\Domain\ActivityDataStorage\HtmlFetcher {
             private int $callCount = 0;
 
             public function __construct(private readonly string $html)
@@ -85,7 +85,7 @@ final class DiscoverActivitiesIntegrationTest extends TestCase
         // Arrange
         $html = file_get_contents($this->fixturesPath . '/uned-index-page.html');
 
-        $mockFetcher = new class ($html) implements \CatalogHarvest\Domain\Port\HtmlFetcher {
+        $mockFetcher = new class ($html) implements \CatalogHarvest\Domain\ActivityDataStorage\HtmlFetcher {
             public function fetch(string $url): string
             {
                 static $html = null;
@@ -126,7 +126,7 @@ final class DiscoverActivitiesIntegrationTest extends TestCase
         // Arrange
         $html = file_get_contents($this->fixturesPath . '/uned-index-page.html');
 
-        $mockFetcher = new class ($html) implements \CatalogHarvest\Domain\Port\HtmlFetcher {
+        $mockFetcher = new class ($html) implements \CatalogHarvest\Domain\ActivityDataStorage\HtmlFetcher {
             public function fetch(string $url): string
             {
                 return file_get_contents(__DIR__ . '/../fixtures/uned-index-page.html');
@@ -169,7 +169,7 @@ final class DiscoverActivitiesIntegrationTest extends TestCase
         $page1Html = file_get_contents($this->fixturesPath . '/uned-index-page.html');
         $page2Html = file_get_contents($this->fixturesPath . '/uned-index-page-2.html');
 
-        $mockFetcher = new class ($page1Html, $page2Html) implements \CatalogHarvest\Domain\Port\HtmlFetcher {
+        $mockFetcher = new class ($page1Html, $page2Html) implements \CatalogHarvest\Domain\ActivityDataStorage\HtmlFetcher {
             private int $callCount = 0;
 
             public function __construct(private readonly string $page1Html, private readonly string $page2Html)
