@@ -58,7 +58,7 @@ final readonly class GeminiEmbeddingClient implements EmbeddingClient
         $error = curl_error($ch);
         curl_close($ch);
 
-        if ($error) {
+        if ($error !== false && $error !== '') {
             throw new RuntimeException('Gemini embeddings request failed: ' . $error);
         }
 

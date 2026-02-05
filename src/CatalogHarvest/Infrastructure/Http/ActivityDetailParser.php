@@ -280,7 +280,7 @@ final class ActivityDetailParser implements HtmlContentExtractor
             if ($div instanceof \DOMElement) {
                 $categoria = $div->getAttribute('data-categoria');
 
-                if ($categoria) {
+                if ($categoria !== '' && $categoria !== null) {
                     $dates = $this->parseDateRange($categoria);
                     if ($dates !== null) {
                         return $dates;
@@ -709,7 +709,7 @@ final class ActivityDetailParser implements HtmlContentExtractor
                 }
 
                 $columnLabel = $columnHeaders[$i] ?? $sectionHeader ?? null;
-                $columnModality = $columnLabel ? $normalizeModality($columnLabel) : null;
+                $columnModality = ($columnLabel !== null && $columnLabel !== '') ? $normalizeModality($columnLabel) : null;
 
                 $modality = $rowModality ?? $columnModality;
                 $modalityLabel = $rowLabel !== '' ? $rowLabel : ($columnLabel !== null ? $columnLabel : null);
