@@ -284,7 +284,7 @@ final readonly class AIActivityParser
         return $data['modality']['hasRecorded'] ?? false;
     }
 
-    private function extractTypology(array $data): ?string
+    private function extractTypology(array $data): string
     {
         // Try to extract from title or other fields
         $title = strtolower($data['title'] ?? '');
