@@ -395,7 +395,8 @@ final readonly class PdoActivityRepository implements ActivityRepository
         );
 
         $stmt->execute(['status' => 'active']);
-        $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [];
+        $result = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        $rows = $result !== false ? $result : [];
 
         return array_map(
             static fn (array $row): array => [

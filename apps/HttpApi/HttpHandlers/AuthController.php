@@ -67,7 +67,7 @@ final readonly class AuthController
         } catch (\InvalidArgumentException $e) {
             $response->getBody()->write(json_encode([
                 'error' => 'validation_error',
-                'message' => $e->getMessage(),
+                'message' => $this->hideDetails ? 'Invalid request' : $e->getMessage(),
             ], JSON_THROW_ON_ERROR));
 
             return $response->withStatus(400)->withHeader('Content-Type', 'application/json');

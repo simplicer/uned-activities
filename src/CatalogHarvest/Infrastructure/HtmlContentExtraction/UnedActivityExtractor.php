@@ -53,7 +53,8 @@ final readonly class UnedActivityExtractor implements HtmlContentExtractor
         if ($nodes->length > 0) {
             $title = trim($nodes->item(0)->textContent);
             // Remove common suffixes
-            return preg_replace('/\s*-\s*UNED.*/i', '', $title) ?: null;
+            $cleanedTitle = preg_replace('/\s*-\s*UNED.*/i', '', $title);
+            return $cleanedTitle !== null ? $cleanedTitle : null;
         }
 
         return null;

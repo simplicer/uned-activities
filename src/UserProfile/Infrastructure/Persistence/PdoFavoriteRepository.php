@@ -89,7 +89,8 @@ final readonly class PdoFavoriteRepository implements FavoriteRepository
         );
         $stmt->execute(['user_id' => $userId->toString()]);
 
-        return $stmt->fetchAll(PDO::FETCH_COLUMN, 0) ?: [];
+        $result = $stmt->fetchAll(PDO::FETCH_COLUMN, 0);
+        return $result !== false ? $result : [];
     }
 
     public function findDetailedByUserId(UserId $userId): array
@@ -106,7 +107,8 @@ final readonly class PdoFavoriteRepository implements FavoriteRepository
         );
         $stmt->execute(['user_id' => $userId->toString()]);
 
-        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        return $result !== false ? $result : [];
     }
 
     public function updateMetadata(UserId $userId, string $activityId, ?bool $enrolled, ?float $rating, ?bool $notifyOnChange): void
@@ -152,7 +154,8 @@ final readonly class PdoFavoriteRepository implements FavoriteRepository
         );
         $stmt->execute(['activity_id' => $activityId]);
 
-        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        return $result !== false ? $result : [];
     }
 
     private function findRow(UserId $userId, string $activityId): ?array

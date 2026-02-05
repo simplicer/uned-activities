@@ -369,17 +369,21 @@ final class ActivityDetailParser implements HtmlContentExtractor
             $endMonth = $this->spanishMonthToNumber($matches[4]);
             $year = $matches[5];
 
+            $startDate = \DateTimeImmutable::createFromFormat('Y-m-d', sprintf("%d-%02d-%02d", $year, $startMonth, $startDay));
+            $endDate = \DateTimeImmutable::createFromFormat('Y-m-d', sprintf("%d-%02d-%02d", $year, $endMonth, $endDay));
             return [
-                'start' => \DateTimeImmutable::createFromFormat('Y-m-d', sprintf("%d-%02d-%02d", $year, $startMonth, $startDay)) ?: null,
-                'end' => \DateTimeImmutable::createFromFormat('Y-m-d', sprintf("%d-%02d-%02d", $year, $endMonth, $endDay)) ?: null,
+                'start' => $startDate !== false ? $startDate : null,
+                'end' => $endDate !== false ? $endDate : null,
             ];
         }
 
         // Pattern: "X/YY/AAAA - Z/WW/AAAA"
         if (preg_match('/(\d{1,2})\/(\d{1,2})\/(\d{4})\s*[-–]\s*(\d{1,2})\/(\d{1,2})\/(\d{4})/', $dateText, $matches)) {
+            $startDate = \DateTimeImmutable::createFromFormat('Y-m-d', sprintf("%s-%02d-%02d", $matches[3], $matches[2], $matches[1]));
+            $endDate = \DateTimeImmutable::createFromFormat('Y-m-d', sprintf("%s-%02d-%02d", $matches[6], $matches[5], $matches[4]));
             return [
-                'start' => \DateTimeImmutable::createFromFormat('Y-m-d', sprintf("%s-%02d-%02d", $matches[3], $matches[2], $matches[1])) ?: null,
-                'end' => \DateTimeImmutable::createFromFormat('Y-m-d', sprintf("%s-%02d-%02d", $matches[6], $matches[5], $matches[4])) ?: null,
+                'start' => $startDate !== false ? $startDate : null,
+                'end' => $endDate !== false ? $endDate : null,
             ];
         }
 
