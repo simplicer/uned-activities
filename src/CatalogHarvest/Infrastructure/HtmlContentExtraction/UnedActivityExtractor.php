@@ -152,7 +152,7 @@ final readonly class UnedActivityExtractor implements HtmlContentExtractor
         $nodes = $xpath->query("//span[contains(@class, 'matricula') or contains(@class, 'enrollment')]");
         if ($nodes->length > 0) {
             $text = strtolower(trim($nodes->item(0)->textContent));
-            return !str_contains($text, 'cerrada') && !str_contains($text, 'cerrada');
+            return !str_contains($text, 'cerrada') && !str_contains($text, 'closed');
         }
 
         return true;
