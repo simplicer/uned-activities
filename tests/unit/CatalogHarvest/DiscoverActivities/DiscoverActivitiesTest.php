@@ -185,10 +185,7 @@ final class DiscoverActivitiesTest extends TestCase
         $this->htmlFetcher
             ->expects($this->exactly(2))
             ->method('fetch')
-            ->willReturnMap([
-                ['https://extension.uned.es/cursos/ext/index', $indexHtml],
-                ['https://extension.uned.es/cursos/ext/index?page=2', $page2Html],
-            ]);
+            ->willReturnOnConsecutiveCalls($indexHtml, $page2Html);
 
         $this->repository
             ->method('existsByUrl')

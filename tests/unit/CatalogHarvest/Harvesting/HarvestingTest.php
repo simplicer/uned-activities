@@ -297,10 +297,7 @@ final class HarvestingTest extends TestCase
         $this->htmlFetcher
             ->expects($this->exactly(2))
             ->method('fetch')
-            ->willReturnMap([
-                ['https://extension.uned.es/cursos/ext/index', $page1Html],
-                ['https://extension.uned.es/cursos/ext/index?page=2', $page2Html],
-            ]);
+            ->willReturnOnConsecutiveCalls($page1Html, $page2Html);
 
         $this->activityRepository
             ->method('existsByUrl')
