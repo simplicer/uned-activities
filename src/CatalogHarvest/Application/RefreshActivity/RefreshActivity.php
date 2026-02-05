@@ -31,7 +31,6 @@ final readonly class RefreshActivity
         private ActivitySnapshotRepository $snapshotRepository,
         private PriceSnapshotRepository $priceSnapshotRepository,
         private HtmlContentExtractor $contentExtractor,
-        private ?ActivityEmbeddingGenerator $embeddingGenerator = null,
         private ?GenerateActivityEmbedding $embeddingService = null,
         private ?NotifyFavoriteUsers $favoriteNotifier = null,
     ) {
