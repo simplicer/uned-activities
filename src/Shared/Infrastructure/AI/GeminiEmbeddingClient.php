@@ -36,7 +36,7 @@ final readonly class GeminiEmbeddingClient implements EmbeddingClient
 
         $jsonPayload = json_encode($payload, JSON_THROW_ON_ERROR);
 
-        $url = sprintf(
+        $url = \sprintf(
             'https://generativelanguage.googleapis.com/v1beta/models/%s:embedContent?key=%s',
             urlencode($this->model),
             urlencode($this->apiKey),
@@ -68,7 +68,7 @@ final readonly class GeminiEmbeddingClient implements EmbeddingClient
 
         $data = json_decode($response, true, 512, JSON_THROW_ON_ERROR);
 
-        if (!isset($data['embedding']['values']) || !is_array($data['embedding']['values'])) {
+        if (!isset($data['embedding']['values']) || !\is_array($data['embedding']['values'])) {
             throw new RuntimeException('Invalid Gemini embeddings response');
         }
 

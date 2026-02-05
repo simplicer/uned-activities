@@ -39,6 +39,7 @@ final readonly class PdoActivityEmbeddingRepository implements ActivityEmbedding
     public function findSimilar(ActivityId $activityId, int $limit = 5, ?float $minSimilarity = null): array
     {
         $baseEmbedding = $this->getEmbeddingById($activityId);
+
         if ($baseEmbedding === null) {
             return [];
         }
@@ -82,9 +83,11 @@ final readonly class PdoActivityEmbeddingRepository implements ActivityEmbedding
 
         $stmt = $this->connection->prepare($sql);
         $stmt->bindValue(':embedding', $params['embedding']);
+
         if (isset($params['exclude_id'])) {
             $stmt->bindValue(':exclude_id', $params['exclude_id']);
         }
+
         if (isset($params['max_distance'])) {
             $stmt->bindValue(':max_distance', $params['max_distance']);
         }
@@ -136,6 +139,7 @@ final readonly class PdoActivityEmbeddingRepository implements ActivityEmbedding
     private function fromSqlVector(string $value): array
     {
         $trimmed = trim($value, '[]');
+
         if ($trimmed === '') {
             return [];
         }

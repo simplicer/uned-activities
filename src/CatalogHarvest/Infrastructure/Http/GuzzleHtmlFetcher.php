@@ -83,12 +83,12 @@ final class GuzzleHtmlFetcher implements HtmlFetcher
 
             $promises[$url] = $this->client->getAsync($url)
                 ->then(
-                    fn($response): array => [
+                    fn ($response): array => [
                         'url' => $url,
                         'content' => (string) $response->getBody(),
                         'status' => $response->getStatusCode(),
                     ],
-                    fn($reason): array => [
+                    fn ($reason): array => [
                         'url' => $url,
                         'error' => $reason->getMessage(),
                         'status' => $reason->getCode(),

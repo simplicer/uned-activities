@@ -7,7 +7,6 @@ use CatalogHarvest\Application\DiscoverActivities\DiscoverActivities;
 use CatalogHarvest\Application\RefreshActivity\RefreshActivity;
 use CatalogHarvest\Application\Embeddings\GenerateActivityEmbedding;
 use CatalogHarvest\Application\Notifications\NotifyFavoriteUsers;
-use CatalogHarvest\Domain\ValueObject\ActivityId;
 use CatalogHarvest\Infrastructure\AI\AIActivityParser;
 use CatalogHarvest\Infrastructure\Http\GuzzleHtmlFetcher;
 use CatalogHarvest\Infrastructure\Http\ActivityDetailParser;
@@ -84,6 +83,7 @@ final class HarvestCommand extends Command
 
         if ($dryRun) {
             $io->success('Dry run complete.');
+
             return Command::SUCCESS;
         }
 
@@ -155,6 +155,7 @@ final class HarvestCommand extends Command
         );
 
         $activities = $discoverResult->discovered;
+
         if ($limit !== null) {
             $activities = array_slice($activities, 0, $limit);
         }
@@ -168,6 +169,7 @@ final class HarvestCommand extends Command
         foreach ($activities as $activityData) {
             try {
                 $activity = $activityRepo->findByUrl($activityData->url);
+
                 if ($activity === null) {
                     $errors++;
                     $progress->advance();

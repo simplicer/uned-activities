@@ -27,6 +27,7 @@ final readonly class GenerateActivityEmbedding
         }
 
         $text = $this->buildText($activity);
+
         if ($text === '') {
             return;
         }
@@ -57,7 +58,7 @@ final readonly class GenerateActivityEmbedding
 
     private function truncate(string $text, int $maxLength): string
     {
-        if (strlen($text) <= $maxLength) {
+        if (\strlen($text) <= $maxLength) {
             return $text;
         }
 

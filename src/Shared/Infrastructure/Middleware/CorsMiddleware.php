@@ -29,10 +29,12 @@ final readonly class CorsMiddleware
 
         if (strtoupper($request->getMethod()) === 'OPTIONS') {
             $response = new SlimResponse(204);
+
             return $this->withCorsHeaders($response, $allowedOrigin);
         }
 
         $response = $handler->handle($request);
+
         return $this->withCorsHeaders($response, $allowedOrigin);
     }
 
@@ -46,7 +48,7 @@ final readonly class CorsMiddleware
             return '*';
         }
 
-        if (in_array($origin, $this->allowedOrigins, true)) {
+        if (\in_array($origin, $this->allowedOrigins, true)) {
             return $origin;
         }
 

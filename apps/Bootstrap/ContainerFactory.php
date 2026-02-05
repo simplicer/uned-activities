@@ -13,7 +13,6 @@ use CatalogHarvest\Infrastructure\Persistence\PdoPriceSnapshotRepository;
 use CatalogHarvest\Infrastructure\Persistence\PdoActivitySnapshotRepository;
 use CatalogHarvest\Infrastructure\Http\GuzzleHtmlFetcher;
 use CatalogHarvest\Domain\HtmlContentExtractor\HtmlContentExtractor;
-use CatalogHarvest\Domain\ActivityEmbeddingGenerator\ActivityEmbeddingGenerator;
 use CatalogHarvest\Domain\ActivityDataStorage\ActivityRepository;
 use CatalogHarvest\Domain\ActivityDataStorage\ActivityEmbeddingRepository;
 use CatalogHarvest\Domain\ActivityDataStorage\PriceSnapshotRepository;
@@ -107,6 +106,7 @@ final class ContainerFactory
             // Redis connection (optional)
             \Redis::class => function (): ?\Redis {
                 $host = (string) ($_ENV['REDIS_HOST'] ?? '');
+
                 if ($host === '') {
                     return null;
                 }
@@ -116,6 +116,7 @@ final class ContainerFactory
                 $redis->connect($host, $port);
 
                 $password = (string) ($_ENV['REDIS_PASSWORD'] ?? '');
+
                 if ($password !== '') {
                     $redis->auth($password);
                 }

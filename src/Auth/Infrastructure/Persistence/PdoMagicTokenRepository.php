@@ -23,7 +23,7 @@ final class PdoMagicTokenRepository implements MagicTokenRepository
 
     public function save(MagicLinkToken $token): void
     {
-        $sql = sprintf(
+        $sql = \sprintf(
             'INSERT INTO %s (id, email, token, expires_at, used_at, created_at)
             VALUES (:id, :email, :token, :expires_at, :used_at, :created_at)',
             self::TABLE
@@ -42,7 +42,7 @@ final class PdoMagicTokenRepository implements MagicTokenRepository
 
     public function findByToken(MagicToken $token): ?MagicLinkToken
     {
-        $sql = sprintf(
+        $sql = \sprintf(
             'SELECT * FROM %s WHERE token = :token ORDER BY created_at DESC LIMIT 1',
             self::TABLE
         );
@@ -51,7 +51,7 @@ final class PdoMagicTokenRepository implements MagicTokenRepository
         $stmt->execute(['token' => MagicLinkToken::hashToken($token->toString())]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        if ($row === false || $row === null || !is_array($row)) {
+        if ($row === false || $row === null || !\is_array($row)) {
             return null;
         }
 
@@ -69,7 +69,7 @@ final class PdoMagicTokenRepository implements MagicTokenRepository
 
     public function deleteExpired(): int
     {
-        $sql = sprintf(
+        $sql = \sprintf(
             'DELETE FROM %s WHERE expires_at < NOW() OR used_at IS NOT NULL',
             self::TABLE
         );
@@ -82,7 +82,7 @@ final class PdoMagicTokenRepository implements MagicTokenRepository
 
     public function markAsUsed(MagicToken $token): bool
     {
-        $sql = sprintf(
+        $sql = \sprintf(
             'UPDATE %s SET used_at = NOW() WHERE token = :token AND used_at IS NULL',
             self::TABLE
         );

@@ -31,8 +31,8 @@ final readonly class AuthController
     public function request(Request $request, Response $response): Response
     {
         $body = $request->getParsedBody();
-        
-        if (!is_array($body)) {
+
+        if (!\is_array($body)) {
             $response->getBody()->write(json_encode([
                 'error' => 'validation_error',
                 'message' => 'Invalid request body',
@@ -89,8 +89,8 @@ final readonly class AuthController
     public function verify(Request $request, Response $response): Response
     {
         $body = $request->getParsedBody();
-        
-        if (!is_array($body)) {
+
+        if (!\is_array($body)) {
             $response->getBody()->write(json_encode([
                 'error' => 'validation_error',
                 'message' => 'Invalid request body',
@@ -179,7 +179,7 @@ final readonly class AuthController
         $userId = $request->getAttribute('auth_user_id');
         $email = $request->getAttribute('auth_email');
 
-        if (!is_string($userId) || $userId === '') {
+        if (!\is_string($userId) || $userId === '') {
             $response->getBody()->write(json_encode([
                 'error' => 'unauthorized',
                 'message' => 'Authentication required',
@@ -204,8 +204,8 @@ final readonly class AuthController
     public function password(Request $request, Response $response): Response
     {
         $body = $request->getParsedBody();
-        
-        if (!is_array($body)) {
+
+        if (!\is_array($body)) {
             $response->getBody()->write(json_encode([
                 'error' => 'validation_error',
                 'message' => 'Invalid request body',
@@ -227,6 +227,7 @@ final readonly class AuthController
         }
 
         $emailValidation = filter_var($email, FILTER_VALIDATE_EMAIL);
+
         if ($emailValidation === false) {
             $response->getBody()->write(json_encode([
                 'error' => 'validation_error',
@@ -248,6 +249,7 @@ final readonly class AuthController
         }
 
         $user = $this->userRepository->findByEmail($email);
+
         if ($user === null) {
             $response->getBody()->write(json_encode([
                 'error' => 'invalid_credentials',

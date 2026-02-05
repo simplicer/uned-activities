@@ -39,8 +39,10 @@ final readonly class FindSimilarActivities
         }
 
         $results = [];
+
         foreach ($similar as $item) {
             $id = $item['activityId']->toString();
+
             if (isset($activityMap[$id])) {
                 $results[] = [
                     'activity' => $activityMap[$id],

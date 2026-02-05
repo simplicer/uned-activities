@@ -80,6 +80,7 @@ final class HarvestingTest extends TestCase
             ->method('save')
             ->with($this->callback(function (Activity $activity) use (&$discoveredActivities): bool {
                 $discoveredActivities[] = $activity;
+
                 return true;
             }));
 
@@ -199,6 +200,7 @@ final class HarvestingTest extends TestCase
             ->method('save')
             ->with($this->callback(function (Activity $activity) use (&$savedActivity): bool {
                 $savedActivity = $activity;
+
                 return true;
             }));
 
@@ -254,6 +256,7 @@ final class HarvestingTest extends TestCase
             ->method('store')
             ->with($this->callback(function ($snapshot) use (&$capturedSnapshot, $activityId): bool {
                 $capturedSnapshot = $snapshot;
+
                 return $snapshot->activityId->equals($activityId);
             }));
 
@@ -397,6 +400,7 @@ final class HarvestingTest extends TestCase
         }
 
         $content = file_get_contents($path);
+
         if ($content === false) {
             $this->fail("Failed to read fixture file: {$path}");
         }

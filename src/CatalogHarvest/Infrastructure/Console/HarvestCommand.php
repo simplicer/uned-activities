@@ -76,9 +76,11 @@ final class HarvestCommand extends Command
             $this->discoverActivities->discover($url, 1, false);
 
             $io->success('✓ Activity processed successfully');
+
             return Command::SUCCESS;
         } catch (\Throwable $e) {
             $io->error("✗ Error: " . $e->getMessage());
+
             return Command::FAILURE;
         }
     }
@@ -88,17 +90,18 @@ final class HarvestCommand extends Command
         $activities = $this->getActivitiesList();
 
         if ($limit !== null) {
-            $activities = array_slice($activities, 0, $limit);
+            $activities = \array_slice($activities, 0, $limit);
         }
 
-        $io->section('Processing ' . count($activities) . ' activities');
+        $io->section('Processing ' . \count($activities) . ' activities');
 
-        if (count($activities) === 0) {
+        if (\count($activities) === 0) {
             $io->warning('No activities found to process');
+
             return Command::SUCCESS;
         }
 
-        $progressBar = $io->createProgressBar(count($activities));
+        $progressBar = $io->createProgressBar(\count($activities));
         $progressBar->start();
 
         $results = [

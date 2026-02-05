@@ -99,6 +99,7 @@ final class InMemoryActivityRepository implements ActivityRepository
 
         foreach ($ids as $id) {
             $key = $id->toString();
+
             if (isset($this->activities[$key])) {
                 $results[] = $this->activities[$key];
             }
@@ -120,6 +121,7 @@ final class InMemoryActivityRepository implements ActivityRepository
 
         foreach ($this->activities as $activity) {
             $center = $activity->center;
+
             if ($center === null || trim($center) === '') {
                 continue;
             }
@@ -134,6 +136,7 @@ final class InMemoryActivityRepository implements ActivityRepository
         ksort($counts);
 
         $result = [];
+
         foreach ($counts as $center => $count) {
             $result[] = ['name' => $center, 'count' => $count];
         }

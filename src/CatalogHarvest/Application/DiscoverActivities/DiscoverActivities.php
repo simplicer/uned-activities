@@ -269,16 +269,20 @@ final readonly class DiscoverActivities
 
         // Find parent container (actividadVisual div)
         $parent = $node;
+
         for ($i = 0; $i < 5; $i++) {
             $parent = $parent->parentNode;
+
             if (!$parent instanceof \DOMElement) {
                 break;
             }
 
             // Look for tituloActividad within this container
             $titleNodes = $xpath->query(".//div[contains(@class, 'tituloActividad')]//a", $parent);
+
             if ($titleNodes->length > 0) {
                 $titleText = trim($titleNodes->item(0)->textContent);
+
                 if ($titleText !== '') {
                     return html_entity_decode($titleText, ENT_QUOTES | ENT_HTML5, 'UTF-8');
                 }
@@ -287,8 +291,10 @@ final readonly class DiscoverActivities
             // Also try to find h1/h2/h3 within the container
             foreach (['h1', 'h2', 'h3'] as $tag) {
                 $headings = $xpath->query(".//{$tag}", $parent);
+
                 if ($headings->length > 0) {
                     $headingText = trim($headings->item(0)->textContent);
+
                     if ($headingText !== '' && $headingText !== '(todos)' && $headingText !== 'Ver todas') {
                         return html_entity_decode($headingText, ENT_QUOTES | ENT_HTML5, 'UTF-8');
                     }

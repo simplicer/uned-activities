@@ -292,11 +292,13 @@ final class RefreshCommand extends Command
                 PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
             ]);
             $pdo->exec("SET NAMES 'utf8'");
+
             return $pdo;
         }
 
         // Fallback to DB_DSN env var
         $dsn = $_ENV['DB_DSN'] ?? 'sqlite::memory:';
+
         if (str_starts_with((string) $dsn, 'postgres')) {
             $pattern = '#postgres://(?<user>[^:]+):(?<password>[^@]+)@(?<host>[^:]+):(?<port>\d+)/(?<dbname>[^/]+)#';
 
@@ -310,6 +312,7 @@ final class RefreshCommand extends Command
                 PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
             ]);
             $pdo->exec("SET NAMES 'utf8'");
+
             return $pdo;
         }
 

@@ -123,7 +123,7 @@ final class WebTokenGateMiddleware
 
     private function validateClaims(array $claims): bool
     {
-        if (!isset($claims['sub']) || !is_string($claims['sub']) || $claims['sub'] === '') {
+        if (!isset($claims['sub']) || !\is_string($claims['sub']) || $claims['sub'] === '') {
             return false;
         }
 
@@ -133,8 +133,9 @@ final class WebTokenGateMiddleware
 
         if ($this->jwtAudience !== null) {
             $aud = $claims['aud'] ?? null;
-            if (is_array($aud)) {
-                if (!in_array($this->jwtAudience, $aud, true)) {
+
+            if (\is_array($aud)) {
+                if (!\in_array($this->jwtAudience, $aud, true)) {
                     return false;
                 }
             } elseif ($aud !== $this->jwtAudience) {

@@ -26,8 +26,7 @@ class ProfileRoutes
         SavedSearchRepository $searchRepository,
         FavoriteRepository $favoriteRepository,
         NotificationRepository $notificationRepository,
-    ): void
-    {
+    ): void {
         // Get current user profile (nginx rewrites /v1/profile -> /v1/profile)
         $app->get('/v1/profile', function (Request $request, Response $response) use ($userRepository): \Psr\Http\Message\ResponseInterface|\Psr\Http\Message\MessageInterface {
             $userId = $this->getUserIdFromRequest($request);
@@ -315,7 +314,7 @@ class ProfileRoutes
                 }
 
                 if (\array_key_exists('rating', $body) && $body['rating'] !== null && $body['rating'] !== '') {
-                    if (!\is_numeric($body['rating'])) {
+                    if (!is_numeric($body['rating'])) {
                         $response->getBody()->write(json_encode([
                             'error' => 'validation_error',
                             'message' => 'La nota debe ser numérica',
@@ -324,6 +323,7 @@ class ProfileRoutes
                         return $response->withStatus(400)->withHeader('Content-Type', 'application/json');
                     }
                     $rating = (float) $body['rating'];
+
                     if ($rating < 0 || $rating > 5) {
                         $response->getBody()->write(json_encode([
                             'error' => 'validation_error',
@@ -396,7 +396,7 @@ class ProfileRoutes
     {
         $userId = $request->getAttribute('auth_user_id');
 
-        if (!is_string($userId) || $userId === '') {
+        if (!\is_string($userId) || $userId === '') {
             return null;
         }
 
@@ -426,11 +426,12 @@ class ProfileRoutes
     private function isValidPassword(string $password): bool
     {
         $length = mb_strlen($password);
+
         if ($length < 12) {
             return false;
         }
 
-        $uniqueChars = count(array_unique(preg_split('//u', $password, -1, PREG_SPLIT_NO_EMPTY)));
+        $uniqueChars = \count(array_unique(preg_split('//u', $password, -1, PREG_SPLIT_NO_EMPTY)));
 
         return $uniqueChars >= 6;
     }

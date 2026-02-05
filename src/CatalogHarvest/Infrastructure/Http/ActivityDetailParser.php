@@ -81,11 +81,13 @@ final class ActivityDetailParser implements HtmlContentExtractor
     private function extractSectionText(DOMXPath $xpath, string $label): ?string
     {
         $nodes = $xpath->query("//dt[contains(., '{$label}')]/following-sibling::dd[1]");
+
         if ($nodes === false || $nodes->length === 0) {
             return null;
         }
 
         $node = $nodes->item(0);
+
         if ($node === null) {
             return null;
         }
@@ -108,15 +110,19 @@ final class ActivityDetailParser implements HtmlContentExtractor
 
         // Contact / More info (preserve line breaks)
         $moreInfoNodes = $xpath->query("//dt[contains(., 'Más información')]/following-sibling::dd[1]");
+
         if ($moreInfoNodes !== false && $moreInfoNodes->length > 0) {
             $node = $moreInfoNodes->item(0);
+
             if ($node !== null) {
                 $html = $node->ownerDocument?->saveHTML($node) ?? '';
+
                 if ($html !== '') {
                     $html = preg_replace('#<br\\s*/?>#i', "\n", $html);
                     $text = trim(preg_replace('/\\s+\\n/', "\n", strip_tags($html)));
                     $text = html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8');
                     $text = preg_replace("/\\n{2,}/", "\n", $text);
+
                     if ($text !== '') {
                         $contact = ['text' => $text];
                         $lines = array_values(array_filter(array_map('trim', preg_split('/\\n+/', $text))));
@@ -127,8 +133,10 @@ final class ActivityDetailParser implements HtmlContentExtractor
                             if ($email === null && preg_match('/[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}/i', $line, $matches)) {
                                 $email = $matches[0];
                                 $before = trim(str_replace($email, '', $line));
+
                                 if ($before !== '') {
                                     $candidate = $this->extractPhoneCandidate($before);
+
                                     if ($candidate !== null) {
                                         $phone = $candidate;
                                     }
@@ -138,6 +146,7 @@ final class ActivityDetailParser implements HtmlContentExtractor
 
                             if ($phone === null && preg_match('/\\b(tel|tlf|teléfono)\\b/i', $line) === 1) {
                                 $candidate = $this->extractPhoneCandidate($line);
+
                                 if ($candidate !== null) {
                                     $phone = $candidate;
                                 }
@@ -151,6 +160,7 @@ final class ActivityDetailParser implements HtmlContentExtractor
                         if ($phone === null) {
                             foreach ($lines as $line) {
                                 $candidate = $this->extractPhoneCandidate($line);
+
                                 if ($candidate !== null) {
                                     $phone = $candidate;
                                     break;
@@ -161,6 +171,7 @@ final class ActivityDetailParser implements HtmlContentExtractor
                         if ($email !== null) {
                             $contact['email'] = $email;
                         }
+
                         if ($phone !== null) {
                             $contact['phone'] = $phone;
                         }
@@ -173,9 +184,11 @@ final class ActivityDetailParser implements HtmlContentExtractor
 
         // Collaborators
         $collabNodes = $xpath->query("//dt[contains(., 'Colaboradores')]/following-sibling::dd[1]");
+
         if ($collabNodes !== false && $collabNodes->length > 0) {
             $raw = trim($collabNodes->item(0)->textContent ?? '');
             $raw = html_entity_decode($raw, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+
             if ($raw !== '') {
                 $sections['collaborators'] = $raw;
             }
@@ -183,10 +196,13 @@ final class ActivityDetailParser implements HtmlContentExtractor
 
         // Calendar link
         $calendarNodes = $xpath->query("//a[contains(., 'Ver calendario') or contains(@href, 'calendar')]");
+
         if ($calendarNodes !== false && $calendarNodes->length > 0) {
             $node = $calendarNodes->item(0);
+
             if ($node instanceof \DOMElement) {
                 $href = $node->getAttribute('href');
+
                 if ($href !== '') {
                     if (!str_starts_with($href, 'http')) {
                         $href = 'https://extension.uned.es' . (str_starts_with($href, '/') ? '' : '/') . $href;
@@ -277,11 +293,13 @@ final class ActivityDetailParser implements HtmlContentExtractor
 
         if ($nodes !== false && $nodes->length > 0) {
             $div = $nodes->item(0);
+
             if ($div instanceof \DOMElement) {
                 $categoria = $div->getAttribute('data-categoria');
 
                 if ($categoria !== '' && $categoria !== null) {
                     $dates = $this->parseDateRange($categoria);
+
                     if ($dates !== null) {
                         return $dates;
                     }
@@ -295,6 +313,7 @@ final class ActivityDetailParser implements HtmlContentExtractor
         if ($nodes !== false && $nodes->length > 0) {
             $dateText = trim($nodes->item(0)->textContent);
             $dates = $this->parseDateRange($dateText);
+
             if ($dates !== null) {
                 return $dates;
             }
@@ -321,9 +340,11 @@ final class ActivityDetailParser implements HtmlContentExtractor
 
         if ($nodes !== false && $nodes->length > 0) {
             $dateText = trim($nodes->item(0)->textContent);
+
             // Extract date range from the text
             if (preg_match('/Del?\s*(.+?)\s*(?:<br\/?>|$)/i', $dateText, $matches)) {
                 $dates = $this->parseDateRange($matches[1]);
+
                 if ($dates !== null) {
                     return $dates;
                 }
@@ -336,13 +357,16 @@ final class ActivityDetailParser implements HtmlContentExtractor
     private function parseDateValue(string $value): ?\DateTimeImmutable
     {
         $value = trim($value);
+
         if ($value === '') {
             return null;
         }
 
         $formats = ['Y-m-d', 'd/m/Y', 'd-m-Y'];
+
         foreach ($formats as $format) {
             $dt = \DateTimeImmutable::createFromFormat($format, $value);
+
             if ($dt instanceof \DateTimeImmutable) {
                 return $dt;
             }
@@ -374,8 +398,9 @@ final class ActivityDetailParser implements HtmlContentExtractor
             $endMonth = $this->spanishMonthToNumber($matches[4]);
             $year = $matches[5];
 
-            $startDate = \DateTimeImmutable::createFromFormat('Y-m-d', sprintf("%d-%02d-%02d", $year, $startMonth, $startDay));
-            $endDate = \DateTimeImmutable::createFromFormat('Y-m-d', sprintf("%d-%02d-%02d", $year, $endMonth, $endDay));
+            $startDate = \DateTimeImmutable::createFromFormat('Y-m-d', \sprintf("%d-%02d-%02d", $year, $startMonth, $startDay));
+            $endDate = \DateTimeImmutable::createFromFormat('Y-m-d', \sprintf("%d-%02d-%02d", $year, $endMonth, $endDay));
+
             return [
                 'start' => $startDate !== false ? $startDate : null,
                 'end' => $endDate !== false ? $endDate : null,
@@ -384,8 +409,9 @@ final class ActivityDetailParser implements HtmlContentExtractor
 
         // Pattern: "X/YY/AAAA - Z/WW/AAAA"
         if (preg_match('/(\d{1,2})\/(\d{1,2})\/(\d{4})\s*[-–]\s*(\d{1,2})\/(\d{1,2})\/(\d{4})/', $dateText, $matches)) {
-            $startDate = \DateTimeImmutable::createFromFormat('Y-m-d', sprintf("%s-%02d-%02d", $matches[3], $matches[2], $matches[1]));
-            $endDate = \DateTimeImmutable::createFromFormat('Y-m-d', sprintf("%s-%02d-%02d", $matches[6], $matches[5], $matches[4]));
+            $startDate = \DateTimeImmutable::createFromFormat('Y-m-d', \sprintf("%s-%02d-%02d", $matches[3], $matches[2], $matches[1]));
+            $endDate = \DateTimeImmutable::createFromFormat('Y-m-d', \sprintf("%s-%02d-%02d", $matches[6], $matches[5], $matches[4]));
+
             return [
                 'start' => $startDate !== false ? $startDate : null,
                 'end' => $endDate !== false ? $endDate : null,
@@ -417,14 +443,18 @@ final class ActivityDetailParser implements HtmlContentExtractor
     private function extractModality(DOMXPath $xpath): ?string
     {
         $nodes = $xpath->query("//span[contains(@class, 'modality')]");
+
         if ($nodes !== false && $nodes->length > 0) {
             $text = strtolower(trim($nodes->item(0)->textContent));
+
             if (str_contains($text, 'presencial')) {
                 return 'in-person';
             }
+
             if (str_contains($text, 'híbr') || str_contains($text, 'hibr')) {
                 return 'hybrid';
             }
+
             if (str_contains($text, 'online') || str_contains($text, 'en línea')) {
                 return 'online';
             }
@@ -435,6 +465,7 @@ final class ActivityDetailParser implements HtmlContentExtractor
 
         if ($nodes !== false && $nodes->length > 0) {
             $node = $nodes->item(0);
+
             if ($node instanceof \DOMElement) {
                 $class = $node->getAttribute('class');
 
@@ -475,8 +506,10 @@ final class ActivityDetailParser implements HtmlContentExtractor
     private function extractCenter(DOMXPath $xpath): ?string
     {
         $nodes = $xpath->query("//span[contains(@class, 'center')]");
+
         if ($nodes !== false && $nodes->length > 0) {
             $value = trim($nodes->item(0)->textContent);
+
             if ($value !== '') {
                 return $value;
             }
@@ -487,8 +520,10 @@ final class ActivityDetailParser implements HtmlContentExtractor
 
         if ($nodes !== false && $nodes->length > 0) {
             $node = $nodes->item(0);
+
             if ($node instanceof \DOMAttr) {
                 $value = trim($node->value);
+
                 if ($value !== '') {
                     return $value;
                 }
@@ -500,6 +535,7 @@ final class ActivityDetailParser implements HtmlContentExtractor
 
         if ($nodes !== false && $nodes->length > 0) {
             $value = trim($nodes->item(0)->textContent);
+
             if ($value !== '') {
                 return 'UNED ' . $value;
             }
@@ -511,8 +547,10 @@ final class ActivityDetailParser implements HtmlContentExtractor
     private function extractTypology(DOMXPath $xpath): ?string
     {
         $nodes = $xpath->query("//span[contains(@class, 'typology')]");
+
         if ($nodes !== false && $nodes->length > 0) {
             $value = trim($nodes->item(0)->textContent);
+
             if ($value !== '') {
                 return $value;
             }
@@ -523,6 +561,7 @@ final class ActivityDetailParser implements HtmlContentExtractor
 
         if ($nodes !== false && $nodes->length > 0) {
             $value = trim($nodes->item(0)->textContent);
+
             if ($value !== '') {
                 return $value;
             }
@@ -530,6 +569,7 @@ final class ActivityDetailParser implements HtmlContentExtractor
 
         // Try to infer from title
         $title = $this->extractTitle($xpath);
+
         if ($title === null) {
             return null;
         }
@@ -540,6 +580,7 @@ final class ActivityDetailParser implements HtmlContentExtractor
             if (str_contains($titleLower, 'taller')) {
                 return 'Taller';
             }
+
             return 'Curso';
         }
 
@@ -561,8 +602,10 @@ final class ActivityDetailParser implements HtmlContentExtractor
     private function extractArea(DOMXPath $xpath): ?string
     {
         $nodes = $xpath->query("//span[contains(@class, 'area')]");
+
         if ($nodes !== false && $nodes->length > 0) {
             $value = trim($nodes->item(0)->textContent);
+
             if ($value !== '' && $value !== 'Otras actividades') {
                 return $value;
             }
@@ -573,6 +616,7 @@ final class ActivityDetailParser implements HtmlContentExtractor
 
         if ($nodes !== false && $nodes->length > 0) {
             $value = trim($nodes->item(0)->textContent);
+
             if ($value !== '' && $value !== 'Otras actividades') {
                 return $value;
             }
@@ -585,9 +629,11 @@ final class ActivityDetailParser implements HtmlContentExtractor
     {
         $parseAmount = static function (string $value): ?int {
             $valueLower = strtolower($value);
+
             if (preg_match('/(\d+(?:,\d+)?)\s*€/', $value, $matches)) {
                 return (int) ((float) str_replace(',', '.', $matches[1]) * 100);
             }
+
             if (str_contains($valueLower, 'gratis') || str_contains($valueLower, 'gratuita')) {
                 return 0;
             }
@@ -606,18 +652,22 @@ final class ActivityDetailParser implements HtmlContentExtractor
                 if (str_contains($value, 'diferido') || str_contains($value, 'grabado')) {
                     return 'online_diferido';
                 }
+
                 if (str_contains($value, 'directo') || str_contains($value, 'en vivo')) {
                     return 'online_directo';
                 }
+
                 return 'online';
             }
 
             if (str_contains($value, 'presencial')) {
                 return 'in-person';
             }
+
             if (str_contains($value, 'hibrid') || str_contains($value, 'semipresencial')) {
                 return 'hybrid';
             }
+
             return null;
         };
 
@@ -625,10 +675,12 @@ final class ActivityDetailParser implements HtmlContentExtractor
         $pricingTable = [];
 
         $nodes = $xpath->query("//table[@class='tabla_precios']//td[@itemprop='price']");
+
         if ($nodes !== false && $nodes->length > 0) {
             foreach ($nodes as $node) {
                 $text = trim($node->textContent);
                 $amount = $parseAmount($text);
+
                 if ($amount !== null) {
                     $priceAmount = $amount;
                 }
@@ -637,9 +689,11 @@ final class ActivityDetailParser implements HtmlContentExtractor
 
         if ($priceAmount === null) {
             $nodes = $xpath->query("//span[contains(@class, 'price')]");
+
             if ($nodes !== false && $nodes->length > 0) {
                 $text = trim($nodes->item(0)->textContent);
                 $amount = $parseAmount($text);
+
                 if ($amount !== null) {
                     $priceAmount = $amount;
                 }
@@ -647,6 +701,7 @@ final class ActivityDetailParser implements HtmlContentExtractor
         }
 
         $tableRows = $xpath->query("//table[@class='tabla_precios']//tr");
+
         if ($tableRows === false) {
             return [
                 'amount' => $priceAmount,
@@ -655,15 +710,19 @@ final class ActivityDetailParser implements HtmlContentExtractor
         }
 
         $rows = [];
+
         foreach ($tableRows as $row) {
             $cells = [];
             $cellNodes = $xpath->query('.//th|.//td', $row);
+
             if ($cellNodes === false) {
                 continue;
             }
+
             foreach ($cellNodes as $cell) {
                 $cells[] = trim(preg_replace('/\s+/', ' ', $cell->textContent));
             }
+
             if ($cells !== []) {
                 $rows[] = $cells;
             }
@@ -678,15 +737,15 @@ final class ActivityDetailParser implements HtmlContentExtractor
 
         $sectionHeader = null;
         $headerRow = $rows[0];
-        $dataRows = array_slice($rows, 1);
+        $dataRows = \array_slice($rows, 1);
 
-        if (count($headerRow) == 1 && $dataRows !== []) {
+        if (\count($headerRow) == 1 && $dataRows !== []) {
             $sectionHeader = $headerRow[0];
-        } elseif (count($headerRow) == 1 && $dataRows === []) {
+        } elseif (\count($headerRow) == 1 && $dataRows === []) {
             $headerRow = [];
         }
 
-        $hasHeaderRow = count($headerRow) > 1 && $dataRows !== [];
+        $hasHeaderRow = \count($headerRow) > 1 && $dataRows !== [];
         $columnHeaders = $hasHeaderRow ? $headerRow : [];
 
         if (!$hasHeaderRow && $sectionHeader === null) {
@@ -694,16 +753,17 @@ final class ActivityDetailParser implements HtmlContentExtractor
         }
 
         foreach ($dataRows as $row) {
-            if (count($row) < 2) {
+            if (\count($row) < 2) {
                 continue;
             }
             $rowLabel = $row[0] ?? '';
             $rowLabelLower = strtolower($rowLabel);
             $rowModality = $normalizeModality($rowLabel);
 
-            for ($i = 1; $i < count($row); $i++) {
+            for ($i = 1; $i < \count($row); $i++) {
                 $cell = $row[$i] ?? '';
                 $amount = $parseAmount($cell);
+
                 if ($amount === null) {
                     continue;
                 }
@@ -733,6 +793,7 @@ final class ActivityDetailParser implements HtmlContentExtractor
 
         if ($pricingTable !== [] && $priceAmount === null) {
             $min = null;
+
             foreach ($pricingTable as $row) {
                 $min = $min === null ? $row['amount'] : min($min, $row['amount']);
             }
@@ -741,6 +802,7 @@ final class ActivityDetailParser implements HtmlContentExtractor
 
         if ($pricingTable !== []) {
             $unique = [];
+
             foreach ($pricingTable as $row) {
                 $key = strtolower(($row['modalityLabel'] ?? '') . '|' . ($row['studentType'] ?? '') . '|' . ($row['amount'] ?? ''));
                 $unique[$key] = $row;
@@ -757,12 +819,15 @@ final class ActivityDetailParser implements HtmlContentExtractor
     private function extractEnrollmentOpen(DOMXPath $xpath): ?bool
     {
         $nodes = $xpath->query("//span[contains(@class, 'enrollment-open')]");
+
         if ($nodes !== false && $nodes->length > 0) {
             $text = strtolower(trim($nodes->item(0)->textContent));
+
             if ($text !== '') {
                 if (str_contains($text, 'abierta') || str_contains($text, 'open')) {
                     return true;
                 }
+
                 if (str_contains($text, 'cerrada') || str_contains($text, 'closed')) {
                     return false;
                 }
@@ -792,12 +857,15 @@ final class ActivityDetailParser implements HtmlContentExtractor
 
         if ($nodes !== false && $nodes->length > 0) {
             $node = $nodes->item(0);
+
             if ($node instanceof \DOMElement) {
                 $href = $node->getAttribute('href');
+
                 if ($href !== null && $href !== '') {
                     if (str_starts_with($href, '/')) {
                         return 'https://extension.uned.es' . $href;
                     }
+
                     return $href;
                 }
             }
@@ -814,6 +882,7 @@ final class ActivityDetailParser implements HtmlContentExtractor
             if (preg_match_all('/(\d+(?:[\\.,]\\d+)?)\\s*créditos?\\s*ects/i', $text, $matches)) {
                 foreach ($matches[1] as $match) {
                     $credits = (float) str_replace(',', '.', $match);
+
                     if ($credits > 0) {
                         $candidates[] = $credits;
                     }
@@ -823,6 +892,7 @@ final class ActivityDetailParser implements HtmlContentExtractor
 
         // Prefer explicit "Créditos" field if present
         $nodes = $xpath->query("//dt[contains(., 'Créditos') or contains(., 'créditos')]/following-sibling::dd[1]");
+
         if ($nodes !== false) {
             foreach ($nodes as $node) {
                 $extract(trim($node->textContent));
@@ -831,6 +901,7 @@ final class ActivityDetailParser implements HtmlContentExtractor
 
         // Fallback: any node containing ECTS
         $nodes = $xpath->query("//*[contains(., 'ECTS') or contains(., 'ects')]");
+
         if ($nodes !== false) {
             foreach ($nodes as $node) {
                 $extract(trim($node->textContent));
@@ -842,6 +913,7 @@ final class ActivityDetailParser implements HtmlContentExtractor
         }
 
         $value = min($candidates);
+
         return (int) round($value * 100);
     }
 
@@ -849,6 +921,7 @@ final class ActivityDetailParser implements HtmlContentExtractor
     {
         // For presencial activities, they are typically live
         $modality = $this->extractModality($xpath);
+
         return $modality === 'in-person' || $modality === 'hybrid';
     }
 
@@ -856,6 +929,7 @@ final class ActivityDetailParser implements HtmlContentExtractor
     {
         // Only online or hybrid activities might have recorded option
         $modality = $this->extractModality($xpath);
+
         return $modality === 'online' || $modality === 'hybrid';
     }
 
@@ -904,12 +978,13 @@ final class ActivityDetailParser implements HtmlContentExtractor
 
         $parseDate = function (string $text): ?string {
             if (preg_match('/(\d{1,2})[\\/\\.-](\d{1,2})[\\/\\.-](\d{4})/', $text, $matches)) {
-                return sprintf('%s-%02d-%02d', $matches[3], (int) $matches[2], (int) $matches[1]);
+                return \sprintf('%s-%02d-%02d', $matches[3], (int) $matches[2], (int) $matches[1]);
             }
 
             if (preg_match('/(\d{1,2})\\s+de\\s+([a-záéíóúñ]+)\\s+de\\s+(\\d{4})/i', $text, $matches)) {
                 $month = $this->spanishMonthToNumber($matches[2]);
-                return sprintf('%s-%02d-%02d', $matches[3], $month, (int) $matches[1]);
+
+                return \sprintf('%s-%02d-%02d', $matches[3], $month, (int) $matches[1]);
             }
 
             return null;
@@ -937,22 +1012,26 @@ final class ActivityDetailParser implements HtmlContentExtractor
 
         foreach ($tableSelectors as $selector) {
             $rows = $xpath->query($selector);
+
             if ($rows === false || $rows->length === 0) {
                 continue;
             }
 
             foreach ($rows as $row) {
                 $cells = $xpath->query('.//th|.//td', $row);
+
                 if ($cells === false || $cells->length === 0) {
                     continue;
                 }
 
                 $values = [];
+
                 foreach ($cells as $cell) {
                     $values[] = trim(preg_replace('/\\s+/', ' ', $cell->textContent));
                 }
 
                 $joined = strtolower(implode(' ', $values));
+
                 if (str_contains($joined, 'fecha') && str_contains($joined, 'hora')) {
                     continue;
                 }
@@ -964,14 +1043,15 @@ final class ActivityDetailParser implements HtmlContentExtractor
                 $title = null;
                 $description = null;
 
-                if (count($values) >= 3) {
+                if (\count($values) >= 3) {
                     $title = $values[2] ?? null;
-                    if (count($values) > 3) {
-                        $description = implode(' | ', array_slice($values, 3));
+
+                    if (\count($values) > 3) {
+                        $description = implode(' | ', \array_slice($values, 3));
                     }
-                } elseif (count($values) === 2) {
+                } elseif (\count($values) === 2) {
                     $title = $values[1];
-                } elseif (count($values) === 1) {
+                } elseif (\count($values) === 1) {
                     $title = $values[0];
                 }
 
@@ -988,9 +1068,11 @@ final class ActivityDetailParser implements HtmlContentExtractor
         }
 
         $listNodes = $xpath->query("//div[@id='programa']//li|//div[contains(@class, 'programa')]//li");
+
         if ($listNodes !== false && $listNodes->length > 0) {
             foreach ($listNodes as $node) {
                 $text = trim(preg_replace('/\\s+/', ' ', $node->textContent));
+
                 if ($text === '') {
                     continue;
                 }
@@ -1008,15 +1090,18 @@ final class ActivityDetailParser implements HtmlContentExtractor
         }
 
         $programNodes = $xpath->query("//ul[@id='programa']/li");
+
         if ($programNodes !== false && $programNodes->length > 0) {
             foreach ($programNodes as $programNode) {
                 $dateNode = $xpath->query(".//span[contains(@class, 'fechas_programa')]", $programNode);
                 $dateText = null;
+
                 if ($dateNode !== false && $dateNode->length > 0) {
                     $dateText = trim(preg_replace('/\\s+/', ' ', $dateNode->item(0)->textContent));
                 }
 
                 $sessionItems = $xpath->query(".//ul//li", $programNode);
+
                 if ($sessionItems === false || $sessionItems->length === 0) {
                     continue;
                 }
@@ -1076,6 +1161,7 @@ final class ActivityDetailParser implements HtmlContentExtractor
 
         if ($nodes !== false && $nodes->length > 0) {
             $text = trim($nodes->item(0)->textContent);
+
             // Try to extract center from the text (format: "Lugar: <b>UNED Pontevedra</b>")
             if (preg_match('/Lugar:\s*<b>\s*(.+?)\s*<\/b>/is', $nodes->item(0)->ownerDocument->saveHTML($nodes->item(0)), $matches)) {
                 $details['center'] = html_entity_decode($matches[1], ENT_QUOTES | ENT_HTML5, 'UTF-8');
@@ -1087,14 +1173,17 @@ final class ActivityDetailParser implements HtmlContentExtractor
 
         if ($nodes !== false && $nodes->length > 0) {
             $node = $nodes->item(0);
+
             if ($node !== null) {
                 $html = $node->ownerDocument?->saveHTML($node) ?? '';
+
                 if ($html !== '') {
                     $html = preg_replace('#<br\\s*/?>#i', "\n", $html);
                     $text = trim(preg_replace('/\\s+\\n/', "\n", strip_tags($html)));
                     $text = html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8');
                     $text = preg_replace("/\\n{2,}/", "\n", $text);
                     $lines = array_values(array_filter(array_map('trim', preg_split('/\\n+/', $text))));
+
                     if ($lines !== []) {
                         $details['address'] = implode(', ', $lines);
                     }
@@ -1113,11 +1202,13 @@ final class ActivityDetailParser implements HtmlContentExtractor
 
         $candidate = trim($matches[0]);
         $digits = preg_replace('/\\D+/', '', $candidate);
+
         if ($digits === null) {
             return null;
         }
 
-        $digitCount = strlen($digits);
+        $digitCount = \strlen($digits);
+
         if ($digitCount < 8) {
             return null;
         }
@@ -1170,6 +1261,7 @@ final class ActivityDetailParser implements HtmlContentExtractor
 
             if ($nodes !== false && $nodes->length > 0) {
                 $node = $nodes->item(0);
+
                 if ($node instanceof \DOMAttr) {
                     $url = trim($node->value);
 

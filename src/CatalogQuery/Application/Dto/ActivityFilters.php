@@ -42,11 +42,13 @@ final readonly class ActivityFilters
         }
 
         $minPrice = null;
+
         if (isset($params['minPrice']) && is_numeric($params['minPrice'])) {
             $minPrice = (int) round(((float) $params['minPrice']) * 100);
         }
 
         $maxPrice = null;
+
         if (isset($params['maxPrice']) && is_numeric($params['maxPrice'])) {
             $maxPrice = (int) round(((float) $params['maxPrice']) * 100);
         }

@@ -62,7 +62,7 @@ final readonly class OpenRouterEmbeddingClient implements EmbeddingClient
 
         $data = json_decode($response, true, 512, JSON_THROW_ON_ERROR);
 
-        if (!isset($data['data'][0]['embedding']) || !is_array($data['data'][0]['embedding'])) {
+        if (!isset($data['data'][0]['embedding']) || !\is_array($data['data'][0]['embedding'])) {
             throw new RuntimeException('Invalid OpenRouter embeddings response');
         }
 

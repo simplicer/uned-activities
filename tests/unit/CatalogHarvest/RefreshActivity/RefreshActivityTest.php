@@ -112,7 +112,7 @@ final class RefreshActivityTest extends TestCase
         $this->activityRepository
             ->expects($this->once())
             ->method('save')
-            ->with($this->callback(fn(Activity $activity): bool => $activity->title === 'Photography Digital Complete'
+            ->with($this->callback(fn (Activity $activity): bool => $activity->title === 'Photography Digital Complete'
                 && $activity->unedId === 'UNED-001'));
 
         $this->snapshotRepository
@@ -184,7 +184,7 @@ final class RefreshActivityTest extends TestCase
         $this->priceSnapshotRepository
             ->expects($this->once())
             ->method('store')
-            ->with($this->callback(fn($snapshot): bool => $snapshot->activityId->equals($activityId)
+            ->with($this->callback(fn ($snapshot): bool => $snapshot->activityId->equals($activityId)
                 && $snapshot->priceAmount === 18000));
 
         // Act

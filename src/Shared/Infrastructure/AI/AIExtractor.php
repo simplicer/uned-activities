@@ -51,8 +51,8 @@ final readonly class AIExtractor
         $openRouterModels = $this->readModelEnv('OPENROUTER_MODELS', self::OPENROUTER_MODELS);
 
         $allModels = array_merge(
-            array_map(fn($m) => ['gemini', $m], $geminiModels),
-            array_map(fn($m) => ['openrouter', $m], $openRouterModels),
+            array_map(fn ($m) => ['gemini', $m], $geminiModels),
+            array_map(fn ($m) => ['openrouter', $m], $openRouterModels),
         );
 
         foreach ($allModels as $index => [$service, $model]) {
@@ -63,7 +63,8 @@ final readonly class AIExtractor
                     $result = $this->extractFromOpenRouter($html, $activityUrl, $model);
                 }
 
-                $this->logSuccess($service . '/' . $model, $index + 1, count($allModels));
+                $this->logSuccess($service . '/' . $model, $index + 1, \count($allModels));
+
                 return $result;
             } catch (RuntimeException $e) {
                 $lastError = $e;
@@ -86,7 +87,8 @@ final readonly class AIExtractor
     private function readModelEnv(string $key, array $fallback): array
     {
         $raw = $_ENV[$key] ?? '';
-        if (!is_string($raw) || trim($raw) === '') {
+
+        if (!\is_string($raw) || trim($raw) === '') {
             return $fallback;
         }
 
@@ -118,8 +120,8 @@ final readonly class AIExtractor
                         ['text' => $systemPrompt],
                         ['text' => $userPrompt],
                         ['text' => "\n\n" . '```json' . "\n" . $schema . "\n" . '```' . "\n\n"],
-                    ]
-                ]
+                    ],
+                ],
             ],
             'generationConfig' => [
                 'responseMimeType' => 'application/json',
@@ -162,6 +164,7 @@ final readonly class AIExtractor
         }
 
         $jsonText = $data['candidates'][0]['content']['parts'][0]['text'];
+
         return $this->parseJsonResponse($jsonText, $activityUrl);
     }
 
@@ -196,7 +199,7 @@ final readonly class AIExtractor
             CURLOPT_HTTPHEADER => [
                 'Content-Type: application/json',
                 'Authorization: Bearer ' . $apiKey,
-                'HTTP-Referer: ' . 'https://extension.uned.es',
+                'HTTP-Referer: https://extension.uned.es',
             ],
             CURLOPT_POSTFIELDS => $jsonPayload,
             CURLOPT_TIMEOUT => 120,
@@ -222,45 +225,46 @@ final readonly class AIExtractor
         }
 
         $jsonText = $data['choices'][0]['message']['content'];
+
         return $this->parseJsonResponse($jsonText, $activityUrl);
     }
 
     private function getSystemPrompt(): string
     {
         return <<<'EOD'
-Eres un extractor de datos especializado en sitios web académicos de la UNED. Tu tarea es analizar el HTML de una página de actividad de extensión y extraer información estructurada en formato JSON.
+            Eres un extractor de datos especializado en sitios web académicos de la UNED. Tu tarea es analizar el HTML de una página de actividad de extensión y extraer información estructurada en formato JSON.
 
-ESTRUCTURA HTML DE UNED:
-IMPORTANTE: UNED usa atributos JSON incrustados en el HTML (data-datos, data-titulo, etc.). Busca específicamente:
-- data-datos='{"titulo":"...", "categoria":"del X al Y de fecha", ...}'
-- data-categoria para fechas
-- <h2 itemprop="name"> o <title> para el título
-- Secciones con clases como "detalleActividad", "informacion", "programa"
-- Tablas de precios con filas para "Presencial", "On line", "On line diferido"
+            ESTRUCTURA HTML DE UNED:
+            IMPORTANTE: UNED usa atributos JSON incrustados en el HTML (data-datos, data-titulo, etc.). Busca específicamente:
+            - data-datos='{"titulo":"...", "categoria":"del X al Y de fecha", ...}'
+            - data-categoria para fechas
+            - <h2 itemprop="name"> o <title> para el título
+            - Secciones con clases como "detalleActividad", "informacion", "programa"
+            - Tablas de precios con filas para "Presencial", "On line", "On line diferido"
 
-EXTRACCIÓN DE FECHAS:
-- Busca en atributos data-categoria: "del 2 al 18 de febrero de 2026" → start: "2026-02-02", end: "2026-02-18"
-- Formatos: "del X al Y de mes de año" o "X/XX/XXXX - Y/YY/XXXX"
-- Horas: "De 10:00 a 13:00 h." o similar
+            EXTRACCIÓN DE FECHAS:
+            - Busca en atributos data-categoria: "del 2 al 18 de febrero de 2026" → start: "2026-02-02", end: "2026-02-18"
+            - Formatos: "del X al Y de mes de año" o "X/XX/XXXX - Y/YY/XXXX"
+            - Horas: "De 10:00 a 13:00 h." o similar
 
-MODALIDAD:
-- "Online" → "online"
-- "Presencial" → "in-person"
-- "Online o presencial" → "hybrid"
-- "A distancia" → "online"
-- "Semipresencial" → "hybrid"
+            MODALIDAD:
+            - "Online" → "online"
+            - "Presencial" → "in-person"
+            - "Online o presencial" → "hybrid"
+            - "A distancia" → "online"
+            - "Semipresencial" → "hybrid"
 
-PRECIOS:
-- La tabla de precios tiene filas para modalidades (Presencial, On line directo, On line diferido)
-- Extrae TODAS las combinaciones de modalidad × tipo de usuario
-- "Gratuita" o "Gratis" = 0 centimos
-- Precios en CENTIMOS (120€ = 12000)
+            PRECIOS:
+            - La tabla de precios tiene filas para modalidades (Presencial, On line directo, On line diferido)
+            - Extrae TODAS las combinaciones de modalidad × tipo de usuario
+            - "Gratuita" o "Gratis" = 0 centimos
+            - Precios en CENTIMOS (120€ = 12000)
 
-REGLAS DE EXTRACCIÓN:
-1. Responde ÚNICAMENTE con el JSON válido, sin texto adicional
-2. Si no encuentras un dato, usa null en lugar de inventarlo
-3. Las fechas deben estar en formato ISO 8601 (YYYY-MM-DD)
-EOD;
+            REGLAS DE EXTRACCIÓN:
+            1. Responde ÚNICAMENTE con el JSON válido, sin texto adicional
+            2. Si no encuentras un dato, usa null en lugar de inventarlo
+            3. Las fechas deben estar en formato ISO 8601 (YYYY-MM-DD)
+            EOD;
     }
 
     private function buildUserPrompt(string $html, string $activityUrl): string
@@ -274,121 +278,121 @@ EOD;
         $urlSafe = htmlspecialchars($html, ENT_QUOTES, 'UTF-8');
 
         return <<<EOD
-Analiza el siguiente HTML de una actividad de extensión de la UNED y extrae la información estructurada según el esquema JSON proporcionado.
+            Analiza el siguiente HTML de una actividad de extensión de la UNED y extrae la información estructurada según el esquema JSON proporcionado.
 
-URL de la actividad: {$activityUrl}
+            URL de la actividad: {$activityUrl}
 
-INSTRUCCIONES ESPECÍFICAS:
-1. Busca el título en etiquetas <h2>, <h1> o meta title
-2. Extrae las fechas del texto que contenga patterns como "del X al Y de mes de año" o "X/XX/XXXX"
-3. Para la modalidad: "Online o presencial" = hybrid, "Online" = online, "Presencial" = in-person
-4. La tabla de precios: extrae cada fila (modalidad) × cada columna (tipo de usuario)
-5. "Gratuita" o "Gratis" = 0 centimos
-6. Extrae información de: "Dirigido por" (director), "Coordinado por" (coordinador), "Ponente" (speaker)
-7. Si hay un programa detallado, extrae las sesiones con sus fechas y horas
+            INSTRUCCIONES ESPECÍFICAS:
+            1. Busca el título en etiquetas <h2>, <h1> o meta title
+            2. Extrae las fechas del texto que contenga patterns como "del X al Y de mes de año" o "X/XX/XXXX"
+            3. Para la modalidad: "Online o presencial" = hybrid, "Online" = online, "Presencial" = in-person
+            4. La tabla de precios: extrae cada fila (modalidad) × cada columna (tipo de usuario)
+            5. "Gratuita" o "Gratis" = 0 centimos
+            6. Extrae información de: "Dirigido por" (director), "Coordinado por" (coordinador), "Ponente" (speaker)
+            7. Si hay un programa detallado, extrae las sesiones con sus fechas y horas
 
-HTML a analizar:
-{$html}
+            HTML a analizar:
+            {$html}
 
-Responde ÚNICAMENTE con el JSON válido siguiendo el esquema proporcionado.
-EOD;
+            Responde ÚNICAMENTE con el JSON válido siguiendo el esquema proporcionado.
+            EOD;
     }
 
     private function getJsonSchema(): string
     {
         return <<<'EOD'
-{
-  "title": "string (título completo de la actividad)",
-  "description": "string (descripción del primer párrafo o null)",
-  "center": "string (nombre del centro, ej: 'UNED A Coruña' o null)",
-  "centerId": "number (ID del centro si existe, ej: 32 para A Coruña, o null)",
-  "topic": {
-    "primary": "string (área temática o null)",
-    "secondary": ["array de subtemáticas o vacío"],
-    "cycle": "string (nombre del ciclo si pertenece a uno, ej: 'IDIOMAS Y COMPETENCIAS LINGÜÍSTICAS' o null)"
-  },
-  "dates": {
-    "start": "string (fecha inicio ISO YYYY-MM-DD o null)",
-    "end": "string (fecha fin ISO YYYY-MM-DD o null)",
-    "display": "string (texto original de fechas, ej: 'del 9 al 19 de febrero de 2026')"
-  },
-  "schedule": {
-    "timeStart": "string (hora inicio, ej: '10:00' o null)",
-    "timeEnd": "string (hora fin, ej: '13:00' o null)",
-    "timezone": "string (huso horario, default: 'Europe/Madrid')",
-    "sessions": [
-      {
-        "date": "string (YYYY-MM-DD)",
-        "timeStart": "string (ej: '10:00')",
-        "timeEnd": "string (ej: '13:00')",
-        "title": "string (título de la sesión)",
-        "location": "string (lugar específico, ej: 'Aula 23A')"
-      }
-    ]
-  },
-  "location": {
-    "venue": "string (lugar específico, ej: 'Aula 23A' o null)",
-    "center": "string (centro, ej: 'Centro UNED A Coruña' o null)",
-    "address": "string (dirección postal si existe o null)",
-    "city": "string (ciudad, ej: 'A Coruña' o null)"
-  },
-  "modality": {
-    "type": "string (online|in-person|hybrid - mapear desde: 'Online o presencial'=hybrid, 'Online'=online, 'Presencial'=in-person)",
-    "hasLive": "boolean (true si tiene opción en directo)",
-    "hasRecorded": "boolean (true si tiene opción en diferido)",
-    "details": ["array de strings con detalles, ej: ['presencial', 'online en directo', 'online en diferido']"]
-  },
-  "pricing": {
-    "table": [
-      {
-        "modality": "string (presencial|online_directo|online_diferido - extraer de la fila)",
-        "studentType": "string (nombre del tipo de usuario, ej: 'Matrícula Ordinaria', 'Alumnos UNED')",
-        "amount": "number (precio en CENTIMOS, 45€ = 4500, 'Gratuita' = 0)",
-        "currency": "string (EUR)",
-        "display": "string (formato visual original)"
-      }
-    ]
-  },
-  "credits": {
-    "ects": "number (créditos ECTS como decimal, ej: 1.0 o null)",
-    "hours": "number (horas lectivas si se indica, ej: 25 o null)",
-    "certificate": "string (tipo de certificado o null)",
-    "status": "string (estado de los créditos, ej: 'en trámite' o null)"
-  },
-  "staff": {
-    "director": {
-      "name": "string (nombre completo o null)",
-      "role": "string (cargo/afiliación o null)"
-    },
-    "coordinator": {
-      "name": "string (nombre completo o null)",
-      "role": "string (cargo/afiliación o null)"
-    },
-    "speakers": [
-      {
-        "name": "string (nombre completo)",
-        "role": "string (cargo/afiliación)",
-        "bio": "string (descripción completa o null)"
-      }
-    ]
-  },
-  "enrollment": {
-    "open": "boolean (true si el periodo de matrícula está abierto)",
-    "info": "string (información de matrícula o null)",
-    "link": "string (URL de matrícula online si existe o null)"
-  },
-  "targetAudience": "string (público objetivo o null)",
-  "requirements": {
-    "prerequisites": ["array de requisitos previos"],
-    "methodology": "string (metodología o null)",
-    "evaluation": "string (sistema de evaluación o null)"
-  },
-  "metadata": {
-    "url": "string (URL de la actividad)",
-    "extractedAt": "string (timestamp de extracción)"
-  }
-}
-EOD;
+            {
+              "title": "string (título completo de la actividad)",
+              "description": "string (descripción del primer párrafo o null)",
+              "center": "string (nombre del centro, ej: 'UNED A Coruña' o null)",
+              "centerId": "number (ID del centro si existe, ej: 32 para A Coruña, o null)",
+              "topic": {
+                "primary": "string (área temática o null)",
+                "secondary": ["array de subtemáticas o vacío"],
+                "cycle": "string (nombre del ciclo si pertenece a uno, ej: 'IDIOMAS Y COMPETENCIAS LINGÜÍSTICAS' o null)"
+              },
+              "dates": {
+                "start": "string (fecha inicio ISO YYYY-MM-DD o null)",
+                "end": "string (fecha fin ISO YYYY-MM-DD o null)",
+                "display": "string (texto original de fechas, ej: 'del 9 al 19 de febrero de 2026')"
+              },
+              "schedule": {
+                "timeStart": "string (hora inicio, ej: '10:00' o null)",
+                "timeEnd": "string (hora fin, ej: '13:00' o null)",
+                "timezone": "string (huso horario, default: 'Europe/Madrid')",
+                "sessions": [
+                  {
+                    "date": "string (YYYY-MM-DD)",
+                    "timeStart": "string (ej: '10:00')",
+                    "timeEnd": "string (ej: '13:00')",
+                    "title": "string (título de la sesión)",
+                    "location": "string (lugar específico, ej: 'Aula 23A')"
+                  }
+                ]
+              },
+              "location": {
+                "venue": "string (lugar específico, ej: 'Aula 23A' o null)",
+                "center": "string (centro, ej: 'Centro UNED A Coruña' o null)",
+                "address": "string (dirección postal si existe o null)",
+                "city": "string (ciudad, ej: 'A Coruña' o null)"
+              },
+              "modality": {
+                "type": "string (online|in-person|hybrid - mapear desde: 'Online o presencial'=hybrid, 'Online'=online, 'Presencial'=in-person)",
+                "hasLive": "boolean (true si tiene opción en directo)",
+                "hasRecorded": "boolean (true si tiene opción en diferido)",
+                "details": ["array de strings con detalles, ej: ['presencial', 'online en directo', 'online en diferido']"]
+              },
+              "pricing": {
+                "table": [
+                  {
+                    "modality": "string (presencial|online_directo|online_diferido - extraer de la fila)",
+                    "studentType": "string (nombre del tipo de usuario, ej: 'Matrícula Ordinaria', 'Alumnos UNED')",
+                    "amount": "number (precio en CENTIMOS, 45€ = 4500, 'Gratuita' = 0)",
+                    "currency": "string (EUR)",
+                    "display": "string (formato visual original)"
+                  }
+                ]
+              },
+              "credits": {
+                "ects": "number (créditos ECTS como decimal, ej: 1.0 o null)",
+                "hours": "number (horas lectivas si se indica, ej: 25 o null)",
+                "certificate": "string (tipo de certificado o null)",
+                "status": "string (estado de los créditos, ej: 'en trámite' o null)"
+              },
+              "staff": {
+                "director": {
+                  "name": "string (nombre completo o null)",
+                  "role": "string (cargo/afiliación o null)"
+                },
+                "coordinator": {
+                  "name": "string (nombre completo o null)",
+                  "role": "string (cargo/afiliación o null)"
+                },
+                "speakers": [
+                  {
+                    "name": "string (nombre completo)",
+                    "role": "string (cargo/afiliación)",
+                    "bio": "string (descripción completa o null)"
+                  }
+                ]
+              },
+              "enrollment": {
+                "open": "boolean (true si el periodo de matrícula está abierto)",
+                "info": "string (información de matrícula o null)",
+                "link": "string (URL de matrícula online si existe o null)"
+              },
+              "targetAudience": "string (público objetivo o null)",
+              "requirements": {
+                "prerequisites": ["array de requisitos previos"],
+                "methodology": "string (metodología o null)",
+                "evaluation": "string (sistema de evaluación o null)"
+              },
+              "metadata": {
+                "url": "string (URL de la actividad)",
+                "extractedAt": "string (timestamp de extracción)"
+              }
+            }
+            EOD;
     }
 
     private function parseJsonResponse(string $jsonText, string $activityUrl): array
@@ -409,12 +413,12 @@ EOD;
 
     private function logSuccess(string $model, int $attempt, int $total): void
     {
-        error_log(sprintf('[AI Extractor] SUCCESS: %s (attempt %d/%d)', $model, $attempt, $total));
+        error_log(\sprintf('[AI Extractor] SUCCESS: %s (attempt %d/%d)', $model, $attempt, $total));
     }
 
     private function logFailure(string $model, int $attempt, string $error): void
     {
-        error_log(sprintf('[AI Extractor] FAILED: %s (attempt %d) - %s', $model, $attempt, $error));
+        error_log(\sprintf('[AI Extractor] FAILED: %s (attempt %d) - %s', $model, $attempt, $error));
     }
 
     /**

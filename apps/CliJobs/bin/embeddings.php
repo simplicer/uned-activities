@@ -58,11 +58,13 @@ final class EmbeddingsCommand extends Command
 
         if (!$enabled) {
             $io->warning('Embeddings are disabled (EMBEDDINGS_ENABLED=false).');
+
             return Command::SUCCESS;
         }
 
         if ($geminiKey === '' && $openRouterKey === '') {
             $io->error('No embedding provider configured (GEMINI_API_KEY / OPENROUTER_API_KEY).');
+
             return Command::FAILURE;
         }
 
@@ -88,6 +90,7 @@ final class EmbeddingsCommand extends Command
             $embeddingClient = $openRouterClient;
         } else {
             $io->error('Embedding providers configured, but embedding model missing.');
+
             return Command::FAILURE;
         }
 
@@ -95,13 +98,16 @@ final class EmbeddingsCommand extends Command
 
         if ($activityId !== 'all') {
             $activity = $activityRepo->findById(\CatalogHarvest\Domain\ValueObject\ActivityId::fromString($activityId));
+
             if (!$activity instanceof \CatalogHarvest\Domain\Entity\Activity) {
                 $io->error('Activity not found.');
+
                 return Command::FAILURE;
             }
 
             $embeddingService->generate($activity);
             $io->success('Embedding generated.');
+
             return Command::SUCCESS;
         }
 
@@ -113,6 +119,7 @@ final class EmbeddingsCommand extends Command
         }
 
         $io->success('Embeddings generated.');
+
         return Command::SUCCESS;
     }
 

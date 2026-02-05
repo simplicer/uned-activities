@@ -61,7 +61,7 @@ final readonly class ContactController
             $this->recipient,
             $email,
             $name,
-            $subject !== '' ? sprintf('%s - %s', $this->context, $subject) : $this->context,
+            $subject !== '' ? \sprintf('%s - %s', $this->context, $subject) : $this->context,
             $message
         );
 
@@ -83,6 +83,7 @@ final readonly class ContactController
     private function json(Response $response, int $status, array $payload): Response
     {
         $response->getBody()->write(json_encode($payload, JSON_THROW_ON_ERROR));
+
         return $response->withStatus($status)->withHeader('Content-Type', 'application/json');
     }
 }

@@ -139,14 +139,14 @@ final class ActivityDetailParserTest extends TestCase
     public function itHandlesVariousDateFormats(): void
     {
         $html = <<<HTML
-<!DOCTYPE html>
-<html>
-<body>
-    <span class="start-date">01/03/2025</span>
-    <span class="end-date">30-06-2025</span>
-</body>
-</html>
-HTML;
+            <!DOCTYPE html>
+            <html>
+            <body>
+                <span class="start-date">01/03/2025</span>
+                <span class="end-date">30-06-2025</span>
+            </body>
+            </html>
+            HTML;
 
         $result = $this->parser->parse($html);
 
@@ -161,13 +161,13 @@ HTML;
     public function itHandlesPresencialModality(): void
     {
         $html = <<<HTML
-<!DOCTYPE html>
-<html>
-<body>
-    <span class="modality">Presencial</span>
-</body>
-</html>
-HTML;
+            <!DOCTYPE html>
+            <html>
+            <body>
+                <span class="modality">Presencial</span>
+            </body>
+            </html>
+            HTML;
 
         $result = $this->parser->parse($html);
 
@@ -179,13 +179,13 @@ HTML;
     public function itHandlesHybridModality(): void
     {
         $html = <<<HTML
-<!DOCTYPE html>
-<html>
-<body>
-    <span class="modality">Híbrido</span>
-</body>
-</html>
-HTML;
+            <!DOCTYPE html>
+            <html>
+            <body>
+                <span class="modality">Híbrido</span>
+            </body>
+            </html>
+            HTML;
 
         $result = $this->parser->parse($html);
 
@@ -197,13 +197,13 @@ HTML;
     public function itHandlesDecimalPrices(): void
     {
         $html = <<<HTML
-<!DOCTYPE html>
-<html>
-<body>
-    <span class="price">99,50€</span>
-</body>
-</html>
-HTML;
+            <!DOCTYPE html>
+            <html>
+            <body>
+                <span class="price">99,50€</span>
+            </body>
+            </html>
+            HTML;
 
         $result = $this->parser->parse($html);
 
@@ -215,13 +215,13 @@ HTML;
     public function itHandlesMissingOptionalFields(): void
     {
         $html = <<<HTML
-<!DOCTYPE html>
-<html>
-<body>
-    <h1>Test Course</h1>
-</body>
-</html>
-HTML;
+            <!DOCTYPE html>
+            <html>
+            <body>
+                <h1>Test Course</h1>
+            </body>
+            </html>
+            HTML;
 
         $result = $this->parser->parse($html);
 
@@ -266,6 +266,7 @@ HTML;
         }
 
         $content = file_get_contents($path);
+
         if ($content === false) {
             $this->fail("Failed to read fixture file: {$path}");
         }

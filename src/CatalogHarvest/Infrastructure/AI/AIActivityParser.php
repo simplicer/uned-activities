@@ -39,6 +39,7 @@ final readonly class AIActivityParser
     public function parseWithUrl(string $html, string $url): array
     {
         $data = $this->extractor->extract($html, $url);
+
         return $this->normalizeToRefreshFormat($data);
     }
 
@@ -119,10 +120,12 @@ final readonly class AIActivityParser
         if (str_contains($description, '|') && str_ends_with($description, '| UNED')) {
             $parts = explode('|', $description);
             $title = trim($parts[0]);
+
             // Only return if it's different from the title field
             if (isset($data['title']) && $title !== $data['title']) {
                 return $title;
             }
+
             return null; // Same as title, no need to duplicate
         }
 
@@ -137,7 +140,7 @@ final readonly class AIActivityParser
         }
 
         // Handle flat location string format
-        if (isset($data['location']) && is_string($data['location']) && $data['location'] !== '') {
+        if (isset($data['location']) && \is_string($data['location']) && $data['location'] !== '') {
             return $data['location'];
         }
 
@@ -169,7 +172,7 @@ final readonly class AIActivityParser
         }
 
         // Try categories array
-        if (isset($data['categories']) && is_array($data['categories']) && count($data['categories']) > 0) {
+        if (isset($data['categories']) && \is_array($data['categories']) && \count($data['categories']) > 0) {
             return $data['categories'][0];
         }
 
@@ -179,12 +182,13 @@ final readonly class AIActivityParser
     private function determineIsFree(array $data): bool
     {
         // Check pricing table (structured format)
-        if (isset($data['pricing']['table']) && is_array($data['pricing']['table'])) {
+        if (isset($data['pricing']['table']) && \is_array($data['pricing']['table'])) {
             foreach ($data['pricing']['table'] as $row) {
                 if (isset($row['amount']) && is_numeric($row['amount']) && $row['amount'] > 0) {
                     return false;
                 }
             }
+
             return true;
         }
 
@@ -204,7 +208,7 @@ final readonly class AIActivityParser
     private function extractPriceAmount(array $data): ?int
     {
         // Check pricing table
-        if (isset($data['pricing']['table']) && is_array($data['pricing']['table'])) {
+        if (isset($data['pricing']['table']) && \is_array($data['pricing']['table'])) {
             foreach ($data['pricing']['table'] as $row) {
                 if (isset($row['amount']) && is_numeric($row['amount']) && $row['amount'] > 0) {
                     return (int) $row['amount'];
@@ -215,6 +219,7 @@ final readonly class AIActivityParser
         // Check price object format: {amount: 0, currency: "EUR"}
         if (isset($data['price']['amount']) && is_numeric($data['price']['amount'])) {
             $amount = (int) $data['price']['amount'];
+
             return $amount > 0 ? $amount : 0;
         }
 
@@ -252,7 +257,7 @@ final readonly class AIActivityParser
             $modality = $data['modality']['type'];
         }
         // Handle flat format: modality: "online"
-        elseif (isset($data['modality']) && is_string($data['modality'])) {
+        elseif (isset($data['modality']) && \is_string($data['modality'])) {
             $modality = $data['modality'];
         }
         // Check location type
@@ -306,11 +311,12 @@ final readonly class AIActivityParser
      */
     private function extractPricingTable(array $data): ?array
     {
-        if (!isset($data['pricing']['table']) || !is_array($data['pricing']['table'])) {
+        if (!isset($data['pricing']['table']) || !\is_array($data['pricing']['table'])) {
             return null;
         }
 
         $pricingTable = [];
+
         foreach ($data['pricing']['table'] as $row) {
             if (!isset($row['amount']) || !is_numeric($row['amount'])) {
                 continue;
@@ -347,7 +353,7 @@ final readonly class AIActivityParser
         $hasData = false;
 
         // Extract director
-        if (isset($data['staff']['director']) && is_array($data['staff']['director'])) {
+        if (isset($data['staff']['director']) && \is_array($data['staff']['director'])) {
             $staff['director'] = [
                 'name' => $data['staff']['director']['name'] ?? null,
                 'role' => $data['staff']['director']['role'] ?? null,
@@ -356,7 +362,7 @@ final readonly class AIActivityParser
         }
 
         // Extract coordinator
-        if (isset($data['staff']['coordinator']) && is_array($data['staff']['coordinator'])) {
+        if (isset($data['staff']['coordinator']) && \is_array($data['staff']['coordinator'])) {
             $staff['coordinator'] = [
                 'name' => $data['staff']['coordinator']['name'] ?? null,
                 'role' => $data['staff']['coordinator']['role'] ?? null,
@@ -365,8 +371,9 @@ final readonly class AIActivityParser
         }
 
         // Extract speakers
-        if (isset($data['staff']['speakers']) && is_array($data['staff']['speakers'])) {
+        if (isset($data['staff']['speakers']) && \is_array($data['staff']['speakers'])) {
             $staff['speakers'] = [];
+
             foreach ($data['staff']['speakers'] as $speaker) {
                 $staff['speakers'][] = [
                     'name' => $speaker['name'] ?? '',
@@ -386,11 +393,12 @@ final readonly class AIActivityParser
      */
     private function extractSessions(array $data): ?array
     {
-        if (!isset($data['schedule']['sessions']) || !is_array($data['schedule']['sessions'])) {
+        if (!isset($data['schedule']['sessions']) || !\is_array($data['schedule']['sessions'])) {
             return null;
         }
 
         $sessions = [];
+
         foreach ($data['schedule']['sessions'] as $session) {
             if (!isset($session['date'])) {
                 continue;
@@ -425,7 +433,7 @@ final readonly class AIActivityParser
 
         $requirements = [];
 
-        if (isset($data['requirements']['prerequisites']) && is_array($data['requirements']['prerequisites'])) {
+        if (isset($data['requirements']['prerequisites']) && \is_array($data['requirements']['prerequisites'])) {
             $requirements['prerequisites'] = $data['requirements']['prerequisites'];
         }
 
@@ -448,7 +456,7 @@ final readonly class AIActivityParser
     {
         $location = $data['location'] ?? [];
 
-        if ($location === [] || !is_array($location)) {
+        if ($location === [] || !\is_array($location)) {
             return null;
         }
 
@@ -481,7 +489,7 @@ final readonly class AIActivityParser
     {
         $schedule = $data['schedule'] ?? [];
 
-        if ($schedule === [] || !is_array($schedule)) {
+        if ($schedule === [] || !\is_array($schedule)) {
             return null;
         }
 
@@ -513,6 +521,7 @@ final readonly class AIActivityParser
 
         foreach ($formats as $format) {
             $parsed = \DateTimeImmutable::createFromFormat($format, $date);
+
             if ($parsed !== false) {
                 return $parsed;
             }

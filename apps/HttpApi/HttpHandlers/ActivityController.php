@@ -91,6 +91,7 @@ final readonly class ActivityController
             $activity = $item['activity'];
             $payload = $this->serializer->toArray($activity);
             $payload['similarity'] = $item['similarity'];
+
             return $payload;
         }, $results);
 

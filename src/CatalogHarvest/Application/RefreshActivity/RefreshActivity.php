@@ -12,7 +12,6 @@ use CatalogHarvest\Domain\ActivityDataStorage\PriceSnapshotRepository;
 use CatalogHarvest\Domain\ActivityDataStorage\PriceSnapshot;
 use CatalogHarvest\Domain\ActivityDataStorage\HtmlFetcher;
 use CatalogHarvest\Domain\HtmlContentExtractor\HtmlContentExtractor;
-use CatalogHarvest\Domain\ActivityEmbeddingGenerator\ActivityEmbeddingGenerator;
 use CatalogHarvest\Domain\ValueObject\ActivityId;
 use CatalogHarvest\Application\Embeddings\GenerateActivityEmbedding;
 use CatalogHarvest\Application\Notifications\NotifyFavoriteUsers;
@@ -63,8 +62,8 @@ final readonly class RefreshActivity
         $hasChanged = $activity->hasChanged($newHash);
 
         // Extended fields with type conversions
-        $credits = isset($data['credits']) && is_numeric($data['credits']) 
-            ? (int) $data['credits'] 
+        $credits = isset($data['credits']) && is_numeric($data['credits'])
+            ? (int) $data['credits']
             : null;
         $hasLive = isset($data['hasLive']) ? (bool) $data['hasLive'] : null;
         $hasRecorded = isset($data['hasRecorded']) ? (bool) $data['hasRecorded'] : null;

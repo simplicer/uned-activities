@@ -41,14 +41,14 @@ final readonly class RequestMagicLink
         // Generate magic token
         $token = MagicToken::generate();
         $expiresAt = new \DateTimeImmutable(
-            sprintf('+%d minutes', $expireMinutes ?? self::DEFAULT_EXPIRE_MINUTES)
+            \sprintf('+%d minutes', $expireMinutes ?? self::DEFAULT_EXPIRE_MINUTES)
         );
 
         $magicLink = MagicLinkToken::create($email, $token, $expiresAt);
         $this->tokenRepository->save($magicLink);
 
         // Send email
-        $magicLinkUrl = sprintf('%s/?token=%s', rtrim($this->frontendUrl, '/'), $token->toString());
+        $magicLinkUrl = \sprintf('%s/?token=%s', rtrim($this->frontendUrl, '/'), $token->toString());
         $this->emailService->sendMagicLink($email, $magicLinkUrl);
     }
 }

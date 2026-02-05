@@ -354,8 +354,10 @@ final readonly class PdoActivityRepository implements ActivityRepository
         }
 
         $ordered = [];
+
         foreach ($ids as $id) {
             $key = $id->toString();
+
             if (isset($activitiesById[$key])) {
                 $ordered[] = $activitiesById[$key];
             }

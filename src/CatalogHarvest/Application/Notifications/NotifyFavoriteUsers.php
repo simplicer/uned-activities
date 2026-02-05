@@ -44,7 +44,7 @@ final readonly class NotifyFavoriteUsers
                 $userId,
                 type: 'activity_update',
                 title: 'Actividad actualizada',
-                message: sprintf('Ha cambiado la actividad "%s".', $title),
+                message: \sprintf('Ha cambiado la actividad "%s".', $title),
                 data: [
                     'activity_id' => $activityId,
                     'activity_title' => $title,

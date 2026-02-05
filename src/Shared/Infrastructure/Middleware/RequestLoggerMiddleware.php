@@ -22,6 +22,7 @@ final readonly class RequestLoggerMiddleware
     public function __invoke(Request $request, RequestHandler $handler): Response
     {
         $requestId = (string) ($request->getAttribute('request_id') ?? '');
+
         if ($requestId === '') {
             $requestId = Uuid::uuid4()->toString();
             $request = $request->withAttribute('request_id', $requestId);
@@ -36,7 +37,7 @@ final readonly class RequestLoggerMiddleware
         $status = $response->getStatusCode();
 
         $rawUserId = $request->getAttribute('auth_user_id');
-        $userIdHash = is_string($rawUserId) && $rawUserId !== ''
+        $userIdHash = \is_string($rawUserId) && $rawUserId !== ''
             ? substr(hash('sha256', $rawUserId), 0, 12)
             : null;
 

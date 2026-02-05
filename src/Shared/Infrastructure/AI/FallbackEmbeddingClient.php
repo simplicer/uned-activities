@@ -42,7 +42,7 @@ final class FallbackEmbeddingClient implements EmbeddingClient
                 return $embedding;
             } catch (Throwable $fallbackError) {
                 throw new RuntimeException(
-                    sprintf(
+                    \sprintf(
                         'Primary embedding failed: %s. Fallback failed: %s.',
                         $error->getMessage(),
                         $fallbackError->getMessage(),

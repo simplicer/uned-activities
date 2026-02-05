@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Auth\Domain\ValueObject;
 
-use Ramsey\Uuid\Uuid;
-
 /**
  * Magic token for passwordless authentication.
  */
@@ -35,9 +33,9 @@ final readonly class MagicToken
             throw new \InvalidArgumentException('Invalid magic token format');
         }
 
-        $tokenPart = substr($token, strlen(self::TOKEN_PREFIX));
+        $tokenPart = substr($token, \strlen(self::TOKEN_PREFIX));
 
-        if (strlen($tokenPart) !== self::TOKEN_LENGTH * 2) {
+        if (\strlen($tokenPart) !== self::TOKEN_LENGTH * 2) {
             throw new \InvalidArgumentException('Invalid magic token length');
         }
 

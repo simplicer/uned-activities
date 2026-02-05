@@ -132,35 +132,35 @@ final class SmtpEmailService
         $greeting = $userName !== '' ? "Hola $userName," : 'Hola,';
 
         return <<<HTML
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <title>Tu enlace de acceso</title>
-    <style>
-        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-        .button { display: inline-block; padding: 12px 30px; background-color: #ffffff; color: #008C45; text-decoration: none; border-radius: 5px; margin: 20px 0; border: 2px solid #008C45; font-weight: 600; }
-        .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; font-size: 12px; color: #888; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h2 style="color: #008C45;">Lexemas</h2>
-        <p>$greeting</p>
-        <p>Haz clic en el siguiente botón para acceder a tu cuenta:</p>
-        <p><a href="$magicLink" class="button">Acceder ahora</a></p>
-        <p>O copia y pega este enlace en tu navegador:</p>
-        <p style="word-break: break-all; color: #666;">$magicLink</p>
-        <p style="color: #888; font-size: 14px;">Este enlace expirará en 15 minutos.</p>
-        <div class="footer">
-            <p>Si no solicitaste este enlace, puedes ignorar este correo.</p>
-            <p>&copy; 2026 <a href="https://simplicer.com" style="color: #008C45;">Simplicer SL</a></p>
-        </div>
-    </div>
-</body>
-</html>
-HTML;
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="UTF-8">
+                <title>Tu enlace de acceso</title>
+                <style>
+                    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+                    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                    .button { display: inline-block; padding: 12px 30px; background-color: #ffffff; color: #008C45; text-decoration: none; border-radius: 5px; margin: 20px 0; border: 2px solid #008C45; font-weight: 600; }
+                    .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; font-size: 12px; color: #888; }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <h2 style="color: #008C45;">Lexemas</h2>
+                    <p>$greeting</p>
+                    <p>Haz clic en el siguiente botón para acceder a tu cuenta:</p>
+                    <p><a href="$magicLink" class="button">Acceder ahora</a></p>
+                    <p>O copia y pega este enlace en tu navegador:</p>
+                    <p style="word-break: break-all; color: #666;">$magicLink</p>
+                    <p style="color: #888; font-size: 14px;">Este enlace expirará en 15 minutos.</p>
+                    <div class="footer">
+                        <p>Si no solicitaste este enlace, puedes ignorar este correo.</p>
+                        <p>&copy; 2026 <a href="https://simplicer.com" style="color: #008C45;">Simplicer SL</a></p>
+                    </div>
+                </div>
+            </body>
+            </html>
+            HTML;
     }
 
     /**
@@ -169,33 +169,33 @@ HTML;
     private function renderRegistrationTemplate(string $confirmLink): string
     {
         return <<<HTML
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <title>Confirma tu registro</title>
-    <style>
-        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-        .button { display: inline-block; padding: 12px 30px; background-color: #ffffff; color: #008C45; text-decoration: none; border-radius: 5px; margin: 20px 0; border: 2px solid #008C45; font-weight: 600; }
-        .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; font-size: 12px; color: #888; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h2 style="color: #008C45;">Lexemas</h2>
-        <p>Gracias por registrarte en Lexemas.</p>
-        <p>Para completar tu registro, haz clic en el siguiente botón:</p>
-        <p><a href="$confirmLink" class="button">Confirmar registro</a></p>
-        <p>O copia y pega este enlace en tu navegador:</p>
-        <p style="word-break: break-all; color: #666;">$confirmLink</p>
-        <div class="footer">
-            <p>&copy; 2026 <a href="https://simplicer.com" style="color: #008C45;">Simplicer SL</a></p>
-        </div>
-    </div>
-</body>
-</html>
-HTML;
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="UTF-8">
+                <title>Confirma tu registro</title>
+                <style>
+                    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+                    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                    .button { display: inline-block; padding: 12px 30px; background-color: #ffffff; color: #008C45; text-decoration: none; border-radius: 5px; margin: 20px 0; border: 2px solid #008C45; font-weight: 600; }
+                    .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; font-size: 12px; color: #888; }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <h2 style="color: #008C45;">Lexemas</h2>
+                    <p>Gracias por registrarte en Lexemas.</p>
+                    <p>Para completar tu registro, haz clic en el siguiente botón:</p>
+                    <p><a href="$confirmLink" class="button">Confirmar registro</a></p>
+                    <p>O copia y pega este enlace en tu navegador:</p>
+                    <p style="word-break: break-all; color: #666;">$confirmLink</p>
+                    <div class="footer">
+                        <p>&copy; 2026 <a href="https://simplicer.com" style="color: #008C45;">Simplicer SL</a></p>
+                    </div>
+                </div>
+            </body>
+            </html>
+            HTML;
     }
 
     private function renderContactTemplate(string $email, string $name, string $message): string
@@ -206,31 +206,31 @@ HTML;
         $safeMessage = htmlspecialchars($message, ENT_QUOTES | ENT_HTML5, 'UTF-8');
 
         return <<<HTML
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <title>Nuevo mensaje de contacto</title>
-    <style>
-        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-        .meta { margin-bottom: 20px; }
-        .meta p { margin: 4px 0; }
-        .message { white-space: pre-wrap; background: #f7f7f7; padding: 16px; border-radius: 6px; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h2>Nuevo mensaje desde el formulario legal</h2>
-        <div class="meta">
-            <p><strong>Remitente:</strong> $safeName</p>
-            <p><strong>Email:</strong> $safeEmail</p>
-        </div>
-        <div class="message">$safeMessage</div>
-    </div>
-</body>
-</html>
-HTML;
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="UTF-8">
+                <title>Nuevo mensaje de contacto</title>
+                <style>
+                    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+                    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                    .meta { margin-bottom: 20px; }
+                    .meta p { margin: 4px 0; }
+                    .message { white-space: pre-wrap; background: #f7f7f7; padding: 16px; border-radius: 6px; }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <h2>Nuevo mensaje desde el formulario legal</h2>
+                    <div class="meta">
+                        <p><strong>Remitente:</strong> $safeName</p>
+                        <p><strong>Email:</strong> $safeEmail</p>
+                    </div>
+                    <div class="message">$safeMessage</div>
+                </div>
+            </body>
+            </html>
+            HTML;
     }
 
     private function renderActivityUpdateTemplate(string $activityTitle, string $activityUrl, string $changeType): string
@@ -242,33 +242,33 @@ HTML;
         };
 
         return <<<HTML
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <title>Actividad actualizada</title>
-    <style>
-        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-        .button { display: inline-block; padding: 12px 30px; background-color: #ffffff; color: #008C45; text-decoration: none; border-radius: 5px; margin: 20px 0; border: 2px solid #008C45; font-weight: 600; }
-        .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; font-size: 12px; color: #888; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h2 style="color: #008C45;">Lexemas</h2>
-        <p>Hola,</p>
-        <p>$reason</p>
-        <p><strong>$activityTitle</strong></p>
-        <p><a href="$activityUrl" class="button">Ver actividad</a></p>
-        <p>O copia y pega este enlace en tu navegador:</p>
-        <p style="word-break: break-all; color: #666;">$activityUrl</p>
-        <div class="footer">
-            <p>&copy; 2026 <a href="https://simplicer.com" style="color: #008C45;">Simplicer SL</a></p>
-        </div>
-    </div>
-</body>
-</html>
-HTML;
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="UTF-8">
+                <title>Actividad actualizada</title>
+                <style>
+                    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+                    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                    .button { display: inline-block; padding: 12px 30px; background-color: #ffffff; color: #008C45; text-decoration: none; border-radius: 5px; margin: 20px 0; border: 2px solid #008C45; font-weight: 600; }
+                    .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; font-size: 12px; color: #888; }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <h2 style="color: #008C45;">Lexemas</h2>
+                    <p>Hola,</p>
+                    <p>$reason</p>
+                    <p><strong>$activityTitle</strong></p>
+                    <p><a href="$activityUrl" class="button">Ver actividad</a></p>
+                    <p>O copia y pega este enlace en tu navegador:</p>
+                    <p style="word-break: break-all; color: #666;">$activityUrl</p>
+                    <div class="footer">
+                        <p>&copy; 2026 <a href="https://simplicer.com" style="color: #008C45;">Simplicer SL</a></p>
+                    </div>
+                </div>
+            </body>
+            </html>
+            HTML;
     }
 }

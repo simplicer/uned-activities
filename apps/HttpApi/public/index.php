@@ -41,7 +41,7 @@ use UserProfile\Infrastructure\Persistence\PdoUserRepository;
 require_once __DIR__ . '/../../../vendor/autoload.php';
 
 // Load environment variables
-$envRoot = __DIR__ . '/../../..' . '/';
+$envRoot = __DIR__ . '/../../../';
 $infraEnv = $envRoot . 'infra/env/local.env';
 
 if (file_exists($infraEnv)) {

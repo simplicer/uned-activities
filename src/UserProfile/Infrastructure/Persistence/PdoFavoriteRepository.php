@@ -23,8 +23,10 @@ final readonly class PdoFavoriteRepository implements FavoriteRepository
     public function add(UserId $userId, string $activityId): FavoriteActivity
     {
         $existing = $this->exists($userId, $activityId);
+
         if ($existing) {
             $row = $this->findRow($userId, $activityId);
+
             if ($row !== null) {
                 return FavoriteActivity::fromPersistence(
                     $row['id'],
@@ -46,6 +48,7 @@ final readonly class PdoFavoriteRepository implements FavoriteRepository
         ]);
 
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
         if ($row === false) {
             throw new \RuntimeException('Unable to create favorite');
         }
@@ -90,6 +93,7 @@ final readonly class PdoFavoriteRepository implements FavoriteRepository
         $stmt->execute(['user_id' => $userId->toString()]);
 
         $result = $stmt->fetchAll(PDO::FETCH_COLUMN, 0);
+
         return $result !== false ? $result : [];
     }
 
@@ -108,6 +112,7 @@ final readonly class PdoFavoriteRepository implements FavoriteRepository
         $stmt->execute(['user_id' => $userId->toString()]);
 
         $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
         return $result !== false ? $result : [];
     }
 
@@ -155,6 +160,7 @@ final readonly class PdoFavoriteRepository implements FavoriteRepository
         $stmt->execute(['activity_id' => $activityId]);
 
         $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
         return $result !== false ? $result : [];
     }
 
