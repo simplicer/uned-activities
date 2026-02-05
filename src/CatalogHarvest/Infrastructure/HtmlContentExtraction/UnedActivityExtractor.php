@@ -182,7 +182,10 @@ final readonly class UnedActivityExtractor implements HtmlContentExtractor
     {
         $nodes = $xpath->query("//a[contains(@class, 'matricula') or contains(text(), 'Matricular')]");
         if ($nodes->length > 0) {
-            return $nodes->item(0)->getAttribute('href');
+            $node = $nodes->item(0);
+            if ($node instanceof \DOMElement) {
+                return $node->getAttribute('href');
+            }
         }
 
         return null;
@@ -192,7 +195,10 @@ final readonly class UnedActivityExtractor implements HtmlContentExtractor
     {
         $nodes = $xpath->query("//img[contains(@class, 'actividad') or contains(@class, 'curso')]");
         if ($nodes->length > 0) {
-            return $nodes->item(0)->getAttribute('src');
+            $node = $nodes->item(0);
+            if ($node instanceof \DOMElement) {
+                return $node->getAttribute('src');
+            }
         }
 
         return null;

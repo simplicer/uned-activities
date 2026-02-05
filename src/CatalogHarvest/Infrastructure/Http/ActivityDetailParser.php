@@ -184,12 +184,15 @@ final class ActivityDetailParser implements HtmlContentExtractor
         // Calendar link
         $calendarNodes = $xpath->query("//a[contains(., 'Ver calendario') or contains(@href, 'calendar')]");
         if ($calendarNodes !== false && $calendarNodes->length > 0) {
-            $href = $calendarNodes->item(0)->getAttribute('href');
-            if ($href !== '') {
-                if (!str_starts_with($href, 'http')) {
-                    $href = 'https://extension.uned.es' . (str_starts_with($href, '/') ? '' : '/') . $href;
+            $node = $calendarNodes->item(0);
+            if ($node instanceof \DOMElement) {
+                $href = $node->getAttribute('href');
+                if ($href !== '') {
+                    if (!str_starts_with($href, 'http')) {
+                        $href = 'https://extension.uned.es' . (str_starts_with($href, '/') ? '' : '/') . $href;
+                    }
+                    $sections['calendarUrl'] = $href;
                 }
-                $sections['calendarUrl'] = $href;
             }
         }
 
@@ -274,12 +277,14 @@ final class ActivityDetailParser implements HtmlContentExtractor
 
         if ($nodes !== false && $nodes->length > 0) {
             $div = $nodes->item(0);
-            $categoria = $div->getAttribute('data-categoria');
+            if ($div instanceof \DOMElement) {
+                $categoria = $div->getAttribute('data-categoria');
 
-            if ($categoria) {
-                $dates = $this->parseDateRange($categoria);
-                if ($dates !== null) {
-                    return $dates;
+                if ($categoria) {
+                    $dates = $this->parseDateRange($categoria);
+                    if ($dates !== null) {
+                        return $dates;
+                    }
                 }
             }
         }
@@ -429,18 +434,21 @@ final class ActivityDetailParser implements HtmlContentExtractor
         $nodes = $xpath->query("//span[contains(@class, 'etiquetaModalidad')]");
 
         if ($nodes !== false && $nodes->length > 0) {
-            $class = $nodes->item(0)->getAttribute('class');
+            $node = $nodes->item(0);
+            if ($node instanceof \DOMElement) {
+                $class = $node->getAttribute('class');
 
-            if (str_contains($class, 'mPresencial') || str_contains($class, 'presencial')) {
-                return 'in-person';
-            }
+                if (str_contains($class, 'mPresencial') || str_contains($class, 'presencial')) {
+                    return 'in-person';
+                }
 
-            if (str_contains($class, 'mOnline') || str_contains($class, 'online')) {
-                return 'online';
-            }
+                if (str_contains($class, 'mOnline') || str_contains($class, 'online')) {
+                    return 'online';
+                }
 
-            if (str_contains($class, 'mHibrid') || str_contains($class, 'hibrid')) {
-                return 'hybrid';
+                if (str_contains($class, 'mHibrid') || str_contains($class, 'hibrid')) {
+                    return 'hybrid';
+                }
             }
         }
 
@@ -478,9 +486,12 @@ final class ActivityDetailParser implements HtmlContentExtractor
         $nodes = $xpath->query("//meta[@itemprop='name' and contains(@content, 'UNED')]/@content");
 
         if ($nodes !== false && $nodes->length > 0) {
-            $value = trim($nodes->item(0)->value);
-            if ($value !== '') {
-                return $value;
+            $node = $nodes->item(0);
+            if ($node instanceof \DOMAttr) {
+                $value = trim($node->value);
+                if ($value !== '') {
+                    return $value;
+                }
             }
         }
 
@@ -780,12 +791,15 @@ final class ActivityDetailParser implements HtmlContentExtractor
         $nodes = $xpath->query("//a[@class='matricula' or contains(@href, 'inscripcion') or contains(@href, 'matricula') or contains(., 'Matrícula') or contains(., 'Matricula') or contains(., 'Inscripción') or contains(., 'Inscripcion')]");
 
         if ($nodes !== false && $nodes->length > 0) {
-            $href = $nodes->item(0)?->getAttribute('href');
-            if ($href !== null && $href !== '') {
-                if (str_starts_with($href, '/')) {
-                    return 'https://extension.uned.es' . $href;
+            $node = $nodes->item(0);
+            if ($node instanceof \DOMElement) {
+                $href = $node->getAttribute('href');
+                if ($href !== null && $href !== '') {
+                    if (str_starts_with($href, '/')) {
+                        return 'https://extension.uned.es' . $href;
+                    }
+                    return $href;
                 }
-                return $href;
             }
         }
 
@@ -1155,15 +1169,18 @@ final class ActivityDetailParser implements HtmlContentExtractor
             $nodes = $xpath->query($selector);
 
             if ($nodes !== false && $nodes->length > 0) {
-                $url = trim($nodes->item(0)->value);
+                $node = $nodes->item(0);
+                if ($node instanceof \DOMAttr) {
+                    $url = trim($node->value);
 
-                if ($url !== '') {
-                    // Convert relative URLs to absolute
-                    if (!str_starts_with($url, 'http')) {
-                        $url = 'https://extension.uned.es' . (str_starts_with($url, '/') ? '' : '/') . $url;
+                    if ($url !== '') {
+                        // Convert relative URLs to absolute
+                        if (!str_starts_with($url, 'http')) {
+                            $url = 'https://extension.uned.es' . (str_starts_with($url, '/') ? '' : '/') . $url;
+                        }
+
+                        return $url;
                     }
-
-                    return $url;
                 }
             }
         }
