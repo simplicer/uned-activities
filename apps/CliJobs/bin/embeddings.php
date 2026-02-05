@@ -32,8 +32,8 @@ if (file_exists($infraEnv)) {
 
 final class EmbeddingsCommand extends Command
 {
-    protected static $defaultName = 'embeddings';
-    protected static $defaultDescription = 'Generate embeddings for activities';
+    protected static string $defaultName = 'embeddings';
+    protected static string $defaultDescription = 'Generate embeddings for activities';
 
     protected function configure(): void
     {

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace CatalogHarvest\Infrastructure\Console;
 
-use CatalogHarvest\Application\Harvest\HarvestActivities;
+use CatalogHarvest\Application\DiscoverActivities\DiscoverActivities;
 use Shared\Infrastructure\AI\AIExtractor;
 use RuntimeException;
 use Symfony\Component\Console\Command\Command;
@@ -16,13 +16,13 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 /**
  * Harvest activities from UNED extension catalog.
  */
-final readonly class HarvestCommand extends Command
+final class HarvestCommand extends Command
 {
-    protected static $defaultName = 'harvest:run';
+    protected static string $defaultName = 'harvest:run';
     private const string CATALOG_URL = 'https://extension.uned.es/';
 
     public function __construct(
-        private readonly HarvestActivities $harvest,
+        private readonly DiscoverActivities $discoverActivities,
         private readonly AIExtractor $aiExtractor,
     ) {
         parent::__construct();
@@ -71,8 +71,8 @@ final readonly class HarvestCommand extends Command
                 'Credits' => $data['credits']['ects'] ?? 'N/A',
             ]);
 
-            // TODO: Save to database via HarvestActivities use case
-            $this->harvest->harvest($url);
+            // Discover and save activity
+            $this->discoverActivities->discover($url, 1, false);
 
             $io->success('✓ Activity processed successfully');
             return Command::SUCCESS;
@@ -110,8 +110,8 @@ final readonly class HarvestCommand extends Command
                 $html = $this->fetchHtml($activityUrl);
                 $data = $this->aiExtractor->extract($html, $activityUrl);
 
-                // TODO: Save to database
-                $this->harvest->harvest($activityUrl);
+                // Discover and save activity
+                $this->discoverActivities->discover($activityUrl, 1, false);
                 $results['success']++;
             } catch (\Throwable $e) {
                 $results['errors']++;
