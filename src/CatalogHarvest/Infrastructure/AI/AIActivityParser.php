@@ -448,7 +448,7 @@ final readonly class AIActivityParser
     {
         $location = $data['location'] ?? [];
 
-        if (empty($location) || !is_array($location)) {
+        if ($location === [] || !is_array($location)) {
             return null;
         }
 
@@ -481,7 +481,7 @@ final readonly class AIActivityParser
     {
         $schedule = $data['schedule'] ?? [];
 
-        if (empty($schedule) || !is_array($schedule)) {
+        if ($schedule === [] || !is_array($schedule)) {
             return null;
         }
 

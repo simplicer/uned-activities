@@ -875,7 +875,7 @@ final class ActivityDetailParser implements HtmlContentExtractor
                 ];
             }
 
-            if (!empty($speakers)) {
+            if ($speakers !== []) {
                 $staff['speakers'] = $speakers;
                 $hasData = true;
             }
@@ -1081,14 +1081,14 @@ final class ActivityDetailParser implements HtmlContentExtractor
                     $text = html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8');
                     $text = preg_replace("/\\n{2,}/", "\n", $text);
                     $lines = array_values(array_filter(array_map('trim', preg_split('/\\n+/', $text))));
-                    if (!empty($lines)) {
+                    if ($lines !== []) {
                         $details['address'] = implode(', ', $lines);
                     }
                 }
             }
         }
 
-        return empty($details) ? null : $details;
+        return $details !== [] ? $details : null;
     }
 
     private function extractPhoneCandidate(string $text): ?string
