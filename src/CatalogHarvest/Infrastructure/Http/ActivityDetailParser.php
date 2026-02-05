@@ -86,7 +86,7 @@ final class ActivityDetailParser implements HtmlContentExtractor
         }
 
         $node = $nodes->item(0);
-        if ($node === null || $node === false) {
+        if ($node === null) {
             return null;
         }
 
@@ -110,7 +110,7 @@ final class ActivityDetailParser implements HtmlContentExtractor
         $moreInfoNodes = $xpath->query("//dt[contains(., 'Más información')]/following-sibling::dd[1]");
         if ($moreInfoNodes !== false && $moreInfoNodes->length > 0) {
             $node = $moreInfoNodes->item(0);
-            if ($node !== null && $node !== false) {
+            if ($node !== null) {
                 $html = $node->ownerDocument?->saveHTML($node) ?? '';
                 if ($html !== '') {
                     $html = preg_replace('#<br\\s*/?>#i', "\n", $html);
@@ -1087,7 +1087,7 @@ final class ActivityDetailParser implements HtmlContentExtractor
 
         if ($nodes !== false && $nodes->length > 0) {
             $node = $nodes->item(0);
-            if ($node !== null && $node !== false) {
+            if ($node !== null) {
                 $html = $node->ownerDocument?->saveHTML($node) ?? '';
                 if ($html !== '') {
                     $html = preg_replace('#<br\\s*/?>#i', "\n", $html);

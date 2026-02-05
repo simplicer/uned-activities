@@ -39,14 +39,15 @@ final class HarvestCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $io = new SymfonyStyle($input, $output);
-        $limit = $input->getOption('limit') ? (int) $input->getOption('limit') : null;
+        $limitOption = $input->getOption('limit');
+        $limit = $limitOption !== null && $limitOption !== false ? (int) $limitOption : null;
         $specificId = $input->getOption('id');
 
         $io->title('🌱 UNED Activities Harvester');
         $io->text('Fetching activities from: ' . self::CATALOG_URL);
         $io->newLine();
 
-        if ($specificId) {
+        if ($specificId !== null && $specificId !== false) {
             return $this->harvestSingle($io, $specificId);
         }
 
@@ -170,7 +171,7 @@ final class HarvestCommand extends Command
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
 
-        if ($error) {
+        if ($error !== false && $error !== '') {
             throw new RuntimeException('Failed to fetch URL: ' . $error);
         }
 
