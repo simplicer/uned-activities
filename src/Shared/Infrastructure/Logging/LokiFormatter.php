@@ -33,7 +33,7 @@ final class LokiFormatter extends JsonFormatter
 
         $labels = $this->buildStreamLabels($record);
 
-        if ($labels !== [] && $labels !== null) {
+        if ($labels !== []) {
             $entry['labels'] = $labels;
         }
 

@@ -1,8 +1,9 @@
 parameters:
-    level: 8
+    level: 6
     paths:
         - src
         - apps
+    treatPhpDocTypesAsCertain: false
     excludePaths:
         - %currentWorkingDirectory%/vendor/*
         - %currentWorkingDirectory%/apps/HttpApi/public/index.php

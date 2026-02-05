@@ -149,7 +149,7 @@ final readonly class AIExtractor
         $error = curl_error($ch);
         curl_close($ch);
 
-        if ($error !== false && $error !== '') {
+        if ($error !== '') {
             throw new RuntimeException('Gemini request failed: ' . $error);
         }
 
@@ -210,7 +210,7 @@ final readonly class AIExtractor
         $error = curl_error($ch);
         curl_close($ch);
 
-        if ($error !== false && $error !== '') {
+        if ($error !== '') {
             throw new RuntimeException('OpenRouter request failed: ' . $error);
         }
 

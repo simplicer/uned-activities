@@ -60,7 +60,7 @@ final class PdoMagicTokenRepository implements MagicTokenRepository
             $row['email'],
             $row['token'],
             new \DateTimeImmutable($row['expires_at']),
-            isset($row['used_at']) && $row['used_at'] !== null
+            isset($row['used_at'])
                 ? new \DateTimeImmutable($row['used_at'])
                 : null,
             new \DateTimeImmutable($row['created_at']),

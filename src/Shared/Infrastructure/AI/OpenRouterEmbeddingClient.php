@@ -52,7 +52,7 @@ final readonly class OpenRouterEmbeddingClient implements EmbeddingClient
         $error = curl_error($ch);
         curl_close($ch);
 
-        if ($error !== false && $error !== '') {
+        if ($error !== '') {
             throw new RuntimeException('OpenRouter embeddings request failed: ' . $error);
         }
 

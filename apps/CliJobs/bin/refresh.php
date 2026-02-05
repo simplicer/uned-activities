@@ -149,7 +149,6 @@ final class RefreshCommand extends Command
             $snapshotRepo,
             $priceRepo,
             $contentExtractor,
-            embeddingGenerator: $aiParser,
             embeddingService: $embeddingService,
             favoriteNotifier: $favoriteNotifier
         );

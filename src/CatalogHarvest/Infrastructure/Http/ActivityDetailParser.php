@@ -98,7 +98,7 @@ final class ActivityDetailParser implements HtmlContentExtractor
         return $text !== '' ? $text : null;
     }
 
-    private function extractExtraSections(DOMXPath $xpath): ?array
+    private function extractExtraSections(DOMXPath $xpath): array
     {
         $sections = [];
 
@@ -212,9 +212,16 @@ final class ActivityDetailParser implements HtmlContentExtractor
             }
         }
 
-        $sections = array_filter($sections, static fn ($value) => $value !== null && $value !== '' && $value !== []);
+        // Filter out null, empty strings, and empty arrays
+        $filtered = [];
+        foreach ($sections as $key => $value) {
+            if ($value === null || $value === '' || (is_array($value) && count($value) === 0)) {
+                continue;
+            }
+            $filtered[$key] = $value;
+        }
 
-        return $sections !== [] ? $sections : null;
+        return $filtered;
     }
 
     private function extractTitle(DOMXPath $xpath): ?string
@@ -243,7 +250,7 @@ final class ActivityDetailParser implements HtmlContentExtractor
 
                 $value = html_entity_decode(trim($value), ENT_QUOTES | ENT_HTML5, 'UTF-8');
 
-                if ($value !== null && $value !== '') {
+                if ($value !== '') {
                     return $value;
                 }
             }
@@ -297,7 +304,7 @@ final class ActivityDetailParser implements HtmlContentExtractor
             if ($div instanceof \DOMElement) {
                 $categoria = $div->getAttribute('data-categoria');
 
-                if ($categoria !== '' && $categoria !== null) {
+                if ($categoria !== '') {
                     $dates = $this->parseDateRange($categoria);
 
                     if ($dates !== null) {
@@ -804,7 +811,7 @@ final class ActivityDetailParser implements HtmlContentExtractor
             $unique = [];
 
             foreach ($pricingTable as $row) {
-                $key = strtolower(($row['modalityLabel'] ?? '') . '|' . ($row['studentType'] ?? '') . '|' . ($row['amount'] ?? ''));
+                $key = strtolower($row['modalityLabel'] . '|' . $row['studentType'] . '|' . $row['amount']);
                 $unique[$key] = $row;
             }
             $pricingTable = array_values($unique);
@@ -861,7 +868,7 @@ final class ActivityDetailParser implements HtmlContentExtractor
             if ($node instanceof \DOMElement) {
                 $href = $node->getAttribute('href');
 
-                if ($href !== null && $href !== '') {
+                if ($href !== '') {
                     if (str_starts_with($href, '/')) {
                         return 'https://extension.uned.es' . $href;
                     }
@@ -1085,7 +1092,7 @@ final class ActivityDetailParser implements HtmlContentExtractor
                     'timeStart' => $timeStart,
                     'timeEnd' => $timeEnd,
                     'title' => $text,
-                ], static fn ($value) => $value !== null && $value !== '');
+                ], static fn ($value) => $value !== null);
             }
         }
 
@@ -1209,11 +1216,13 @@ final class ActivityDetailParser implements HtmlContentExtractor
 
         $digitCount = \strlen($digits);
 
-        if ($digitCount < 8) {
+        // Skip postal codes (exactly 5 digits)
+        if ($digitCount === 5) {
             return null;
         }
 
-        if ($digitCount === 5) {
+        // Skip too-short codes (< 8 digits)
+        if ($digitCount < 8) {
             return null;
         }
 

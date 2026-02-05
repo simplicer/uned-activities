@@ -283,13 +283,13 @@ final readonly class PdoActivityRepository implements ActivityRepository
             isset($row['has_live']) ? ($row['has_live'] === '1' || $row['has_live'] === true || $row['has_live'] === 't') : null,
             isset($row['has_recorded']) ? ($row['has_recorded'] === '1' || $row['has_recorded'] === true || $row['has_recorded'] === 't') : null,
             // Extended fields
-            isset($row['pricing_table']) && $row['pricing_table'] !== null ? json_decode($row['pricing_table'], true) : null,
-            isset($row['staff']) && $row['staff'] !== null ? json_decode($row['staff'], true) : null,
-            isset($row['sessions']) && $row['sessions'] !== null ? json_decode($row['sessions'], true) : null,
+            isset($row['pricing_table']) ? json_decode($row['pricing_table'], true) : null,
+            isset($row['staff']) ? json_decode($row['staff'], true) : null,
+            isset($row['sessions']) ? json_decode($row['sessions'], true) : null,
             $row['target_audience'] !== '' ? $row['target_audience'] : null,
-            isset($row['requirements']) && $row['requirements'] !== null ? json_decode($row['requirements'], true) : null,
-            isset($row['location_details']) && $row['location_details'] !== null ? json_decode($row['location_details'], true) : null,
-            isset($row['schedule_details']) && $row['schedule_details'] !== null ? json_decode($row['schedule_details'], true) : null,
+            isset($row['requirements']) ? json_decode($row['requirements'], true) : null,
+            isset($row['location_details']) ? json_decode($row['location_details'], true) : null,
+            isset($row['schedule_details']) ? json_decode($row['schedule_details'], true) : null,
             $row['image_url'] ?? null,
         );
     }
@@ -398,7 +398,7 @@ final readonly class PdoActivityRepository implements ActivityRepository
 
         $stmt->execute(['status' => 'active']);
         $result = $stmt->fetchAll(\PDO::FETCH_ASSOC);
-        $rows = $result !== false ? $result : [];
+        $rows = $result;
 
         return array_map(
             static fn (array $row): array => [
