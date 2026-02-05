@@ -51,7 +51,7 @@ final class PdoMagicTokenRepository implements MagicTokenRepository
         $stmt->execute(['token' => MagicLinkToken::hashToken($token->toString())]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        if (!$row) {
+        if ($row === false || $row === null || !is_array($row)) {
             return null;
         }
 
