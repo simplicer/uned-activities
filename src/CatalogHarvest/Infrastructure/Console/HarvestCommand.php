@@ -116,7 +116,7 @@ final class HarvestCommand extends Command
                 $results['success']++;
             } catch (\Throwable $e) {
                 $results['errors']++;
-                $io->text("Error processing {$activityUrl}: {$e->getMessage()}", 'fg=red');
+                $io->writeln("<fg=red>Error processing {$activityUrl}: {$e->getMessage()}</>");
             }
 
             $progressBar->advance();
