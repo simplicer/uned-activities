@@ -10,7 +10,7 @@ REGISTRY=${REGISTRY:-ghcr.io/lexemas}
 if [ -z "$VERSION" ]; then
     echo "❌ Error: No se pudo determinar la versión"
     echo "   Uso: ./build-images.sh <version>"
-    echo "   Ejemplo: ./build-images.sh 0.20.23-alpha"
+    echo "   Ejemplo: ./build-images.sh 0.21.0-alpha"
     exit 1
 fi
 

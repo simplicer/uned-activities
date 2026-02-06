@@ -22,6 +22,7 @@ infra/.migration-version
 
 # Local data / tooling
 infra/volumes/
+infra/backups/
 .claude/
 AI_INTEGRATION_PLAN.md
 contexto.txt

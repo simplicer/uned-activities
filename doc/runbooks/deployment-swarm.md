@@ -37,12 +37,12 @@ Internet → Traefik (HTTPS) → Docker Swarm
 3. **Imágenes Docker** construidas y publicadas en un registry:
    ```bash
    # Backend
-   docker build -t ghcr.io/lexemas/uned-backend:0.20.23-alpha -f infra/Dockerfile.backend .
-   docker push ghcr.io/lexemas/uned-backend:0.20.23-alpha
+   docker build -t ghcr.io/lexemas/uned-backend:0.21.0-alpha -f infra/Dockerfile.backend .
+   docker push ghcr.io/lexemas/uned-backend:0.21.0-alpha
    
    # Frontend
-   docker build -t ghcr.io/lexemas/uned-frontend:0.20.23-alpha -f infra/Dockerfile.frontend .
-   docker push ghcr.io/lexemas/uned-frontend:0.20.23-alpha
+   docker build -t ghcr.io/lexemas/uned-frontend:0.21.0-alpha -f infra/Dockerfile.frontend .
+   docker push ghcr.io/lexemas/uned-frontend:0.21.0-alpha
    ```
 
 ## Paso 1: Crear Secrets
