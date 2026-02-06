@@ -141,6 +141,6 @@ This project is licensed under the **MIT License** - see [LICENSE](LICENSE) file
 ---
 
 **Last Updated:** February 4, 2026
-**Version:** 0.20.0-alpha
+**Version:** 0.20.23-alpha
 **Status:** Pre-production (alpha testing)
 **License:** MIT
