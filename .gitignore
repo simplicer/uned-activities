@@ -58,3 +58,4 @@ web/auth-session.json
 
 # Build
 /build/
+tests/e2e/auth-session.json
