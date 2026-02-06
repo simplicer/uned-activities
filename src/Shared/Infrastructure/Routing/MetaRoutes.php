@@ -17,8 +17,7 @@ class MetaRoutes
 {
     public function __invoke(App $app): void
     {
-        // (nginx rewrites /api/v1/status -> /v1/status)
-        $app->get('/v1/status', function (Request $request, Response $response) {
+        $statusHandler = function (Request $request, Response $response) {
             $payload = [
                 'status' => 'ok',
                 'timestamp' => (new \DateTimeImmutable())->format('Y-m-d\TH:i:s\Z'),
@@ -38,10 +37,9 @@ class MetaRoutes
             return $response
                 ->withHeader('Content-Type', 'application/json')
                 ->withStatus(200);
-        });
+        };
 
-        // (nginx rewrites /api/v1/version -> /v1/version)
-        $app->get('/v1/version', function (Request $request, Response $response) {
+        $versionHandler = function (Request $request, Response $response) {
             $payload = [
                 'version' => $_ENV['APP_VERSION'] ?? '1.0.0-dev',
                 'commit' => $_ENV['GIT_COMMIT'] ?? 'unknown',
@@ -58,6 +56,14 @@ class MetaRoutes
             return $response
                 ->withHeader('Content-Type', 'application/json')
                 ->withStatus(200);
-        });
+        };
+
+        // API v1 endpoints (nginx rewrites /api/v1/status -> /v1/status)
+        $app->get('/v1/status', $statusHandler);
+        $app->get('/v1/version', $versionHandler);
+
+        // Direct aliases for E2E tests
+        $app->get('/status', $statusHandler);
+        $app->get('/version', $versionHandler);
     }
 }

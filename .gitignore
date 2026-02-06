@@ -49,6 +49,11 @@ lerna-debug.log*
 # Testing
 /coverage/
 /.nyc_output/
+playwright-report/
+test-results/
+tests/e2e/playwright-report/
+tests/e2e/test-results/
+web/auth-session.json
 
 # Build
 /build/

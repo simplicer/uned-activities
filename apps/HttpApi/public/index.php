@@ -55,6 +55,8 @@ if (file_exists($infraEnv)) {
 // Set default environment values
 $_ENV['APP_DEBUG'] ??= 'false';
 $_ENV['APP_VERSION'] ??= '1.0.0-dev';
+$_ENV['APP_ENV'] ??= 'development';
+$appEnv = $_ENV['APP_ENV'];
 
 // Rate limiting settings
 $rateLimit = (int) ($_ENV['RATE_LIMIT'] ?? 100);

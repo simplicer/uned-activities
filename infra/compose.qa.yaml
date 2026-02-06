@@ -58,6 +58,8 @@ services:
       - REDIS_PORT=6379
       - RATE_LIMIT=100
       - RATE_WINDOW=60
+    volumes:
+      - ..:/app
     networks:
       - uned_qa_network
 
