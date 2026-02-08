@@ -4,8 +4,15 @@ export function getApiBase(): string {
   return raw.replace(/\/+$/, '');
 }
 
-export function buildApiUrl(path: string, prefix = '/api/v1'): string {
+export function getApiPrefix(): string {
+  const raw = import.meta.env.VITE_API_PREFIX;
+  const normalized = (raw && raw.trim() !== '' ? raw.trim() : '/v1').replace(/\/+$/, '');
+  return normalized.startsWith('/') ? normalized : `/${normalized}`;
+}
+
+export function buildApiUrl(path: string, prefix?: string): string {
   const base = getApiBase();
+  const resolvedPrefix = (prefix ?? getApiPrefix()).replace(/\/+$/, '');
   const normalizedPath = path.startsWith('/') ? path : `/${path}`;
-  return `${base}${prefix}${normalizedPath}`;
+  return `${base}${resolvedPrefix}${normalizedPath}`;
 }

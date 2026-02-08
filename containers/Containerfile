@@ -2,6 +2,7 @@ ARG APP_VERSION=1.0.0
 ARG BUILD_DATE=unknown
 ARG VCS_REF=unknown
 ARG VITE_API_URL=https://api.lexemas.com
+ARG VITE_API_PREFIX=/v1
 
 # Multi-stage build for a small unified runtime image.
 FROM composer:2 AS composer
@@ -9,6 +10,7 @@ FROM composer:2 AS composer
 FROM node:20-alpine AS frontend-build
 
 ARG VITE_API_URL
+ARG VITE_API_PREFIX
 
 WORKDIR /app
 
@@ -19,6 +21,7 @@ RUN npm ci --ignore-scripts --prefer-offline --no-audit
 COPY web/ /app/web/
 ENV NODE_ENV=production
 ENV VITE_API_URL=${VITE_API_URL}
+ENV VITE_API_PREFIX=${VITE_API_PREFIX}
 RUN npm run build && rm -rf /root/.npm /app/web/node_modules
 
 FROM php:8.4-fpm-alpine AS builder

@@ -44,6 +44,7 @@ REGISTRY_HOST=${REGISTRY_HOST:-registry.storage.simplicer.com}
 REGISTRY_NAMESPACE=${REGISTRY_NAMESPACE:-antonio}
 IMAGE_PREFIX="${REGISTRY_HOST}/${REGISTRY_NAMESPACE}"
 VITE_API_URL=${VITE_API_URL:-https://api.lexemas.com}
+VITE_API_PREFIX=${VITE_API_PREFIX:-/v1}
 
 if [ -z "$VERSION" ]; then
     echo "❌ Error: No se pudo determinar la versión"
@@ -65,6 +66,7 @@ docker build \
     --build-arg BUILD_DATE="$(date -u +'%Y-%m-%dT%H:%M:%SZ')" \
     --build-arg VCS_REF="$(git rev-parse --short HEAD)" \
     --build-arg VITE_API_URL="$VITE_API_URL" \
+    --build-arg VITE_API_PREFIX="$VITE_API_PREFIX" \
     -t "${IMAGE_PREFIX}/uned-activities:${VERSION}" \
     -t "${IMAGE_PREFIX}/uned-activities:latest" \
     -f containers/Containerfile \
