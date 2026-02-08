@@ -20,6 +20,7 @@ STACK=""
 DUMP=""
 DB_NAME="uned_activities"
 DB_USER="postgres"
+WAIT_SECONDS="600"
 
 usage() {
   echo "Usage: $0 --host user@ip --stack STACK_NAME --dump /path/to.dump [--db-name NAME] [--db-user USER]" >&2
@@ -32,6 +33,7 @@ while [ $# -gt 0 ]; do
     --dump) DUMP="${2:-}"; shift 2;;
     --db-name) DB_NAME="${2:-}"; shift 2;;
     --db-user) DB_USER="${2:-}"; shift 2;;
+    --wait-seconds) WAIT_SECONDS="${2:-}"; shift 2;;
     -h|--help) usage; exit 0;;
     *) echo "Unknown arg: $1" >&2; usage; exit 1;;
   esac
@@ -49,6 +51,23 @@ fi
 
 REMOTE_DUMP="/tmp/${STACK}-uned_activities.dump"
 
+wait_for_db_container() {
+  local deadline
+  deadline="$(( $(date +%s) + WAIT_SECONDS ))"
+
+  while [ "$(date +%s)" -lt "$deadline" ]; do
+    local cid
+    cid="$(ssh "$HOST" "sudo docker ps --format '{{.ID}} {{.Names}}' | awk '\$2 ~ /^${STACK}_db\\.1\\./ {print \$1; exit}'" || true)"
+    if [ -n "$cid" ]; then
+      echo "$cid"
+      return 0
+    fi
+    sleep 2
+  done
+
+  return 1
+}
+
 echo "1) Uploading dump to $HOST:$REMOTE_DUMP"
 ssh "$HOST" "cat > '$REMOTE_DUMP'" < "$DUMP"
 ssh "$HOST" "ls -lh '$REMOTE_DUMP'"
@@ -65,9 +84,10 @@ echo "3) Scaling down backend/harvester during restore"
 ssh "$HOST" "sudo docker service scale ${STACK}_backend=0 ${STACK}_harvester=0 >/dev/null 2>&1 || true"
 
 echo "4) Finding Postgres container"
-db_cid="$(ssh "$HOST" "sudo docker ps --format '{{.ID}} {{.Names}}' | awk '\$2 ~ /^${STACK}_db\\.1\\./ {print \$1; exit}'")"
+db_cid="$(wait_for_db_container || true)"
 if [ -z "$db_cid" ]; then
   echo "Could not find db container for stack '${STACK}'. Is it deployed and running?" >&2
+  echo "Tip: deploy the stack in Dokploy first, then re-run this script." >&2
   exit 1
 fi
 echo "   db container id=$db_cid"
