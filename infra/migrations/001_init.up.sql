@@ -5,8 +5,20 @@
 -- Required for gen_random_uuid()
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
--- Optional: embeddings support (pgvector). If not available in your Postgres image, remove this line.
-CREATE EXTENSION IF NOT EXISTS vector;
+-- Optional: embeddings support (pgvector). Make this tolerant so deploys don't fail if the extension isn't present.
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM pg_available_extensions WHERE name = 'vector') THEN
+        CREATE EXTENSION IF NOT EXISTS vector;
+    ELSE
+        RAISE NOTICE 'pgvector extension not available, skipping';
+    END IF;
+EXCEPTION
+    -- Missing control file or similar.
+    WHEN undefined_file THEN
+        RAISE NOTICE 'pgvector extension not available (undefined_file), skipping';
+END
+$$;
 
 -- Activities (main catalog)
 CREATE TABLE IF NOT EXISTS activities (
@@ -74,13 +86,23 @@ CREATE TABLE IF NOT EXISTS activity_snapshots (
 CREATE INDEX IF NOT EXISTS idx_activity_snapshots_activity_id ON activity_snapshots(activity_id);
 CREATE INDEX IF NOT EXISTS idx_activity_snapshots_captured_at ON activity_snapshots(captured_at);
 
--- Activity embeddings (pgvector)
-CREATE TABLE IF NOT EXISTS activity_embeddings (
-    activity_id UUID PRIMARY KEY REFERENCES activities(id) ON DELETE CASCADE,
-    embedding vector(768),
-    model TEXT NOT NULL,
-    updated_at TIMESTAMP DEFAULT NOW()
-);
+-- Activity embeddings (pgvector) - create only when the vector type is available.
+DO $$
+BEGIN
+    IF to_regtype('vector') IS NOT NULL THEN
+        EXECUTE $sql$
+            CREATE TABLE IF NOT EXISTS activity_embeddings (
+                activity_id UUID PRIMARY KEY REFERENCES activities(id) ON DELETE CASCADE,
+                embedding vector(768),
+                model TEXT NOT NULL,
+                updated_at TIMESTAMP DEFAULT NOW()
+            )
+        $sql$;
+    ELSE
+        RAISE NOTICE 'vector type not available, skipping activity_embeddings table';
+    END IF;
+END
+$$;
 
 -- Users
 CREATE TABLE IF NOT EXISTS users (

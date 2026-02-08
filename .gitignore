@@ -24,6 +24,7 @@ infra/.migration-version
 infra/volumes/
 infra/backups/
 .claude/
+*.dump
 AI_INTEGRATION_PLAN.md
 contexto.txt
 test_parser.php
