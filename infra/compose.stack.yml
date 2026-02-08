@@ -54,7 +54,7 @@ services:
 
   # Backend PHP API
   backend:
-    image: registry.storage.simplicer.com/antonio/uned-activities:${VERSION:-latest}
+    image: registry.storage.simplicer.com/lexemas/uned-activities:${VERSION:-latest}
     environment:
       - APP_ENV=production
       - APP_DEBUG=false
@@ -144,7 +144,7 @@ services:
 
   # Harvester - Background job for scraping activities
   harvester:
-    image: registry.storage.simplicer.com/antonio/uned-activities:${VERSION:-latest}
+    image: registry.storage.simplicer.com/lexemas/uned-activities:${VERSION:-latest}
     command: ["/bin/sh", "/app/infra/scripts/harvest-loop.sh"]
     environment:
       - APP_ENV=production
