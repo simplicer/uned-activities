@@ -32,6 +32,7 @@
     },
     "autoload": {
         "psr-4": {
+            "Apps\\": "apps/",
             "CatalogHarvest\\": "src/CatalogHarvest/",
             "CatalogQuery\\": "src/CatalogQuery/",
             "UserProfile\\": "src/UserProfile/",
