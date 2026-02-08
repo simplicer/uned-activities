@@ -15,7 +15,9 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ./init-scripts:/docker-entrypoint-initdb.d:ro
     networks:
-      - backend
+      backend:
+        aliases:
+          - db
     deploy:
       replicas: 1
       placement:
@@ -42,7 +44,9 @@ services:
     volumes:
       - redis_data:/data
     networks:
-      - backend
+      backend:
+        aliases:
+          - redis
     deploy:
       replicas: 1
       restart_policy:
