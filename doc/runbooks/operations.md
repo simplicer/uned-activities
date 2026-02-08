@@ -144,11 +144,11 @@ services:
 ```bash
 # PHP
 composer update
-make build-backend
+make build-image
 
 # Node
 cd web && npm update
-make build-frontend
+make build-image
 
 # Reiniciar
 make infra-restart

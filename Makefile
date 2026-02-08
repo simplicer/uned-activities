@@ -156,11 +156,13 @@ embeddings: ## Generate embeddings for activities
 
 ##@ Docker
 
-build: build-backend ## Build unified backend container
+build: build-image ## Build unified application container
 
-build-backend: ## Build backend container
-	@echo "$(BLUE)Building backend container...$(NC)"
-	docker build -f containers/Containerfile.backend -t uned-backend:latest .
+build-image: ## Build unified application container
+	@echo "$(BLUE)Building unified application container...$(NC)"
+	docker build -f containers/Containerfile -t uned-activities:latest .
+
+build-backend: build-image ## Backward-compatible alias
 
 ##@ CI
 

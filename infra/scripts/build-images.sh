@@ -58,18 +58,18 @@ echo
 # Moverse al directorio raíz del proyecto
 cd "${ROOT_DIR}"
 
-# Construir imagen unificada (backend + frontend static)
-echo "📦 Construyendo backend unificado (incluye frontend estático)..."
+# Construir imagen unificada (API + frontend estático)
+echo "📦 Construyendo imagen unificada de la aplicación..."
 docker build \
     --build-arg APP_VERSION="$VERSION" \
     --build-arg BUILD_DATE="$(date -u +'%Y-%m-%dT%H:%M:%SZ')" \
     --build-arg VCS_REF="$(git rev-parse --short HEAD)" \
     --build-arg VITE_API_URL="$VITE_API_URL" \
-    -t "${IMAGE_PREFIX}/uned-backend:${VERSION}" \
-    -t "${IMAGE_PREFIX}/uned-backend:latest" \
-    -f containers/Containerfile.backend \
+    -t "${IMAGE_PREFIX}/uned-activities:${VERSION}" \
+    -t "${IMAGE_PREFIX}/uned-activities:latest" \
+    -f containers/Containerfile \
     .
-echo "✅ Imagen backend unificada construida"
+echo "✅ Imagen unificada construida"
 echo
 
 if [ "$PUSH" != "true" ]; then
@@ -83,13 +83,13 @@ fi
 if [ "$PUSH" = "true" ]; then
     echo "🚀 Subiendo imágenes..."
 
-    docker push "${IMAGE_PREFIX}/uned-backend:${VERSION}"
-    docker push "${IMAGE_PREFIX}/uned-backend:latest"
+    docker push "${IMAGE_PREFIX}/uned-activities:${VERSION}"
+    docker push "${IMAGE_PREFIX}/uned-activities:latest"
     
     echo "✅ Imagen subida correctamente"
     echo
     echo "🎉 Deployment ready!"
-    echo "   App: ${IMAGE_PREFIX}/uned-backend:${VERSION}"
+    echo "   App: ${IMAGE_PREFIX}/uned-activities:${VERSION}"
     echo
     echo "📋 Siguiente paso:"
     echo "   VERSION=${VERSION} docker stack deploy -c infra/compose.stack.yml uned-activities --with-registry-auth"
@@ -97,5 +97,5 @@ else
     echo "⏭️  Subida omitida"
     echo
     echo "💾 Imágenes construidas localmente:"
-    docker images | grep -E "uned-backend"
+    docker images | grep -E "uned-activities"
 fi

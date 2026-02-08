@@ -43,10 +43,10 @@ Internet → Traefik (HTTPS) → Docker Swarm
 
    # App (backend + frontend estático en la misma imagen)
    docker build \
-     -t ${REGISTRY_HOST}/${REGISTRY_NAMESPACE}/uned-backend:${VERSION} \
+     -t ${REGISTRY_HOST}/${REGISTRY_NAMESPACE}/uned-activities:${VERSION} \
      --build-arg VITE_API_URL=${VITE_API_URL} \
-     -f containers/Containerfile.backend .
-   docker push ${REGISTRY_HOST}/${REGISTRY_NAMESPACE}/uned-backend:${VERSION}
+     -f containers/Containerfile .
+   docker push ${REGISTRY_HOST}/${REGISTRY_NAMESPACE}/uned-activities:${VERSION}
    ```
 
 ## Paso 1: Crear Secrets
@@ -76,14 +76,14 @@ REDIS_PASSWORD=changeme
 ```
 
 El registry queda fijo en `infra/compose.stack.yml` como:
-- `registry.storage.simplicer.com/antonio/uned-backend`
+- `registry.storage.simplicer.com/antonio/uned-activities`
 
 ## Namespace del registry
 
 En este stack, el namespace es `antonio` y forma parte del nombre completo de imagen:
 
 ```text
-registry.storage.simplicer.com/antonio/uned-backend:1.0.0
+registry.storage.simplicer.com/antonio/uned-activities:1.0.0
 ```
 
 En la mayoría de registries privados, el namespace/repo se crea automáticamente al primer `docker push`.
@@ -145,13 +145,13 @@ export REGISTRY_NAMESPACE=antonio
 export VITE_API_URL=https://api.lexemas.com
 
 docker build \
-  -t ${REGISTRY_HOST}/${REGISTRY_NAMESPACE}/uned-backend:$VERSION \
+  -t ${REGISTRY_HOST}/${REGISTRY_NAMESPACE}/uned-activities:$VERSION \
   --build-arg VITE_API_URL=${VITE_API_URL} \
-  -f containers/Containerfile.backend .
-docker push ${REGISTRY_HOST}/${REGISTRY_NAMESPACE}/uned-backend:$VERSION
+  -f containers/Containerfile .
+docker push ${REGISTRY_HOST}/${REGISTRY_NAMESPACE}/uned-activities:$VERSION
 
 # 2. Actualizar servicios
-docker service update --with-registry-auth --image ${REGISTRY_HOST}/${REGISTRY_NAMESPACE}/uned-backend:$VERSION uned-activities_backend
+docker service update --with-registry-auth --image ${REGISTRY_HOST}/${REGISTRY_NAMESPACE}/uned-activities:$VERSION uned-activities_backend
 ```
 
 El update se hará de forma gradual (rolling update) sin downtime.

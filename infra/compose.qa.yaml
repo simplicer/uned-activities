@@ -39,11 +39,11 @@ services:
 
   # Backend PHP API - interno, NO expone puerto
   backend:
-    container_name: uned-backend-qa
-    image: uned-backend-qa:local
+    container_name: uned-activities-qa
+    image: uned-activities:qa-local
     build:
       context: ..
-      dockerfile: containers/Containerfile.backend
+      dockerfile: containers/Containerfile
       args:
         VITE_API_URL: ${VITE_API_URL:-http://localhost:8080}
     restart: unless-stopped
@@ -68,8 +68,8 @@ services:
 
   # Harvest scheduler - refresh activities periodically
   harvester:
-    container_name: uned-harvester-qa
-    image: uned-backend-qa:local
+    container_name: uned-activities-harvester-qa
+    image: uned-activities:qa-local
     restart: unless-stopped
     env_file:
       - ./env/local.env
@@ -100,7 +100,7 @@ services:
     ports:
       - "8080:80"
     volumes:
-      - ./nginx-fixed.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx.qa.conf:/etc/nginx/nginx.conf:ro
     depends_on:
       - backend
     networks:

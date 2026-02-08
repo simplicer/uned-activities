@@ -3,7 +3,7 @@ ARG BUILD_DATE=unknown
 ARG VCS_REF=unknown
 ARG VITE_API_URL=https://api.lexemas.com
 
-# Multi-stage build for smaller image
+# Multi-stage build for a small unified runtime image.
 FROM composer:2 AS composer
 
 FROM node:20-alpine AS frontend-build
@@ -30,7 +30,8 @@ ARG VCS_REF
 LABEL maintainer="Simplicer" \
       org.opencontainers.image.version="${APP_VERSION}" \
       org.opencontainers.image.created="${BUILD_DATE}" \
-      org.opencontainers.image.revision="${VCS_REF}"
+      org.opencontainers.image.revision="${VCS_REF}" \
+      org.opencontainers.image.description="UNED activities unified app image"
 
 # Install build dependencies and PHP extensions in one layer
 RUN apk add --no-cache --virtual .build-deps \
@@ -38,8 +39,6 @@ RUN apk add --no-cache --virtual .build-deps \
     postgresql-dev \
     libzip-dev \
     && apk add --no-cache \
-    postgresql-client \
-    curl \
     git \
     zip \
     unzip \
@@ -83,19 +82,18 @@ ARG VCS_REF
 LABEL maintainer="Simplicer" \
       org.opencontainers.image.version="${APP_VERSION}" \
       org.opencontainers.image.created="${BUILD_DATE}" \
-      org.opencontainers.image.revision="${VCS_REF}"
+      org.opencontainers.image.revision="${VCS_REF}" \
+      org.opencontainers.image.description="UNED activities unified app image"
 
 # Install only runtime dependencies
 RUN apk add --no-cache \
-    postgresql-client \
+    libpq \
     libzip \
-    curl \
     && rm -rf /var/cache/apk/*
 
 # Copy PHP extensions from builder
 COPY --from=builder --chown=1000:1000 /usr/local/etc/php/conf.d /usr/local/etc/php/conf.d
 COPY --from=builder --chown=1000:1000 /usr/local/lib/php/extensions /usr/local/lib/php/extensions
-COPY --from=builder --chown=1000:1000 /usr/bin/composer /usr/bin/composer
 
 # Copy application with vendor from builder
 COPY --from=builder --chown=1000:1000 /app /app
