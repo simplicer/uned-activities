@@ -79,9 +79,7 @@ try {
 $app->addBodyParsingMiddleware();
 $app->addRoutingMiddleware();
 
-// Add security middlewares
-$allowedOrigins = array_filter(array_map('trim', explode(',', $_ENV['CORS_ALLOWED_ORIGINS'] ?? '*')));
-$app->add(new CorsMiddleware($allowedOrigins === [] ? ['*'] : $allowedOrigins));
+// Add security middlewares (CORS is added later as the outermost middleware so it also applies to error responses)
 $app->add(new RateLimiterMiddleware($rateLimit, $rateWindow, $redis));
 $app->add(new WebTokenGateMiddleware($jwtSecret, $jwtIssuer, $jwtAudience, $appEnv === 'production'));
 
@@ -102,6 +100,10 @@ $errorMiddleware = $app->addErrorMiddleware(
     logErrors: true,
     logErrorDetails: true
 );
+
+// CORS must be outermost so even error responses include the headers (otherwise browsers surface it as a CORS failure).
+$allowedOrigins = array_filter(array_map('trim', explode(',', $_ENV['CORS_ALLOWED_ORIGINS'] ?? '*')));
+$app->add(new CorsMiddleware($allowedOrigins === [] ? ['*'] : $allowedOrigins));
 
 // Register meta routes
 (new MetaRoutes())($app);

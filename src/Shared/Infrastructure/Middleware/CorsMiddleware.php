@@ -61,10 +61,17 @@ final readonly class CorsMiddleware
             return $response;
         }
 
-        return $response
+        $response = $response
             ->withHeader('Access-Control-Allow-Origin', $origin)
             ->withHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS')
-            ->withHeader('Access-Control-Allow-Headers', 'Authorization,Content-Type')
+            ->withHeader('Access-Control-Allow-Headers', 'Authorization,Content-Type,X-Requested-With')
             ->withHeader('Access-Control-Allow-Credentials', 'true');
+
+        // Avoid cache poisoning across origins when CDN/proxies are in front.
+        if ($origin !== '*') {
+            $response = $response->withHeader('Vary', 'Origin');
+        }
+
+        return $response;
     }
 }
