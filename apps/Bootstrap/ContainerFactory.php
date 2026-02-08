@@ -6,6 +6,9 @@ namespace Apps\Bootstrap;
 
 use DI\Container;
 use DI\ContainerBuilder;
+use Psr\Container\ContainerInterface;
+use Auth\Application\RequestMagicLink\RequestMagicLink;
+use Auth\Application\VerifyMagicLink\VerifyMagicLink;
 use CatalogHarvest\Infrastructure\Http\ActivityDetailParser;
 use CatalogHarvest\Infrastructure\Persistence\PdoActivityRepository;
 use CatalogHarvest\Infrastructure\Persistence\PdoActivityEmbeddingRepository;
@@ -18,6 +21,8 @@ use CatalogHarvest\Domain\ActivityDataStorage\ActivityEmbeddingRepository;
 use CatalogHarvest\Domain\ActivityDataStorage\PriceSnapshotRepository;
 use CatalogHarvest\Domain\ActivityDataStorage\ActivitySnapshotRepository;
 use CatalogHarvest\Domain\ActivityDataStorage\HtmlFetcher;
+use HttpApi\Controller\AuthController;
+use HttpApi\Controller\ContactController;
 use UserProfile\Infrastructure\Persistence\PdoUserRepository;
 use UserProfile\Infrastructure\Persistence\PdoSavedSearchRepository;
 use UserProfile\Infrastructure\Persistence\PdoFavoriteRepository;
@@ -58,7 +63,7 @@ final class ContainerFactory
             MagicTokenRepository::class => \DI\autowire(PdoMagicTokenRepository::class),
 
             // Environment-based configuration
-            'app.version' => '0.10.1-alpha',
+            'app.version' => (string) ($_ENV['APP_VERSION'] ?? '1.0.0'),
             'app.env' => (string) ($_ENV['APP_ENV'] ?? 'production'),
             'app.debug' => (string) ($_ENV['APP_DEBUG'] ?? 'false'),
 
@@ -122,6 +127,35 @@ final class ContainerFactory
                 }
 
                 return $redis;
+            },
+
+            // HTTP API (controllers / request-specific factories)
+            RequestMagicLink::class => function (ContainerInterface $container): RequestMagicLink {
+                return new RequestMagicLink(
+                    tokenRepository: $container->get(MagicTokenRepository::class),
+                    emailService: $container->get(SmtpEmailService::class),
+                    frontendUrl: (string) ($_ENV['FRONTEND_URL'] ?? 'http://localhost:8080')
+                );
+            },
+
+            ContactController::class => function (ContainerInterface $container): ContactController {
+                return new ContactController(
+                    emailService: $container->get(SmtpEmailService::class),
+                    recipient: (string) ($_ENV['CONTACT_EMAIL'] ?? 'hola@lexemas.com'),
+                    context: (string) ($_ENV['CONTACT_CONTEXT'] ?? 'Contacto')
+                );
+            },
+
+            AuthController::class => function (ContainerInterface $container): AuthController {
+                $appEnv = (string) ($_ENV['APP_ENV'] ?? 'production');
+
+                return new AuthController(
+                    requestMagicLink: $container->get(RequestMagicLink::class),
+                    verifyMagicLink: $container->get(VerifyMagicLink::class),
+                    jwtService: $container->get(JwtService::class),
+                    userRepository: $container->get(UserRepository::class),
+                    hideDetails: $appEnv === 'production',
+                );
             },
         ]);
 

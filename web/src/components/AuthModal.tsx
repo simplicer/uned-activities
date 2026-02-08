@@ -2,9 +2,9 @@
  * Authentication modal with magic link flow.
  */
 
-import { useState, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { X, Mail, CheckCircle, Clock } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
@@ -23,17 +23,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
-  // Check for token in URL on mount
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const token = params.get('token');
-
-    if (token) {
-      handleVerifyToken(token);
-    }
-  }, []);
-
-  const handleVerifyToken = async (token: string) => {
+  const handleVerifyToken = useCallback(async (token: string) => {
     setIsSubmitting(true);
     setError('');
 
@@ -47,7 +37,17 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
     } finally {
       setIsSubmitting(false);
     }
-  };
+  }, [navigate, onClose, t, verifyToken]);
+
+  // Check for token in URL on mount
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('token');
+
+    if (token) {
+      handleVerifyToken(token);
+    }
+  }, [handleVerifyToken]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -80,14 +80,14 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
     }
   };
 
-  const handleClose = () => {
+  const handleClose = useCallback(() => {
     onClose();
     setMagicLinkSent(false);
     setEmail('');
     setPassword('');
     setError('');
     setAuthMode('magic');
-  };
+  }, [onClose, setMagicLinkSent]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -98,7 +98,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen]);
+  }, [handleClose, isOpen]);
 
   if (!isOpen) return null;
 

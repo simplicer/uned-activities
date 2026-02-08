@@ -49,7 +49,7 @@ export function FilterSidebar({ filters, onFiltersChange, isOpen, onToggle }: Fi
     queryFn: getCenters,
   });
 
-  const centers = centersData?.data ?? [];
+  const centers = centersData?.data;
 
   const modalityOnlineChecked =
     localFilters.modality === 'online' || localFilters.modality === 'hybrid';
@@ -60,7 +60,7 @@ export function FilterSidebar({ filters, onFiltersChange, isOpen, onToggle }: Fi
     const groups = new Map<string, CenterOption[]>();
     const fallback = t('filters.centerOther');
 
-    centers.forEach((center) => {
+    (centers ?? []).forEach((center) => {
       const community = centerCommunityMap[center.name] || fallback;
       if (!groups.has(community)) {
         groups.set(community, []);

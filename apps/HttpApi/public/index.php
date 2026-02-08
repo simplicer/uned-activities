@@ -2,21 +2,10 @@
 
 declare(strict_types=1);
 
-use Auth\Application\RequestMagicLink\RequestMagicLink;
-use Auth\Application\VerifyMagicLink\VerifyMagicLink;
-use Auth\Domain\AuthenticationTokenStorage\MagicTokenRepository;
-use Auth\Infrastructure\Persistence\PdoMagicTokenRepository;
-use CatalogHarvest\Domain\ActivityDataStorage\ActivityRepository;
-use CatalogHarvest\Domain\ActivityDataStorage\ActivityEmbeddingRepository;
-use CatalogHarvest\Domain\ActivityDataStorage\PriceSnapshotRepository;
-use CatalogHarvest\Infrastructure\Persistence\PdoActivityRepository;
-use CatalogHarvest\Infrastructure\Persistence\PdoActivityEmbeddingRepository;
-use CatalogHarvest\Infrastructure\Persistence\PdoPriceSnapshotRepository;
+use Apps\Bootstrap\ContainerFactory;
 use HttpApi\Controller\ActivityController;
 use HttpApi\Controller\AuthController;
 use HttpApi\Controller\ContactController;
-use Shared\Infrastructure\Email\SmtpEmailService;
-use Shared\Infrastructure\Auth\JwtService;
 use Shared\Infrastructure\Middleware\CorsMiddleware;
 use Shared\Infrastructure\Middleware\RequestLoggerMiddleware;
 use Shared\Infrastructure\Middleware\RateLimiterMiddleware;
@@ -29,17 +18,13 @@ use Shared\Infrastructure\Routing\ActivityRoutes;
 use Shared\Infrastructure\Routing\AuthRoutes;
 use Shared\Infrastructure\Routing\ContactRoutes;
 use Shared\Infrastructure\Routing\MetaRoutes;
-use Slim\App;
-use Slim\Psr7\Stream;
 use Notifications\Domain\NotificationQueue\NotificationRepository;
-use Notifications\Infrastructure\Persistence\PdoNotificationRepository;
+use Slim\Psr7\Stream;
 use UserProfile\Domain\UserDataStorage\FavoriteRepository;
 use UserProfile\Domain\UserDataStorage\SavedSearchRepository;
 use UserProfile\Domain\UserDataStorage\UserRepository;
 use UserProfile\Infrastructure\Http\ProfileRoutes;
-use UserProfile\Infrastructure\Persistence\PdoFavoriteRepository;
-use UserProfile\Infrastructure\Persistence\PdoSavedSearchRepository;
-use UserProfile\Infrastructure\Persistence\PdoUserRepository;
+use Slim\Factory\AppFactory;
 
 require_once __DIR__ . '/../../../vendor/autoload.php';
 
@@ -57,6 +42,7 @@ if (file_exists($infraEnv)) {
 
 // Backward compatibility for legacy local/proxy setups that still call /api/*.
 $requestUri = $_SERVER['REQUEST_URI'] ?? null;
+
 if (is_string($requestUri) && str_starts_with($requestUri, '/api/')) {
     $_SERVER['REQUEST_URI'] = substr($requestUri, 4);
 } elseif ($requestUri === '/api') {
@@ -65,7 +51,7 @@ if (is_string($requestUri) && str_starts_with($requestUri, '/api/')) {
 
 // Set default environment values
 $_ENV['APP_DEBUG'] ??= 'false';
-$_ENV['APP_VERSION'] ??= '1.0.0-dev';
+$_ENV['APP_VERSION'] ??= '1.0.0';
 $_ENV['APP_ENV'] ??= 'development';
 $appEnv = $_ENV['APP_ENV'];
 
@@ -73,79 +59,21 @@ $appEnv = $_ENV['APP_ENV'];
 $rateLimit = (int) ($_ENV['RATE_LIMIT'] ?? 100);
 $rateWindow = (int) ($_ENV['RATE_WINDOW'] ?? 60);
 
-// Database connection
-$dsn = sprintf(
-    'pgsql:host=%s;port=%s;dbname=%s',
-    $_ENV['DB_HOST'] ?? 'localhost',
-    $_ENV['DB_PORT'] ?? '5432',
-    $_ENV['DB_NAME'] ?? 'uned_activities',
-);
-$pdo = new \PDO(
-    $dsn,
-    $_ENV['DB_USER'] ?? 'postgres',
-    $_ENV['DB_PASSWORD'] ?? 'postgres',
-    [
-        \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
-        \PDO::ATTR_DEFAULT_FETCH_MODE => \PDO::FETCH_ASSOC,
-    ]
-);
-
-// Redis connection (optional)
-$redis = null;
-
-if (isset($_ENV['REDIS_HOST']) && $_ENV['REDIS_HOST'] !== '') {
-    $redis = new \Redis();
-    $redis->connect($_ENV['REDIS_HOST'], (int) ($_ENV['REDIS_PORT'] ?? 6379));
-
-    if (isset($_ENV['REDIS_PASSWORD']) && $_ENV['REDIS_PASSWORD'] !== '') {
-        $redis->auth($_ENV['REDIS_PASSWORD']);
-    }
-}
-
-// Create Slim app with container
-$container = new \DI\Container();
-$container->set(PDO::class, $pdo);
-$container->set(ActivityRepository::class, \DI\autowire(PdoActivityRepository::class));
-$container->set(ActivityEmbeddingRepository::class, \DI\autowire(PdoActivityEmbeddingRepository::class));
-$container->set(PriceSnapshotRepository::class, \DI\autowire(PdoPriceSnapshotRepository::class));
-$container->set(UserRepository::class, \DI\autowire(PdoUserRepository::class));
-$container->set(SavedSearchRepository::class, \DI\autowire(PdoSavedSearchRepository::class));
-$container->set(FavoriteRepository::class, \DI\autowire(PdoFavoriteRepository::class));
-$container->set(NotificationRepository::class, \DI\autowire(PdoNotificationRepository::class));
-
-// Auth services
-$container->set(MagicTokenRepository::class, \DI\autowire(PdoMagicTokenRepository::class));
-
-// Email service
-$smtpFromEmail = $_ENV['SMTP_FROM_EMAIL'] ?? 'noreply@example.com';
-$smtpFromName = $_ENV['SMTP_FROM_NAME'] ?? 'Buscador UNED';
-$smtpHost = $_ENV['SMTP_HOST'] ?? 'smtp.gmail.com';
-$smtpPort = (int) ($_ENV['SMTP_PORT'] ?? 587);
-$smtpUser = $_ENV['SMTP_USER'] ?? ($_ENV['SMTP_USERNAME'] ?? '');
-$smtpPassword = $_ENV['SMTP_PASSWORD'] ?? '';
-$smtpEncryption = $_ENV['SMTP_ENCRYPTION'] ?? 'tls';
-$container->set(SmtpEmailService::class, \DI\create(SmtpEmailService::class)
-    ->constructor($smtpFromEmail, $smtpFromName, $smtpHost, $smtpPort, $smtpUser, $smtpPassword, $smtpEncryption));
-
-// Contact controller
-$contactRecipient = $_ENV['CONTACT_EMAIL'] ?? 'hola@lexemas.com';
-$container->set(ContactController::class, \DI\autowire(ContactController::class)
-    ->constructorParameter('recipient', $contactRecipient)
-    ->constructorParameter('context', 'Contacto'));
-
-// Auth use cases
-$frontendUrl = $_ENV['FRONTEND_URL'] ?? 'http://localhost:8080';
-$container->set(RequestMagicLink::class, \DI\autowire(RequestMagicLink::class)
-    ->constructorParameter('frontendUrl', $frontendUrl));
-$container->set(VerifyMagicLink::class, \DI\autowire(VerifyMagicLink::class));
 $jwtSecret = $_ENV['SUPABASE_JWT_SECRET'] ?? ($_ENV['JWT_SECRET'] ?? '');
 $jwtIssuer = $_ENV['SUPABASE_JWT_ISSUER'] ?? null;
 $jwtAudience = $_ENV['SUPABASE_JWT_AUDIENCE'] ?? null;
-$jwtTtl = (int) ($_ENV['JWT_TTL_SECONDS'] ?? 3600);
-$container->set(JwtService::class, \DI\create(JwtService::class)
-    ->constructor($jwtSecret, $jwtIssuer, $jwtAudience, $jwtTtl));
 
-$app = Slim\Factory\AppFactory::createFromContainer($container);
+// Create Slim app with centralized container wiring.
+$container = ContainerFactory::create();
+$app = AppFactory::createFromContainer($container);
+
+$redis = null;
+
+try {
+    $redis = $container->get(\Redis::class);
+} catch (\Throwable) {
+    $redis = null;
+}
 
 // Add middleware (order matters - last added runs first)
 $app->addBodyParsingMiddleware();
@@ -183,13 +111,7 @@ $activityController = $container->get(ActivityController::class);
 (new ActivityRoutes())($app, $activityController);
 
 // Register auth routes
-$authController = new AuthController(
-    $container->get(RequestMagicLink::class),
-    $container->get(VerifyMagicLink::class),
-    $container->get(JwtService::class),
-    $container->get(UserRepository::class),
-    $appEnv === 'production',
-);
+$authController = $container->get(AuthController::class);
 (new AuthRoutes())($app, $authController);
 
 // Register contact routes

@@ -1,5 +1,9 @@
 parameters:
     level: 6
+    parallel:
+        maximumNumberOfProcesses: 0
+        jobSize: 20
+        processTimeout: 600.0
     paths:
         - src
         - apps
@@ -7,10 +11,11 @@ parameters:
     excludePaths:
         - %currentWorkingDirectory%/vendor/*
         - %currentWorkingDirectory%/apps/HttpApi/public/index.php
-    checkMissingIterableValueType: false
-    checkGenericClassInNonGenericObjectType: false
     reportUnmatchedIgnoredErrors: false
     ignoreErrors:
+        # PHPStan 1.12+ deprecations: keep previous behaviour (less strict about missing generics/iterable value types)
+        - identifier: missingType.iterableValue
+        - identifier: missingType.generics
         # Ignore common PSR-7/Psr-18 patterns
         - '~Psr\\\\Http\\\\Message\\\\.*~'
         - '~Psr\\\\Http\\\\Server\\\\.*~'

@@ -8,15 +8,15 @@ import { getActivity, getSimilarActivities, type ActivityDetail, type Staff, typ
 import { Loader2, ArrowLeft, Calendar, MapPin, ExternalLink, Clock, BookOpen, Users, GraduationCap, CheckCircle, XCircle, Star, Bell, BellOff } from 'lucide-react';
 import { ActivityCard } from '@/components/ActivityCard';
 import { useTranslation } from 'react-i18next';
-import { useEffect } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useCallback, useEffect } from 'react';
+import { useAuth } from '@/contexts/useAuth';
 import { addFavorite, getFavoriteIds, getFavorites, removeFavorite, updateFavorite } from '@/lib/api/profile';
 
 export function ActivityDetailPage() {
   const { t, i18n } = useTranslation();
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const tr = (key: string): string => {
+  const tr = useCallback((key: string): string => {
     const value = t(key);
     if (typeof value === 'string') return value;
     if (value === null || value === undefined) return '';
@@ -25,9 +25,9 @@ export function ActivityDetailPage() {
     } catch {
       return String(value);
     }
-  };
+  }, [t]);
 
-  const renderText = (value: unknown): string => {
+  const renderText = useCallback((value: unknown): string => {
     if (value === null || value === undefined) return '';
     if (typeof value === 'string') return value;
     if (typeof value === 'number' || typeof value === 'boolean') return String(value);
@@ -36,7 +36,7 @@ export function ActivityDetailPage() {
     } catch {
       return String(value);
     }
-  };
+  }, []);
 
   const { id } = useParams<{ id: string }>();
 
@@ -164,7 +164,7 @@ export function ActivityDetailPage() {
       meta.content = description;
       document.head.appendChild(meta);
     }
-  }, [activity, tr]);
+  }, [activity, renderText, tr]);
 
   if (isLoading) {
     return (

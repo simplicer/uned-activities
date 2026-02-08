@@ -1,8 +1,8 @@
 /**
- * Authentication context and provider with magic link authentication.
+ * Authentication provider with magic link authentication.
  */
 
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { type ReactNode, useEffect, useState } from 'react';
 import {
   requestMagicLink,
   verifyMagicLink,
@@ -14,20 +14,7 @@ import {
   isAuthenticated as checkIsAuthenticated,
   type AuthUser,
 } from '@/lib/api/auth';
-
-interface AuthContextType {
-  user: AuthUser | null;
-  loading: boolean;
-  isAuthenticated: boolean;
-  signIn: (email: string) => Promise<void>;
-  signInWithPassword: (email: string, password: string) => Promise<void>;
-  verifyToken: (token: string) => Promise<void>;
-  signOut: () => Promise<void>;
-  magicLinkSent: boolean;
-  setMagicLinkSent: (sent: boolean) => void;
-}
-
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+import { AuthContext, type AuthContextType } from './auth-context';
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
@@ -51,7 +38,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       await requestMagicLink(email);
       setMagicLinkSent(true);
-    } catch (error) {
+    } catch (_error) {
       // Still show success message to prevent email enumeration
       setMagicLinkSent(true);
     }
@@ -110,10 +97,3 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 }
 
-export function useAuth() {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-}

@@ -214,8 +214,9 @@ final class ActivityDetailParser implements HtmlContentExtractor
 
         // Filter out null, empty strings, and empty arrays
         $filtered = [];
+
         foreach ($sections as $key => $value) {
-            if ($value === null || $value === '' || (is_array($value) && count($value) === 0)) {
+            if ($value === null || $value === '' || (\is_array($value) && \count($value) === 0)) {
                 continue;
             }
             $filtered[$key] = $value;

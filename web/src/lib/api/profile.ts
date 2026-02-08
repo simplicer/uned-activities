@@ -8,14 +8,14 @@ export interface UserProfile {
   id: string;
   email: string;
   fullName: string | null;
-  preferences: Record<string, any>;
+  preferences: Record<string, unknown>;
   createdAt: string;
 }
 
 export interface SavedSearch {
   id: string;
   name: string;
-  filters: Record<string, any>;
+  filters: Record<string, unknown>;
   notifyOnNew: boolean;
   createdAt: string;
 }
@@ -58,7 +58,7 @@ export async function getProfile(): Promise<UserProfile> {
  */
 export async function updateProfile(data: {
   fullName?: string;
-  preferences?: Record<string, any>;
+  preferences?: Record<string, unknown>;
 }): Promise<{ updated: boolean }> {
   const response = await apiFetch<{ data: { updated: boolean } }>('/profile', {
     method: 'PUT',
@@ -80,7 +80,7 @@ export async function getSavedSearches(): Promise<SavedSearch[]> {
  */
 export async function createSavedSearch(data: {
   name: string;
-  filters: Record<string, any>;
+  filters: Record<string, unknown>;
   notifyOnNew?: boolean;
 }): Promise<SavedSearch> {
   const response = await apiFetch<{ data: SavedSearch }>('/profile/saved-searches', {
@@ -183,7 +183,7 @@ export async function getNotifications(): Promise<Array<{
   type: string;
   title: string;
   message: string;
-  data: Record<string, any>;
+  data: Record<string, unknown>;
   isRead: boolean;
   createdAt: string;
 }>> {
@@ -192,7 +192,7 @@ export async function getNotifications(): Promise<Array<{
     type: string;
     title: string;
     message: string;
-    data: Record<string, any>;
+    data: Record<string, unknown>;
     isRead: boolean;
     createdAt: string;
   }> | { items?: Array<{
@@ -200,7 +200,7 @@ export async function getNotifications(): Promise<Array<{
     type: string;
     title: string;
     message: string;
-    data: Record<string, any>;
+    data: Record<string, unknown>;
     isRead: boolean;
     createdAt: string;
   }> } }>('/profile/notifications');
@@ -212,7 +212,7 @@ export async function getNotifications(): Promise<Array<{
     type: string;
     title: string;
     message: string;
-    data: Record<string, any>;
+    data: Record<string, unknown>;
     isRead: boolean;
     createdAt: string;
   }> }).items)) {
@@ -221,7 +221,7 @@ export async function getNotifications(): Promise<Array<{
       type: string;
       title: string;
       message: string;
-      data: Record<string, any>;
+      data: Record<string, unknown>;
       isRead: boolean;
       createdAt: string;
     }> }).items ?? [];

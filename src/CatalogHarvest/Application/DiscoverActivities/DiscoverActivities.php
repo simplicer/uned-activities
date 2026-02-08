@@ -8,6 +8,7 @@ use CatalogHarvest\Domain\Entity\Activity;
 use CatalogHarvest\Domain\ActivityDataStorage\ActivityRepository;
 use CatalogHarvest\Domain\ActivityDataStorage\HtmlFetcher;
 use CatalogHarvest\Domain\ValueObject\ActivityId;
+use Ramsey\Uuid\Uuid;
 
 /**
  * DiscoverActivities use case.
@@ -248,7 +249,26 @@ final readonly class DiscoverActivities
             return $matches[1];
         }
 
-        return 'UNED-' . md5($url);
+        return 'UNED-' . $this->uuidV4FromString($url);
+    }
+
+    /**
+     * Deterministic UUIDv4-like identifier derived from the input.
+     *
+     * We want an RFC4122 UUID with version=4 for formatting/interoperability,
+     * but we also need stability across harvest runs (avoid duplicates when UNED
+     * doesn't expose an activity id in the URL).
+     */
+    private function uuidV4FromString(string $input): string
+    {
+        $bytes = hash('sha256', $input, true);
+        $uuidBytes = substr($bytes, 0, 16);
+
+        // Set version to 4 (0100) and variant to RFC 4122 (10xx).
+        $uuidBytes[6] = \chr((\ord($uuidBytes[6]) & 0x0f) | 0x40);
+        $uuidBytes[8] = \chr((\ord($uuidBytes[8]) & 0x3f) | 0x80);
+
+        return Uuid::fromBytes($uuidBytes)->toString();
     }
 
     /**

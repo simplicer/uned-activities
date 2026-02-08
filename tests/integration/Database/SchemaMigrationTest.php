@@ -34,7 +34,7 @@ class SchemaMigrationTest extends TestCase
             self::markTestSkipped('PDO pgsql driver is not available in this environment.');
         }
 
-        $dsn = sprintf(
+        $dsn = \sprintf(
             'pgsql:host=%s;port=%s;dbname=%s',
             $_ENV['DB_HOST'] ?? '127.0.0.1',
             $_ENV['DB_PORT'] ?? '5432',
@@ -47,8 +47,8 @@ class SchemaMigrationTest extends TestCase
         );
         $this->connection->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
         $this->schema = 'it_schema_' . bin2hex(random_bytes(4));
-        $this->connection->exec(sprintf('CREATE SCHEMA "%s"', $this->schema));
-        $this->connection->exec(sprintf('SET search_path TO "%s"', $this->schema));
+        $this->connection->exec(\sprintf('CREATE SCHEMA "%s"', $this->schema));
+        $this->connection->exec(\sprintf('SET search_path TO "%s"', $this->schema));
 
         $this->runMigrations();
     }
@@ -57,7 +57,7 @@ class SchemaMigrationTest extends TestCase
     protected function tearDown(): void
     {
         if (isset($this->schema) && $this->schema !== '') {
-            $this->connection->exec(sprintf('DROP SCHEMA IF EXISTS "%s" CASCADE', $this->schema));
+            $this->connection->exec(\sprintf('DROP SCHEMA IF EXISTS "%s" CASCADE', $this->schema));
         }
         unset($this->connection);
     }

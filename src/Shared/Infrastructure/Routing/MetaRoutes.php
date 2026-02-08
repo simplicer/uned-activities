@@ -41,7 +41,7 @@ class MetaRoutes
 
         $versionHandler = function (Request $request, Response $response) {
             $payload = [
-                'version' => $_ENV['APP_VERSION'] ?? '1.0.0-dev',
+                'version' => $_ENV['APP_VERSION'] ?? '1.0.0',
                 'commit' => $_ENV['GIT_COMMIT'] ?? 'unknown',
                 'buildDate' => $_ENV['BUILD_DATE'] ?? (new \DateTimeImmutable())->format('Y-m-d\TH:i:s\Z'),
             ];

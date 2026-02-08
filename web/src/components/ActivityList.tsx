@@ -4,10 +4,10 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { getActivities, type ActivityFilters } from '@/lib/api/activities';
+import { getActivities, type Activity, type ActivityFilters } from '@/lib/api/activities';
 import { ActivityCard } from './ActivityCard';
 import { Loader2, Search, FileQuestion } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/useAuth';
 import { addFavorite, getFavoriteIds, removeFavorite } from '@/lib/api/profile';
 
 interface ActivityListProps {
@@ -149,7 +149,7 @@ export function ActivityList({ filters }: ActivityListProps) {
 
       {/* Activity Grid - Single column layout */}
       <div className="grid gap-6 grid-cols-1">
-        {data.data.map((activity: any) => (
+        {data.data.map((activity: Activity) => (
           <ActivityCard
             key={activity.id}
             activity={activity}
