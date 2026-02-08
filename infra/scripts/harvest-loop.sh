@@ -15,6 +15,23 @@ log_message() {
     echo "[$(date -u +'%Y-%m-%dT%H:%M:%SZ')] [$level] $message" | tee -a "$LOG_FILE"
 }
 
+seconds_until_next_run() {
+    local run_time_utc="${HARVEST_RUN_TIME_UTC:-03:00}" # HH:MM in UTC
+    local now_epoch
+    now_epoch="$(date -u +%s)"
+
+    local today
+    today="$(date -u +%F)"
+    local target_epoch
+    target_epoch="$(date -u -d "${today} ${run_time_utc}:00" +%s)"
+
+    if [ "$target_epoch" -le "$now_epoch" ]; then
+        target_epoch="$(date -u -d "tomorrow ${run_time_utc}:00" +%s)"
+    fi
+
+    echo $((target_epoch - now_epoch))
+}
+
 retry_harvest() {
     local attempt=1
     local delay=$INITIAL_DELAY
@@ -46,14 +63,15 @@ retry_harvest() {
 }
 
 main() {
-    log_message "INFO" "Harvest loop started"
+    log_message "INFO" "Harvest loop started (daily schedule)"
 
     while true; do
-        retry_harvest || log_message "ERROR" "Giving up on this cycle"
+        local sleep_seconds
+        sleep_seconds="$(seconds_until_next_run)"
+        log_message "INFO" "Next harvest run in ${sleep_seconds}s at ${HARVEST_RUN_TIME_UTC:-03:00} UTC"
+        sleep "$sleep_seconds"
 
-        # Sleep 1 hour before next harvest attempt
-        log_message "INFO" "Sleeping 1 hour until next harvest cycle"
-        sleep 3600
+        retry_harvest || log_message "ERROR" "Giving up on this cycle"
     done
 }
 
