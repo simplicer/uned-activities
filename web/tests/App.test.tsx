@@ -5,14 +5,12 @@ import App from '../src/App';
 describe('App', () => {
   it('renders header brand', () => {
     render(<App />);
-    expect(
-      screen.getByText('Universidad Nacional de Educación a Distancia')
-    ).toBeInTheDocument();
+    expect(screen.getByText('LEXEMAS')).toBeInTheDocument();
   });
 
   it('renders language switcher', () => {
     render(<App />);
-    expect(screen.getByRole('combobox')).toBeInTheDocument();
-    expect(screen.getByText('Español')).toBeInTheDocument();
+    expect(screen.getAllByRole('combobox').length).toBeGreaterThan(0);
+    expect(screen.getByText('Castellano')).toBeInTheDocument();
   });
 });

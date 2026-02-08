@@ -1,5 +1,5 @@
-# Docker Compose para QA local - Con Proxy Inverso
-# Nginx sirve frontend estático y hace proxy de la API PHP
+# Docker Compose para QA local
+# Nginx actúa como entrypoint y envía todo al backend unificado por FastCGI
 
 services:
   # PostgreSQL 17 - NO expone puerto públicamente
@@ -40,9 +40,12 @@ services:
   # Backend PHP API - interno, NO expone puerto
   backend:
     container_name: uned-backend-qa
+    image: uned-backend-qa:local
     build:
       context: ..
       dockerfile: containers/Containerfile.backend
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:8080}
     restart: unless-stopped
     env_file:
       - ./env/local.env
@@ -58,17 +61,15 @@ services:
       - REDIS_PORT=6379
       - RATE_LIMIT=100
       - RATE_WINDOW=60
-    volumes:
-      - ..:/app
+    expose:
+      - "9000"
     networks:
       - uned_qa_network
 
   # Harvest scheduler - refresh activities periodically
   harvester:
     container_name: uned-harvester-qa
-    build:
-      context: ..
-      dockerfile: containers/Containerfile.backend
+    image: uned-backend-qa:local
     restart: unless-stopped
     env_file:
       - ./env/local.env
@@ -91,8 +92,7 @@ services:
     networks:
       - uned_qa_network
 
-
-  # Nginx Proxy Inverso - ÚnICO puerto expuesto
+  # Nginx entrypoint local (único puerto expuesto)
   nginx:
     image: nginx:1.25-alpine
     container_name: uned-nginx-qa
@@ -101,7 +101,6 @@ services:
       - "8080:80"
     volumes:
       - ./nginx-fixed.conf:/etc/nginx/nginx.conf:ro
-      - ../web/dist:/usr/share/nginx/html:ro
     depends_on:
       - backend
     networks:

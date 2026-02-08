@@ -14,12 +14,30 @@ use PHPUnit\Framework\TestCase;
 class SchemaOperationsTest extends TestCase
 {
     private \PDO $connection;
+    private string $schema;
 
     #[\Override]
     protected function setUp(): void
     {
-        $this->connection = new \PDO('sqlite::memory:');
+        if (!\in_array('pgsql', \PDO::getAvailableDrivers(), true)) {
+            self::markTestSkipped('PDO pgsql driver is not available in this environment.');
+        }
+
+        $dsn = sprintf(
+            'pgsql:host=%s;port=%s;dbname=%s',
+            $_ENV['DB_HOST'] ?? '127.0.0.1',
+            $_ENV['DB_PORT'] ?? '5432',
+            $_ENV['DB_NAME'] ?? 'uned_activities',
+        );
+        $this->connection = new \PDO(
+            $dsn,
+            $_ENV['DB_USER'] ?? 'postgres',
+            $_ENV['DB_PASSWORD'] ?? 'postgres',
+        );
         $this->connection->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+        $this->schema = 'it_schema_' . bin2hex(random_bytes(4));
+        $this->connection->exec(sprintf('CREATE SCHEMA "%s"', $this->schema));
+        $this->connection->exec(sprintf('SET search_path TO "%s"', $this->schema));
 
         $this->createTables();
     }
@@ -27,6 +45,9 @@ class SchemaOperationsTest extends TestCase
     #[\Override]
     protected function tearDown(): void
     {
+        if (isset($this->schema) && $this->schema !== '') {
+            $this->connection->exec(sprintf('DROP SCHEMA IF EXISTS "%s" CASCADE', $this->schema));
+        }
         unset($this->connection);
     }
 
@@ -175,7 +196,7 @@ class SchemaOperationsTest extends TestCase
         $statement->execute(['id' => $activityId]);
         $count = $statement->fetchColumn();
 
-        $this->assertSame('0', $count);
+        $this->assertSame(0, (int) $count);
     }
 
     private function createTables(): void

@@ -82,7 +82,7 @@ web-build: ## Build frontend for production
 
 web-test: ## Run frontend tests
 	@echo "$(BLUE)Running frontend tests...$(NC)"
-	cd web && npm run test
+	cd web && npm run test -- --run
 
 web-lint: ## Run ESLint
 	@echo "$(BLUE)Linting frontend code...$(NC)"
