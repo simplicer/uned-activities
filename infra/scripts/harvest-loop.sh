@@ -16,20 +16,26 @@ log_message() {
 }
 
 seconds_until_next_run() {
-    local run_time_utc="${HARVEST_RUN_TIME_UTC:-03:00}" # HH:MM in UTC
-    local now_epoch
-    now_epoch="$(date -u +%s)"
+    # BusyBox `date` on Alpine doesn't support GNU `-d`, so do pure arithmetic.
+    # HARVEST_RUN_TIME_UTC is HH:MM (UTC).
+    local run_time_utc="${HARVEST_RUN_TIME_UTC:-03:00}"
+    local run_h="${run_time_utc%%:*}"
+    local run_m="${run_time_utc##*:}"
 
-    local today
-    today="$(date -u +%F)"
-    local target_epoch
-    target_epoch="$(date -u -d "${today} ${run_time_utc}:00" +%s)"
+    local now_h now_m now_s
+    now_h="$(date -u +%H)"
+    now_m="$(date -u +%M)"
+    now_s="$(date -u +%S)"
 
-    if [ "$target_epoch" -le "$now_epoch" ]; then
-        target_epoch="$(date -u -d "tomorrow ${run_time_utc}:00" +%s)"
+    # Force base-10 to avoid leading-zero octal.
+    local now_sec=$((10#$now_h * 3600 + 10#$now_m * 60 + 10#$now_s))
+    local target_sec=$((10#$run_h * 3600 + 10#$run_m * 60))
+
+    if [ "$target_sec" -le "$now_sec" ]; then
+        echo $((86400 - now_sec + target_sec))
+    else
+        echo $((target_sec - now_sec))
     fi
-
-    echo $((target_epoch - now_epoch))
 }
 
 retry_harvest() {

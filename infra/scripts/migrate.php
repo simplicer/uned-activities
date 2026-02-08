@@ -44,14 +44,26 @@ try {
     exit(1);
 }
 
-// Create migrations table if not exists
-$pdo->exec("
-    CREATE TABLE IF NOT EXISTS schema_migrations (
-        id SERIAL PRIMARY KEY,
-        name VARCHAR(255) UNIQUE NOT NULL,
-        executed_at TIMESTAMP DEFAULT NOW()
-    )
-");
+// Detect and/or create schema_migrations table.
+// We support both:
+// - legacy: schema_migrations(version varchar)
+// - current: schema_migrations(name varchar, executed_at timestamp)
+$pdo->exec("CREATE TABLE IF NOT EXISTS schema_migrations (version VARCHAR(255) PRIMARY KEY)");
+
+$cols = $pdo
+    ->query("SELECT column_name FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'schema_migrations'")
+    ->fetchAll(PDO::FETCH_COLUMN);
+$cols = array_map('strval', $cols ?: []);
+
+$keyCol = null;
+if (in_array('name', $cols, true)) {
+    $keyCol = 'name';
+} elseif (in_array('version', $cols, true)) {
+    $keyCol = 'version';
+} else {
+    echo "[ERROR] schema_migrations exists but has no known key column (name/version)\n";
+    exit(1);
+}
 
 if ($direction === 'up') {
     $files = glob("{$migrationsDir}/*.up.sql");
@@ -60,7 +72,7 @@ if ($direction === 'up') {
     foreach ($files as $file) {
         $name = basename($file);
         
-        $stmt = $pdo->prepare("SELECT id FROM schema_migrations WHERE name = ?");
+        $stmt = $pdo->prepare("SELECT 1 FROM schema_migrations WHERE {$keyCol} = ?");
         $stmt->execute([$name]);
         
         if ($stmt->fetch()) {
@@ -71,7 +83,7 @@ if ($direction === 'up') {
         $sql = file_get_contents($file);
         try {
             $pdo->exec($sql);
-            $pdo->prepare("INSERT INTO schema_migrations (name) VALUES (?)")->execute([$name]);
+            $pdo->prepare("INSERT INTO schema_migrations ({$keyCol}) VALUES (?)")->execute([$name]);
             echo "[OK] {$name}\n";
         } catch (PDOException $e) {
             echo "[ERROR] {$name}: {$e->getMessage()}\n";
@@ -79,16 +91,21 @@ if ($direction === 'up') {
         }
     }
 } elseif ($direction === 'down') {
-    $stmt = $pdo->query("SELECT name FROM schema_migrations ORDER BY id DESC LIMIT 1");
+    // Prefer executed_at if present, otherwise fall back to key column ordering.
+    if (in_array('executed_at', $cols, true)) {
+        $stmt = $pdo->query("SELECT {$keyCol} AS k FROM schema_migrations ORDER BY executed_at DESC LIMIT 1");
+    } else {
+        $stmt = $pdo->query("SELECT {$keyCol} AS k FROM schema_migrations ORDER BY {$keyCol} DESC LIMIT 1");
+    }
     if ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-        $migration = $row['name'];
+        $migration = (string) $row['k'];
         $rollbackFile = str_replace('.up.sql', '.down.sql', "{$migrationsDir}/{$migration}");
         
         if (file_exists($rollbackFile)) {
             $sql = file_get_contents($rollbackFile);
             try {
                 $pdo->exec($sql);
-                $pdo->prepare("DELETE FROM schema_migrations WHERE name = ?")->execute([$migration]);
+                $pdo->prepare("DELETE FROM schema_migrations WHERE {$keyCol} = ?")->execute([$migration]);
                 echo "[OK] Rolled back: {$migration}\n";
             } catch (PDOException $e) {
                 echo "[ERROR] Rollback failed: {$e->getMessage()}\n";
