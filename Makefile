@@ -156,15 +156,11 @@ embeddings: ## Generate embeddings for activities
 
 ##@ Docker
 
-build: build-backend build-frontend ## Build all containers
+build: build-backend ## Build unified backend container
 
 build-backend: ## Build backend container
 	@echo "$(BLUE)Building backend container...$(NC)"
 	docker build -f containers/Containerfile.backend -t uned-backend:latest .
-
-build-frontend: ## Build frontend container
-	@echo "$(BLUE)Building frontend container...$(NC)"
-	docker build -f containers/Containerfile.frontend --build-arg VITE_API_URL=http://localhost:8080 -t uned-frontend:latest .
 
 ##@ CI
 

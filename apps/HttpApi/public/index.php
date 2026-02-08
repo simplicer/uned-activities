@@ -55,6 +55,14 @@ if (file_exists($infraEnv)) {
     $dotenv->load();
 }
 
+// Backward compatibility for legacy local/proxy setups that still call /api/*.
+$requestUri = $_SERVER['REQUEST_URI'] ?? null;
+if (is_string($requestUri) && str_starts_with($requestUri, '/api/')) {
+    $_SERVER['REQUEST_URI'] = substr($requestUri, 4);
+} elseif ($requestUri === '/api') {
+    $_SERVER['REQUEST_URI'] = '/';
+}
+
 // Set default environment values
 $_ENV['APP_DEBUG'] ??= 'false';
 $_ENV['APP_VERSION'] ??= '1.0.0-dev';
@@ -241,7 +249,12 @@ $app->map(['GET', 'HEAD'], '/{path:.*}', function (Request $request, Response $r
     $requestedPath = trim((string) ($args['path'] ?? ''), '/');
 
     // Keep API namespace separated from frontend static serving.
-    if ($requestedPath === 'v1' || str_starts_with($requestedPath, 'v1/')) {
+    if (
+        $requestedPath === 'v1'
+        || str_starts_with($requestedPath, 'v1/')
+        || $requestedPath === 'api'
+        || str_starts_with($requestedPath, 'api/')
+    ) {
         return $response->withStatus(404);
     }
 
