@@ -71,9 +71,15 @@ if ($direction === 'up') {
     
     foreach ($files as $file) {
         $name = basename($file);
+        $key = $name;
+        if ($keyCol === 'version') {
+            // Legacy schema_migrations.version is often very short (e.g. varchar(14)).
+            // Store only the base migration id (e.g. "001_init") instead of full filename.
+            $key = preg_replace('/\\.up\\.sql$/', '', $name) ?? $name;
+        }
         
         $stmt = $pdo->prepare("SELECT 1 FROM schema_migrations WHERE {$keyCol} = ?");
-        $stmt->execute([$name]);
+        $stmt->execute([$key]);
         
         if ($stmt->fetch()) {
             echo "[SKIP] {$name} (already executed)\n";
@@ -83,7 +89,7 @@ if ($direction === 'up') {
         $sql = file_get_contents($file);
         try {
             $pdo->exec($sql);
-            $pdo->prepare("INSERT INTO schema_migrations ({$keyCol}) VALUES (?)")->execute([$name]);
+            $pdo->prepare("INSERT INTO schema_migrations ({$keyCol}) VALUES (?)")->execute([$key]);
             echo "[OK] {$name}\n";
         } catch (PDOException $e) {
             echo "[ERROR] {$name}: {$e->getMessage()}\n";
@@ -99,7 +105,11 @@ if ($direction === 'up') {
     }
     if ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
         $migration = (string) $row['k'];
-        $rollbackFile = str_replace('.up.sql', '.down.sql', "{$migrationsDir}/{$migration}");
+        if ($keyCol === 'version') {
+            $rollbackFile = "{$migrationsDir}/{$migration}.down.sql";
+        } else {
+            $rollbackFile = str_replace('.up.sql', '.down.sql', "{$migrationsDir}/{$migration}");
+        }
         
         if (file_exists($rollbackFile)) {
             $sql = file_get_contents($rollbackFile);
