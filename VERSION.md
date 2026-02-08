@@ -1,21 +1,21 @@
 # Version Management
 
-## Current Version: 0.21.0-alpha
+## Current Version: 1.0.0
 
 ### Semantic Versioning Strategy
-- MAJOR: Breaking changes (not incremented in alpha)
-- MINOR: New features (feat: commits) → Currently 20
-- PATCH: Bug fixes (fix: commits) → Currently 23
-- Status: -alpha (pre-production)
+- MAJOR: Breaking changes
+- MINOR: New backwards-compatible features
+- PATCH: Backwards-compatible bug fixes
 
-### Calculation
-From git history since v0.19.0-alpha:
-- 2 feat (PHPCS, backup/restore scripts) → 0.21.0
-- 23 fixes (type safety, tests, security) → reset to 0
+### Release Notes
+- v1.0.0 is the first stable release.
+- Docker build/push/deploy flow aligned for production.
+- Containerfiles hardened and optimized for production builds.
 
 ### Version History
 | Version | Date | Changes |
 |---------|------|---------|
+| 1.0.0 | 2026-02-08 | Stable release, production registry integration, container build optimization |
 | 0.21.0-alpha | 2026-02-06 | Database backup/restore scripts, improved E2E tests (20 tests) |
 | 0.20.23-alpha | 2026-02-06 | PHPStan 0 errors, type safety, PSR-12 compliance |
 | 0.19.0-alpha | 2026-02-04 | Post-audit remediation (screaming architecture, PHP-FPM, migrations) |

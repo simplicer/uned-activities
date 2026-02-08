@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: UNED Activities Finder API
-  version: 0.21.0-alpha
+  version: 1.0.0
   description: |
     REST API for querying UNED extension activities with filtering, faceting, and notifications.
 

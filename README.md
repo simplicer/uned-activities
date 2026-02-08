@@ -1,7 +1,7 @@
-# UNED Activities Finder v0.19.0-alpha
+# UNED Activities Finder v1.0.0
 
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
-![Status: Alpha](https://img.shields.io/badge/Status-Alpha-red.svg)
+![Status: Stable](https://img.shields.io/badge/Status-Stable-green.svg)
 ![Languages: 6](https://img.shields.io/badge/Languages-6-blue.svg)
 
 Find and stay updated on UNED extension activities in your language of choice.
@@ -140,7 +140,7 @@ This project is licensed under the **MIT License** - see [LICENSE](LICENSE) file
 
 ---
 
-**Last Updated:** February 6, 2026
-**Version:** 0.21.0-alpha
-**Status:** Pre-production (alpha testing)
+**Last Updated:** February 8, 2026
+**Version:** 1.0.0
+**Status:** Stable release
 **License:** MIT

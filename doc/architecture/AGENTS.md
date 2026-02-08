@@ -416,7 +416,7 @@ Prohibitions:
 │   ├── scripts/
 │   └── env/
 │
-├── container/                    # Containerfiles
+├── containers/                   # Containerfiles
 ├── doc/                          # Documentation
 │   ├── api-specs/
 │   ├── architecture/

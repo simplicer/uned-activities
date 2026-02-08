@@ -1,11 +1,20 @@
 # Docker ignore file
 vendor/
 infra/volumes/
+infra/backups/
 *.log
 .env
 .env.local
 .DS_Store
 node_modules/
+web/node_modules/
+web/dist/
+test-results/
+playwright-report/
+.phpunit.cache/
+.git/
+.idea/
+.vscode/
 dist/
 build/
 coverage/

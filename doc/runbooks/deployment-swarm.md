@@ -34,15 +34,19 @@ Internet → Traefik (HTTPS) → Docker Swarm
    - Certificados SSL automáticos con Let's Encrypt configurados
    - Entrypoints `web` (80) y `websecure` (443)
 
-3. **Imágenes Docker** construidas y publicadas en un registry:
+3. **Imagen Docker unificada** construida y publicada en tu registry:
    ```bash
-   # Backend
-   docker build -t ghcr.io/lexemas/uned-backend:0.21.0-alpha -f infra/Dockerfile.backend .
-   docker push ghcr.io/lexemas/uned-backend:0.21.0-alpha
-   
-   # Frontend
-   docker build -t ghcr.io/lexemas/uned-frontend:0.21.0-alpha -f infra/Dockerfile.frontend .
-   docker push ghcr.io/lexemas/uned-frontend:0.21.0-alpha
+   export VERSION=1.0.0
+   export REGISTRY_HOST=registry.storage.simplicer.com
+   export REGISTRY_NAMESPACE=antonio
+   export VITE_API_URL=https://api.lexemas.com
+
+   # App (backend + frontend estático en la misma imagen)
+   docker build \
+     -t ${REGISTRY_HOST}/${REGISTRY_NAMESPACE}/uned-backend:${VERSION} \
+     --build-arg VITE_API_URL=${VITE_API_URL} \
+     -f containers/Containerfile.backend .
+   docker push ${REGISTRY_HOST}/${REGISTRY_NAMESPACE}/uned-backend:${VERSION}
    ```
 
 ## Paso 1: Crear Secrets
@@ -65,20 +69,30 @@ Crea un archivo `.env` en el directorio `infra/`:
 
 ```bash
 # Versión de la aplicación
-VERSION=0.20.23-alpha
-
-# Registry de imágenes
-REGISTRY=ghcr.io/lexemas
+VERSION=1.0.0
 
 # Contraseña de Redis (usa __SECRET__ para docker secrets)
 REDIS_PASSWORD=changeme
 ```
 
+El registry queda fijo en `infra/compose.stack.yml` como:
+- `registry.storage.simplicer.com/antonio/uned-backend`
+
+## Namespace del registry
+
+En este stack, el namespace es `antonio` y forma parte del nombre completo de imagen:
+
+```text
+registry.storage.simplicer.com/antonio/uned-backend:1.0.0
+```
+
+En la mayoría de registries privados, el namespace/repo se crea automáticamente al primer `docker push`.
+
 ## Paso 3: Desplegar el Stack
 
 ```bash
 cd infra
-docker stack deploy -c compose.stack.yml uned-activities
+docker stack deploy -c compose.stack.yml uned-activities --with-registry-auth
 ```
 
 ## Verificación
@@ -92,7 +106,6 @@ Deberías ver:
 - `uned-activities_db` (1 réplica)
 - `uned-activities_redis` (1 réplica)
 - `uned-activities_backend` (3 réplicas)
-- `uned-activities_frontend` (2 réplicas)
 - `uned-activities_harvester` (1 réplica)
 
 ### Ver logs
@@ -126,16 +139,19 @@ Para actualizar a una nueva versión:
 
 ```bash
 # 1. Construir y pushear nuevas imágenes
-export VERSION=0.21.0-alpha
-docker build -t ghcr.io/lexemas/uned-backend:$VERSION -f infra/Dockerfile.backend .
-docker push ghcr.io/lexemas/uned-backend:$VERSION
+export VERSION=1.0.0
+export REGISTRY_HOST=registry.storage.simplicer.com
+export REGISTRY_NAMESPACE=antonio
+export VITE_API_URL=https://api.lexemas.com
 
-docker build -t ghcr.io/lexemas/uned-frontend:$VERSION -f infra/Dockerfile.frontend .
-docker push ghcr.io/lexemas/uned-frontend:$VERSION
+docker build \
+  -t ${REGISTRY_HOST}/${REGISTRY_NAMESPACE}/uned-backend:$VERSION \
+  --build-arg VITE_API_URL=${VITE_API_URL} \
+  -f containers/Containerfile.backend .
+docker push ${REGISTRY_HOST}/${REGISTRY_NAMESPACE}/uned-backend:$VERSION
 
 # 2. Actualizar servicios
-docker service update --image ghcr.io/lexemas/uned-backend:$VERSION uned-activities_backend
-docker service update --image ghcr.io/lexemas/uned-frontend:$VERSION uned-activities_frontend
+docker service update --with-registry-auth --image ${REGISTRY_HOST}/${REGISTRY_NAMESPACE}/uned-backend:$VERSION uned-activities_backend
 ```
 
 El update se hará de forma gradual (rolling update) sin downtime.
@@ -145,9 +161,6 @@ El update se hará de forma gradual (rolling update) sin downtime.
 ```bash
 # Escalar backend a 5 réplicas
 docker service scale uned-activities_backend=5
-
-# Escalar frontend a 3 réplicas
-docker service scale uned-activities_frontend=3
 ```
 
 ## Rollback
@@ -156,7 +169,6 @@ Si algo sale mal, puedes hacer rollback:
 
 ```bash
 docker service rollback uned-activities_backend
-docker service rollback uned-activities_frontend
 ```
 
 ## Migraciones de Base de Datos

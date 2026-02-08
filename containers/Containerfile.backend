@@ -1,10 +1,36 @@
+ARG APP_VERSION=1.0.0
+ARG BUILD_DATE=unknown
+ARG VCS_REF=unknown
+ARG VITE_API_URL=https://api.lexemas.com
+
 # Multi-stage build for smaller image
 FROM composer:2 AS composer
 
+FROM node:20-alpine AS frontend-build
+
+ARG VITE_API_URL
+
+WORKDIR /app
+
+COPY web/package*.json ./web/
+WORKDIR /app/web
+RUN npm ci --ignore-scripts --prefer-offline --no-audit
+
+COPY web/ /app/web/
+ENV NODE_ENV=production
+ENV VITE_API_URL=${VITE_API_URL}
+RUN npm run build && rm -rf /root/.npm /app/web/node_modules
+
 FROM php:8.3-fpm-alpine AS builder
 
-LABEL maintainer="Simplicer"
-LABEL version="0.19.0-alpha"
+ARG APP_VERSION
+ARG BUILD_DATE
+ARG VCS_REF
+
+LABEL maintainer="Simplicer" \
+      org.opencontainers.image.version="${APP_VERSION}" \
+      org.opencontainers.image.created="${BUILD_DATE}" \
+      org.opencontainers.image.revision="${VCS_REF}"
 
 # Install build dependencies and PHP extensions in one layer
 RUN apk add --no-cache --virtual .build-deps \
@@ -18,9 +44,8 @@ RUN apk add --no-cache --virtual .build-deps \
     zip \
     unzip \
     && pecl install redis \
-    && docker-php-ext-enable redis \
     && docker-php-ext-install pdo pdo_pgsql zip opcache \
-    && docker-php-ext-opcache \
+    && docker-php-ext-enable redis opcache \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Copy composer from composer image
@@ -31,24 +56,34 @@ WORKDIR /app
 # Copy dependency files first for better caching
 COPY composer.json composer.lock ./
 
-# Install dependencies (only production)
+# Install dependencies (production) without generating autoload yet.
 RUN composer install \
     --no-dev \
     --no-scripts \
     --no-autoloader \
     --no-progress \
     --prefer-dist \
-    && composer dump-autoload --optimize --classmap-authoritative \
+    --no-interaction \
     && rm -rf /root/.composer/cache
 
 # Copy application files
 COPY --chown=1000:1000 . .
+COPY --from=frontend-build --chown=1000:1000 /app/web/dist /app/apps/HttpApi/public/dist
+
+# Build authoritative autoloader with the full source already copied.
+RUN composer dump-autoload --optimize --classmap-authoritative --no-dev --no-interaction
 
 # Final stage - minimal image
 FROM php:8.3-fpm-alpine
 
-LABEL maintainer="Simplicer"
-LABEL version="0.19.0-alpha"
+ARG APP_VERSION
+ARG BUILD_DATE
+ARG VCS_REF
+
+LABEL maintainer="Simplicer" \
+      org.opencontainers.image.version="${APP_VERSION}" \
+      org.opencontainers.image.created="${BUILD_DATE}" \
+      org.opencontainers.image.revision="${VCS_REF}"
 
 # Install only runtime dependencies
 RUN apk add --no-cache \
@@ -59,7 +94,7 @@ RUN apk add --no-cache \
 # Copy PHP extensions from builder
 COPY --from=builder --chown=1000:1000 /usr/local/etc/php/conf.d /usr/local/etc/php/conf.d
 COPY --from=builder --chown=1000:1000 /usr/local/lib/php/extensions /usr/local/lib/php/extensions
-COPY --from=builder --chown=1000:1000 /usr/local/bin/composer /usr/bin/composer
+COPY --from=builder --chown=1000:1000 /usr/bin/composer /usr/bin/composer
 
 # Copy application with vendor from builder
 COPY --from=builder --chown=1000:1000 /app /app

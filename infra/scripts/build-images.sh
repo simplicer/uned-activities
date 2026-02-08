@@ -1,78 +1,101 @@
 #!/bin/bash
 # Script para construir y subir imágenes Docker para deployment en producción
 
-set -e
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+
+usage() {
+    echo "Uso: ./build-images.sh [version] [--push]"
+    echo "Ejemplo: ./build-images.sh 1.0.0 --push"
+}
 
 # Leer versión desde VERSION.md o usar argumento
-VERSION=${1:-$(grep -oP 'Versión actual: \K[0-9]+\.[0-9]+\.[0-9]+-[a-z]+' ../VERSION.md | head -1)}
-REGISTRY=${REGISTRY:-ghcr.io/lexemas}
+VERSION=""
+PUSH="false"
+
+for arg in "$@"; do
+    case "$arg" in
+        --push)
+            PUSH="true"
+            ;;
+        -h|--help)
+            usage
+            exit 0
+            ;;
+        *)
+            if [ -z "$VERSION" ]; then
+                VERSION="$arg"
+            else
+                echo "❌ Argumento no reconocido: $arg"
+                usage
+                exit 1
+            fi
+            ;;
+    esac
+done
+
+if [ -z "$VERSION" ]; then
+    VERSION="$(grep -oP 'Current Version:\s*\K[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.-]+)?' "${ROOT_DIR}/VERSION.md" | head -1 || true)"
+fi
+
+REGISTRY_HOST=${REGISTRY_HOST:-registry.storage.simplicer.com}
+REGISTRY_NAMESPACE=${REGISTRY_NAMESPACE:-antonio}
+IMAGE_PREFIX="${REGISTRY_HOST}/${REGISTRY_NAMESPACE}"
+VITE_API_URL=${VITE_API_URL:-https://api.lexemas.com}
 
 if [ -z "$VERSION" ]; then
     echo "❌ Error: No se pudo determinar la versión"
-    echo "   Uso: ./build-images.sh <version>"
-    echo "   Ejemplo: ./build-images.sh 0.21.0-alpha"
+    usage
     exit 1
 fi
 
-echo "🏗️  Construyendo imágenes Docker para versión $VERSION"
+echo "🏗️  Construyendo imagen Docker para versión $VERSION"
+echo "📦 Registry: $IMAGE_PREFIX"
 echo
 
 # Moverse al directorio raíz del proyecto
-cd "$(dirname "$0")/../.."
+cd "${ROOT_DIR}"
 
-# Construir imagen del backend
-echo "📦 Construyendo backend..."
+# Construir imagen unificada (backend + frontend static)
+echo "📦 Construyendo backend unificado (incluye frontend estático)..."
 docker build \
-    --build-arg VERSION="$VERSION" \
+    --build-arg APP_VERSION="$VERSION" \
     --build-arg BUILD_DATE="$(date -u +'%Y-%m-%dT%H:%M:%SZ')" \
     --build-arg VCS_REF="$(git rev-parse --short HEAD)" \
-    -t "${REGISTRY}/uned-backend:${VERSION}" \
-    -t "${REGISTRY}/uned-backend:latest" \
-    -f infra/Dockerfile.backend \
+    --build-arg VITE_API_URL="$VITE_API_URL" \
+    -t "${IMAGE_PREFIX}/uned-backend:${VERSION}" \
+    -t "${IMAGE_PREFIX}/uned-backend:latest" \
+    -f containers/Containerfile.backend \
     .
-echo "✅ Backend construido"
+echo "✅ Imagen backend unificada construida"
 echo
 
-# Construir imagen del frontend
-echo "🎨 Construyendo frontend..."
-docker build \
-    --build-arg VERSION="$VERSION" \
-    --build-arg BUILD_DATE="$(date -u +'%Y-%m-%dT%H:%M:%SZ')" \
-    -t "${REGISTRY}/uned-frontend:${VERSION}" \
-    -t "${REGISTRY}/uned-frontend:latest" \
-    -f infra/Dockerfile.frontend \
-    .
-echo "✅ Frontend construido"
-echo
-
-# Preguntar si se deben subir las imágenes
-echo "📤 ¿Subir imágenes al registry $REGISTRY? (y/N)"
-read -r PUSH
-
-if [ "$PUSH" = "y" ] || [ "$PUSH" = "Y" ]; then
-    echo "🚀 Subiendo imágenes..."
-    
-    # Login al registry (si es necesario)
-    if [ "$REGISTRY" = "ghcr.io/lexemas" ]; then
-        echo "   Asegúrate de haber hecho login: echo \$GITHUB_TOKEN | docker login ghcr.io -u USERNAME --password-stdin"
+if [ "$PUSH" != "true" ]; then
+    echo "📤 ¿Subir imágenes al registry $IMAGE_PREFIX? (y/N)"
+    read -r PUSH_ANSWER
+    if [ "$PUSH_ANSWER" = "y" ] || [ "$PUSH_ANSWER" = "Y" ]; then
+        PUSH="true"
     fi
+fi
+
+if [ "$PUSH" = "true" ]; then
+    echo "🚀 Subiendo imágenes..."
+
+    docker push "${IMAGE_PREFIX}/uned-backend:${VERSION}"
+    docker push "${IMAGE_PREFIX}/uned-backend:latest"
     
-    docker push "${REGISTRY}/uned-backend:${VERSION}"
-    docker push "${REGISTRY}/uned-backend:latest"
-    docker push "${REGISTRY}/uned-frontend:${VERSION}"
-    docker push "${REGISTRY}/uned-frontend:latest"
-    
-    echo "✅ Imágenes subidas correctamente"
+    echo "✅ Imagen subida correctamente"
     echo
     echo "🎉 Deployment ready!"
-    echo "   Backend: ${REGISTRY}/uned-backend:${VERSION}"
-    echo "   Frontend: ${REGISTRY}/uned-frontend:${VERSION}"
+    echo "   App: ${IMAGE_PREFIX}/uned-backend:${VERSION}"
     echo
     echo "📋 Siguiente paso:"
-    echo "   docker stack deploy -c infra/compose.stack.yml uned-activities"
+    echo "   VERSION=${VERSION} docker stack deploy -c infra/compose.stack.yml uned-activities --with-registry-auth"
 else
     echo "⏭️  Subida omitida"
     echo
     echo "💾 Imágenes construidas localmente:"
-    docker images | grep -E "uned-(backend|frontend)"
+    docker images | grep -E "uned-backend"
 fi

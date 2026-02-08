@@ -23,11 +23,14 @@ use Shared\Infrastructure\Middleware\RateLimiterMiddleware;
 use Shared\Infrastructure\Middleware\WebTokenGateMiddleware;
 use Shared\Infrastructure\Logging\LoggerFactory;
 use Monolog\Level;
+use Psr\Http\Message\ResponseInterface as Response;
+use Psr\Http\Message\ServerRequestInterface as Request;
 use Shared\Infrastructure\Routing\ActivityRoutes;
 use Shared\Infrastructure\Routing\AuthRoutes;
 use Shared\Infrastructure\Routing\ContactRoutes;
 use Shared\Infrastructure\Routing\MetaRoutes;
 use Slim\App;
+use Slim\Psr7\Stream;
 use Notifications\Domain\NotificationQueue\NotificationRepository;
 use Notifications\Infrastructure\Persistence\PdoNotificationRepository;
 use UserProfile\Domain\UserDataStorage\FavoriteRepository;
@@ -191,6 +194,74 @@ $savedSearchRepository = $container->get(SavedSearchRepository::class);
 $favoriteRepository = $container->get(FavoriteRepository::class);
 $notificationRepository = $container->get(NotificationRepository::class);
 (new ProfileRoutes())($app, $userRepository, $savedSearchRepository, $favoriteRepository, $notificationRepository);
+
+// Serve frontend static files built into apps/HttpApi/public/dist.
+$frontendDist = __DIR__ . '/dist';
+$frontendDistReal = is_dir($frontendDist) ? realpath($frontendDist) : false;
+$mimeByExt = static function (string $path): string {
+    return match (strtolower(pathinfo($path, PATHINFO_EXTENSION))) {
+        'html' => 'text/html; charset=utf-8',
+        'js' => 'application/javascript; charset=utf-8',
+        'css' => 'text/css; charset=utf-8',
+        'json' => 'application/json; charset=utf-8',
+        'svg' => 'image/svg+xml',
+        'png' => 'image/png',
+        'jpg', 'jpeg' => 'image/jpeg',
+        'gif' => 'image/gif',
+        'webp' => 'image/webp',
+        'ico' => 'image/x-icon',
+        'woff' => 'font/woff',
+        'woff2' => 'font/woff2',
+        'map' => 'application/json; charset=utf-8',
+        default => 'application/octet-stream',
+    };
+};
+$serveFile = static function (string $filePath, Response $response) use ($mimeByExt): Response {
+    $resource = fopen($filePath, 'rb');
+
+    if ($resource === false) {
+        return $response->withStatus(500);
+    }
+
+    $cacheHeader = str_ends_with($filePath, '.html')
+        ? 'no-cache'
+        : 'public, max-age=31536000, immutable';
+
+    return $response
+        ->withBody(new Stream($resource))
+        ->withHeader('Content-Type', $mimeByExt($filePath))
+        ->withHeader('Cache-Control', $cacheHeader);
+};
+
+$app->map(['GET', 'HEAD'], '/{path:.*}', function (Request $request, Response $response, array $args) use ($frontendDist, $frontendDistReal, $serveFile): Response {
+    if ($frontendDistReal === false) {
+        return $response->withStatus(404);
+    }
+
+    $requestedPath = trim((string) ($args['path'] ?? ''), '/');
+
+    // Keep API namespace separated from frontend static serving.
+    if ($requestedPath === 'v1' || str_starts_with($requestedPath, 'v1/')) {
+        return $response->withStatus(404);
+    }
+
+    $relativePath = $requestedPath === '' ? 'index.html' : $requestedPath;
+    $candidatePath = realpath($frontendDist . '/' . $relativePath);
+    $isInDist = $candidatePath !== false
+        && (str_starts_with($candidatePath, $frontendDistReal . DIRECTORY_SEPARATOR) || $candidatePath === $frontendDistReal);
+
+    if ($isInDist && is_file($candidatePath)) {
+        return $serveFile($candidatePath, $response);
+    }
+
+    $indexFile = $frontendDist . '/index.html';
+
+    if (is_file($indexFile)) {
+        return $serveFile($indexFile, $response);
+    }
+
+    return $response->withStatus(404);
+});
 
 // Run the application
 $app->run();

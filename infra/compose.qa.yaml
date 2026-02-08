@@ -42,7 +42,7 @@ services:
     container_name: uned-backend-qa
     build:
       context: ..
-      dockerfile: infra/Dockerfile.backend
+      dockerfile: containers/Containerfile.backend
     restart: unless-stopped
     env_file:
       - ./env/local.env
@@ -68,7 +68,7 @@ services:
     container_name: uned-harvester-qa
     build:
       context: ..
-      dockerfile: infra/Dockerfile.backend
+      dockerfile: containers/Containerfile.backend
     restart: unless-stopped
     env_file:
       - ./env/local.env

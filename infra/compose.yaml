@@ -40,6 +40,8 @@ services:
     build:
       context: ..
       dockerfile: containers/Containerfile.backend
+      args:
+        VITE_API_URL: ${VITE_API_URL:-https://api.lexemas.com}
     restart: unless-stopped
     environment:
       - APP_ENV=production
@@ -67,7 +69,12 @@ services:
       - "traefik.http.routers.backend.entrypoints=websecure"
       - "traefik.http.routers.backend.tls.certresolver=letsencrypt"
       - "traefik.http.services.backend.loadbalancer.server.port=9000"
+      - "traefik.http.services.backend.loadbalancer.server.scheme=fcgi"
       - "traefik.http.routers.backend.service=backend"
+      - "traefik.http.routers.web.rule=Host(`lexemas.com`) || Host(`www.lexemas.com`)"
+      - "traefik.http.routers.web.entrypoints=websecure"
+      - "traefik.http.routers.web.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.web.service=backend"
 
   # Harvest scheduler
   harvester:
@@ -95,26 +102,6 @@ services:
       - redis
     networks:
       - app_network
-
-  # Frontend static
-  frontend:
-    build:
-      context: ..
-      dockerfile: containers/Containerfile.frontend
-      args:
-        VITE_API_URL: ${VITE_API_URL:-https://api.lexemas.com}
-    restart: unless-stopped
-    expose:
-      - "80"
-    networks:
-      - dokploy-network
-    labels:
-      - "traefik.enable=true"
-      - "traefik.docker.network=dokploy-network"
-      - "traefik.http.routers.frontend.rule=Host(`lexemas.com`)"
-      - "traefik.http.routers.frontend.entrypoints=websecure"
-      - "traefik.http.routers.frontend.tls.certresolver=letsencrypt"
-      - "traefik.http.services.frontend.loadbalancer.server.port=80"
 
 volumes:
   uned_data:

@@ -93,6 +93,11 @@ final class WebTokenGateMiddleware
 
     private function isPublicRoute(string $method, string $path): bool
     {
+        if (($method === 'GET' || $method === 'HEAD') && !str_starts_with($path, '/v1')) {
+            // Frontend SPA and static assets are public and served from backend.
+            return true;
+        }
+
         if (\in_array($path, self::PUBLIC_PATHS, true)) {
             return true;
         }
