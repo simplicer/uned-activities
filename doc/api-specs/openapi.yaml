@@ -11,7 +11,7 @@ info:
 
     ## Authentication
 
-    Public endpoints require a web session token. User endpoints require Supabase JWT.
+    Public endpoints require a web session token. User endpoints require a JWT.
 
     ## Errors
 
@@ -648,7 +648,7 @@ components:
     BearerAuth:
       type: http
       scheme: bearer
-      description: Supabase JWT (Bearer {jwt})
+      description: JWT (Bearer {jwt})
 
   schemas:
     # Common schemas

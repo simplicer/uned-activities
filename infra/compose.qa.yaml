@@ -2,10 +2,10 @@
 # Nginx actúa como entrypoint y envía todo al backend unificado por FastCGI
 
 services:
-  # PostgreSQL 17 - NO expone puerto públicamente
+  # PostgreSQL 17 (pgvector) - NO expone puerto públicamente
   db:
     container_name: uned-postgres-qa
-    image: supabase/postgres:17.6.1.079
+    image: pgvector/pgvector:pg17
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "postgres"]

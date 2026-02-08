@@ -6,7 +6,7 @@
 
 UNED Activities Finder is a monorepo project that:
 1. Scrapes UNED extension activities from their website
-2. Stores normalized data in Supabase/PostgreSQL
+2. Stores normalized data in PostgreSQL
 3. Exposes a Zalando-compliant REST API (`/v1`)
 4. Provides a React+Vite+shadcn UI in 6 languages
 
@@ -110,7 +110,7 @@ make web-test           # Run frontend tests
 make web-lint           # ESLint + TypeScript check
 
 # Infrastructure
-make infra-up           # Start Supabase + services
+make infra-up           # Start database + services
 make infra-down         # Stop services
 make infra-logs         # View logs
 

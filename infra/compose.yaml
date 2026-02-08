@@ -2,9 +2,9 @@
 # Traefik manages SSL and routing using labels
 
 services:
-  # PostgreSQL 17
+  # PostgreSQL 17 (pgvector)
   db:
-    image: supabase/postgres:17.6.1.079
+    image: pgvector/pgvector:pg17
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "postgres"]

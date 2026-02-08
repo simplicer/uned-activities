@@ -59,9 +59,9 @@ $appEnv = $_ENV['APP_ENV'];
 $rateLimit = (int) ($_ENV['RATE_LIMIT'] ?? 100);
 $rateWindow = (int) ($_ENV['RATE_WINDOW'] ?? 60);
 
-$jwtSecret = $_ENV['SUPABASE_JWT_SECRET'] ?? ($_ENV['JWT_SECRET'] ?? '');
-$jwtIssuer = $_ENV['SUPABASE_JWT_ISSUER'] ?? null;
-$jwtAudience = $_ENV['SUPABASE_JWT_AUDIENCE'] ?? null;
+$jwtSecret = $_ENV['JWT_SECRET'] ?? '';
+$jwtIssuer = $_ENV['JWT_ISSUER'] ?? null;
+$jwtAudience = $_ENV['JWT_AUDIENCE'] ?? null;
 
 // Create Slim app with centralized container wiring.
 $container = ContainerFactory::create();

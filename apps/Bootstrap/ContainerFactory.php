@@ -70,9 +70,9 @@ final class ContainerFactory
             // JWT configuration
             JwtService::class => function (): JwtService {
                 return new JwtService(
-                    secret: (string) ($_ENV['SUPABASE_JWT_SECRET'] ?? $_ENV['JWT_SECRET'] ?? ''),
-                    issuer: $_ENV['SUPABASE_JWT_ISSUER'] ?? null,
-                    audience: $_ENV['SUPABASE_JWT_AUDIENCE'] ?? null,
+                    secret: (string) ($_ENV['JWT_SECRET'] ?? ''),
+                    issuer: $_ENV['JWT_ISSUER'] ?? null,
+                    audience: $_ENV['JWT_AUDIENCE'] ?? null,
                     ttlSeconds: (int) ($_ENV['JWT_TTL_SECONDS'] ?? 3600)
                 );
             },

@@ -94,7 +94,7 @@ web-typecheck: ## Run TypeScript check
 
 ##@ Infrastructure
 
-infra-up: ## Start Docker services (Supabase)
+infra-up: ## Start Docker services (database, redis, app)
 	@echo "$(BLUE)Starting Docker services...$(NC)"
 	cd infra && docker compose up -d
 

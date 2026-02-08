@@ -133,7 +133,7 @@ services:
 
 1. Cambiar contraseñas en `.env`
 2. Rotar API tokens: agregar nuevo, eliminar viejo
-3. Rotar `SUPABASE_ANON_KEY` desde el dashboard de Supabase
+3. Rotar las credenciales del proveedor de auth (si aplica)
 4. Recrear contenedores:
    ```bash
    make infra-restart

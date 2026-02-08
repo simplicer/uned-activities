@@ -23,7 +23,7 @@ cp .env.example .env
 ### 3. Iniciar Servicios
 
 ```bash
-# Base de datos y Redis (Supabase)
+# Base de datos y Redis
 make infra-up
 
 # Servidor PHP (API)

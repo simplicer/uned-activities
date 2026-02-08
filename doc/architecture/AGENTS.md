@@ -73,7 +73,7 @@ This agent:
 
 All harvesting logic MUST be idempotent and fault-tolerant.
 
-### Supabase Auth (Authentication Provider)
+### JWT Auth (Authentication Provider)
 
 This agent provides user authentication and JWT token issuance.
 
@@ -202,7 +202,7 @@ Configuration:
 
 **Shared Value Objects:**
 - `ActivityId` - Activity UUID
-- `UserId` - User UUID (from Supabase)
+- `UserId` - User UUID (from the auth provider)
 - `SavedSearchId` - Saved search UUID
 - `NotificationId` - Notification UUID
 - `Email` - Email address value object
@@ -237,7 +237,7 @@ Requirements:
 
 All authenticated endpoints MUST:
 
-- Validate Supabase JWT tokens
+- Validate JWT tokens
 - Extract user ID from token
 - Enforce ownership: users MAY access only their own resources
 
@@ -313,7 +313,7 @@ Required:
 Required:
 - Docker (containerization)
 - Docker Compose (orchestration)
-- Supabase self-host (auth + database)
+- Self-hosted auth + database (optional)
 - Traefik (reverse proxy, via Dokploy)
 
 Volume Structure:

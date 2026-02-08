@@ -2,16 +2,6 @@
 -- Date: 2026-02-04
 -- Description: Initialize database schema (public tables) for UNED Activities
 
--- Some Supabase-derived images reference this role in default privileges/grants.
--- Create it if missing so migrations are portable across Postgres images.
-DO $supabase_admin$
-BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'supabase_admin') THEN
-        CREATE ROLE supabase_admin NOLOGIN;
-    END IF;
-END
-$supabase_admin$;
-
 -- Required for gen_random_uuid()
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 

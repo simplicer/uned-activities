@@ -146,7 +146,7 @@ User preferences and settings.
 | Name | Type | Description |
 |------|------|-------------|
 | `id` | `UserProfileId` | Unique identifier (UUID) |
-| `userId` | `UserId` | Reference to user (from Supabase) |
+| `userId` | `UserId` | Reference to user (from the auth provider) |
 | `preferredLanguage` | `Language` | Default language (es, en, ca, val, eu, gl) |
 | `emailNotificationsEnabled` | `bool` | Whether to send email notifications |
 | `createdAt` | `DateTimeImmutable` | When profile was created |
@@ -218,7 +218,7 @@ final class ActivityId
 
 ### UserId
 
-Wraps a UUID string from Supabase Auth.
+Wraps a UUID string from the auth provider.
 
 ### Money
 
