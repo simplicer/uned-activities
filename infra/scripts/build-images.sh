@@ -41,7 +41,7 @@ if [ -z "$VERSION" ]; then
 fi
 
 REGISTRY_HOST=${REGISTRY_HOST:-registry.storage.simplicer.com}
-REGISTRY_NAMESPACE=${REGISTRY_NAMESPACE:-antonio}
+REGISTRY_NAMESPACE=${REGISTRY_NAMESPACE:-lexemas}
 IMAGE_PREFIX="${REGISTRY_HOST}/${REGISTRY_NAMESPACE}"
 VITE_API_URL=${VITE_API_URL:-https://api.lexemas.com}
 VITE_API_PREFIX=${VITE_API_PREFIX:-/v1}
@@ -75,10 +75,13 @@ echo "✅ Imagen unificada construida"
 echo
 
 if [ "$PUSH" != "true" ]; then
-    echo "📤 ¿Subir imágenes al registry $IMAGE_PREFIX? (y/N)"
-    read -r PUSH_ANSWER
-    if [ "$PUSH_ANSWER" = "y" ] || [ "$PUSH_ANSWER" = "Y" ]; then
-        PUSH="true"
+    # In CI/non-interactive contexts we never prompt.
+    if [ -t 0 ]; then
+        echo "📤 ¿Subir imágenes al registry $IMAGE_PREFIX? (y/N)"
+        read -r PUSH_ANSWER
+        if [ "$PUSH_ANSWER" = "y" ] || [ "$PUSH_ANSWER" = "Y" ]; then
+            PUSH="true"
+        fi
     fi
 fi
 
