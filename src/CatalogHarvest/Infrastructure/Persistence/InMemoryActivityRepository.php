@@ -25,6 +25,50 @@ final class InMemoryActivityRepository implements ActivityRepository
     #[\Override]
     public function save(Activity $activity): void
     {
+        // uned_id is the stable business key (UNIQUE in the schema): saving an
+        // activity whose uned_id already exists updates that row in place,
+        // keeping its persistent id and adopting the new URL.
+        $existing = $this->byUnedId[$activity->unedId] ?? null;
+        if ($existing instanceof Activity) {
+            $activity = Activity::fromPersistence(
+                $existing->id,
+                $activity->unedId,
+                $activity->url,
+                $existing->createdAt,
+                $activity->updatedAt,
+                $activity->hash,
+                $activity->status,
+                $activity->title,
+                $activity->description,
+                $activity->startDate,
+                $activity->endDate,
+                $activity->modality,
+                $activity->center,
+                $activity->typology,
+                $activity->area,
+                $activity->priceAmount,
+                $activity->priceCurrency,
+                $activity->isFree,
+                $activity->enrollmentOpen,
+                $activity->enrollmentStartDate,
+                $activity->enrollmentEndDate,
+                $activity->enrollmentLink,
+                $activity->credits,
+                $activity->hasLive,
+                $activity->hasRecorded,
+                $activity->pricingTable,
+                $activity->staff,
+                $activity->sessions,
+                $activity->targetAudience,
+                $activity->requirements,
+                $activity->locationDetails,
+                $activity->scheduleDetails,
+                $activity->imageUrl,
+            );
+
+            unset($this->activities[$existing->id->toString()], $this->byUrl[$existing->url]);
+        }
+
         $id = $activity->id->toString();
         $this->activities[$id] = $activity;
         $this->byUnedId[$activity->unedId] = $activity;

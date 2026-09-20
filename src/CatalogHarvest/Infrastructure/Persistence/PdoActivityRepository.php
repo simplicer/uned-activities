@@ -22,7 +22,9 @@ final readonly class PdoActivityRepository implements ActivityRepository
     #[\Override]
     public function save(Activity $activity): void
     {
-        // Check if exists
+        // uned_id is the stable business key (UNIQUE in the schema): existing
+        // rows are updated by uned_id (adopting the possibly-changed URL), so a
+        // rediscovered activity at a new location never updates zero rows.
         $exists = $this->existsByUnedId($activity->unedId);
 
         if ($exists) {
@@ -217,8 +219,9 @@ final readonly class PdoActivityRepository implements ActivityRepository
                 requirements = :requirements,
                 location_details = :location_details,
                 schedule_details = :schedule_details,
-                image_url = :image_url
-            WHERE id = :id'
+                image_url = :image_url,
+                url = :url
+            WHERE uned_id = :uned_id'
         );
 
         $stmt->execute([
@@ -250,7 +253,8 @@ final readonly class PdoActivityRepository implements ActivityRepository
             'location_details' => $activity->locationDetails !== null ? json_encode($activity->locationDetails, JSON_THROW_ON_ERROR) : null,
             'schedule_details' => $activity->scheduleDetails !== null ? json_encode($activity->scheduleDetails, JSON_THROW_ON_ERROR) : null,
             'image_url' => $activity->imageUrl,
-            'id' => $activity->id->toString(),
+            'url' => $activity->url,
+            'uned_id' => $activity->unedId,
         ]);
     }
 
