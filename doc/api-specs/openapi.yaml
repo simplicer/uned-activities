@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: UNED Activities Finder API
-  version: 1.1.3
+  version: 1.1.12
   description: |
     REST API for querying UNED extension activities with filtering, faceting, and notifications.
 
@@ -90,7 +90,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Version'
               example:
-                version: 1.1.3
+                version: 1.1.12
                 commit: abc123def
                 buildDate: '2025-01-15T10:30:00Z'
 

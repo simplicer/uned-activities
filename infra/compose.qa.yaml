@@ -40,7 +40,7 @@ services:
   # Backend PHP API - interno, NO expone puerto
   backend:
     container_name: uned-activities-qa
-    image: ${REGISTRY_HOST:-registry.storage.simplicer.com}/${REGISTRY_NAMESPACE:-lexemas}/uned-activities:${VERSION:-1.0.0}
+    image: ${REGISTRY_HOST:-registry.storage.simplicer.com}/${REGISTRY_NAMESPACE:-lexemas}/uned-activities:${VERSION:-1.1.12}
     restart: unless-stopped
     env_file:
       - ./env/local.env
@@ -64,7 +64,7 @@ services:
   # Harvest scheduler - refresh activities periodically
   harvester:
     container_name: uned-activities-harvester-qa
-    image: ${REGISTRY_HOST:-registry.storage.simplicer.com}/${REGISTRY_NAMESPACE:-lexemas}/uned-activities:${VERSION:-1.0.0}
+    image: ${REGISTRY_HOST:-registry.storage.simplicer.com}/${REGISTRY_NAMESPACE:-lexemas}/uned-activities:${VERSION:-1.1.12}
     restart: unless-stopped
     env_file:
       - ./env/local.env
