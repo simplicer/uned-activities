@@ -16,7 +16,7 @@ final class RateLimiterBypassTest extends TestCase
 {
     private function handler(): RequestHandlerInterface
     {
-        return new class implements RequestHandlerInterface {
+        return new class () implements RequestHandlerInterface {
             #[\Override]
             public function handle(\Psr\Http\Message\ServerRequestInterface $request): \Psr\Http\Message\ResponseInterface
             {
@@ -43,13 +43,14 @@ final class RateLimiterBypassTest extends TestCase
         $handler = $this->handler();
 
         $statuses = [];
+
         for ($i = 0; $i < 10; $i++) {
             $response = $middleware($this->requestWithBearer('forged-token-' . $i), $handler);
             $statuses[] = $response->getStatusCode();
         }
 
         self::assertContains(429, $statuses, 'IP bucket must cap requests even with rotating bearers');
-        self::assertSame(5, count(array_filter($statuses, fn ($s) => $s === 200)), 'exactly limit requests pass');
+        self::assertSame(5, \count(array_filter($statuses, fn ($s) => $s === 200)), 'exactly limit requests pass');
     }
 
     public function testSameBearerIsStillLimited(): void
@@ -58,6 +59,7 @@ final class RateLimiterBypassTest extends TestCase
         $handler = $this->handler();
 
         $statuses = [];
+
         for ($i = 0; $i < 7; $i++) {
             $response = $middleware($this->requestWithBearer('same-token'), $handler);
             $statuses[] = $response->getStatusCode();

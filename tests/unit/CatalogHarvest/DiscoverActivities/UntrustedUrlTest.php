@@ -16,10 +16,10 @@ final class UntrustedUrlTest extends TestCase
     public function testStoresRelativeActivityLinksOnTheUnedHost(): void
     {
         $result = $this->discoverPages(<<<'HTML'
-        <html><body>
-        <div class="tituloActividad"><a href="/actividad/idactividad/55045">Yoga</a></div>
-        </body></html>
-        HTML);
+            <html><body>
+            <div class="tituloActividad"><a href="/actividad/idactividad/55045">Yoga</a></div>
+            </body></html>
+            HTML);
 
         self::assertCount(1, $result->discovered);
         self::assertSame('https://extension.uned.es/actividad/idactividad/55045', $result->discovered[0]->url);
@@ -30,11 +30,11 @@ final class UntrustedUrlTest extends TestCase
         // Regression (stored-URL refetch SSRF): an absolute href to any host
         // used to be stored verbatim and later refetched by RefreshActivity.
         $result = $this->discoverPages(<<<'HTML'
-        <html><body>
-        <div class="tituloActividad"><a href="http://169.254.169.254/actividad/idactividad/1">metadata</a></div>
-        <div class="tituloActividad"><a href="https://attacker.example/cursos/curso/2">evil</a></div>
-        </body></html>
-        HTML);
+            <html><body>
+            <div class="tituloActividad"><a href="http://169.254.169.254/actividad/idactividad/1">metadata</a></div>
+            <div class="tituloActividad"><a href="https://attacker.example/cursos/curso/2">evil</a></div>
+            </body></html>
+            HTML);
 
         self::assertCount(0, $result->discovered);
     }
@@ -44,17 +44,17 @@ final class UntrustedUrlTest extends TestCase
         // The substring validator used to accept anything containing
         // /actividad/idactividad/, including javascript: payloads.
         $result = $this->discoverPages(<<<'HTML'
-        <html><body>
-        <div class="tituloActividad"><a href="javascript:///actividad/idactividad/3">click</a></div>
-        </body></html>
-        HTML);
+            <html><body>
+            <div class="tituloActividad"><a href="javascript:///actividad/idactividad/3">click</a></div>
+            </body></html>
+            HTML);
 
         self::assertCount(0, $result->discovered);
     }
 
     private function discoverPages(string $firstPageHtml): \CatalogHarvest\Application\DiscoverActivities\DiscoverActivitiesResult
     {
-        $fetcher = new class($firstPageHtml) implements HtmlFetcher {
+        $fetcher = new class ($firstPageHtml) implements HtmlFetcher {
             public function __construct(private readonly string $firstPage)
             {
             }

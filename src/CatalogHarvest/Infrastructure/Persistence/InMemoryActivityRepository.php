@@ -29,6 +29,7 @@ final class InMemoryActivityRepository implements ActivityRepository
         // activity whose uned_id already exists updates that row in place,
         // keeping its persistent id and adopting the new URL.
         $existing = $this->byUnedId[$activity->unedId] ?? null;
+
         if ($existing instanceof Activity) {
             $activity = Activity::fromPersistence(
                 $existing->id,

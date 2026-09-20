@@ -219,7 +219,7 @@ final readonly class DiscoverActivities
             $scheme = strtolower((string) (parse_url($href, PHP_URL_SCHEME) ?? ''));
             $host = strtolower((string) (parse_url($href, PHP_URL_HOST) ?? ''));
 
-            if (in_array($scheme, ['http', 'https'], true) && $host === self::UNED_HOST) {
+            if (\in_array($scheme, ['http', 'https'], true) && $host === self::UNED_HOST) {
                 return $href;
             }
 
@@ -353,7 +353,7 @@ final readonly class DiscoverActivities
         $scheme = strtolower((string) (parse_url($url, PHP_URL_SCHEME) ?? ''));
         $host = strtolower((string) (parse_url($url, PHP_URL_HOST) ?? ''));
 
-        if (!in_array($scheme, ['http', 'https'], true) || $host !== self::UNED_HOST) {
+        if (!\in_array($scheme, ['http', 'https'], true) || $host !== self::UNED_HOST) {
             return false;
         }
 

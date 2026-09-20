@@ -205,6 +205,7 @@ final class ActivityDetailParser implements HtmlContentExtractor
 
                 if ($href !== '') {
                     $normalized = self::normalizeHttpUrl($href);
+
                     if ($normalized !== null) {
                         $sections['calendarUrl'] = $normalized;
                     }
@@ -871,7 +872,7 @@ final class ActivityDetailParser implements HtmlContentExtractor
             $scheme = strtolower((string) (parse_url($url, PHP_URL_SCHEME) ?? ''));
             $host = strtolower((string) (parse_url($url, PHP_URL_HOST) ?? ''));
 
-            if (in_array($scheme, ['http', 'https'], true) && $host !== '') {
+            if (\in_array($scheme, ['http', 'https'], true) && $host !== '') {
                 return $url;
             }
 

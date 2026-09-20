@@ -12,11 +12,11 @@ use PHPUnit\Framework\TestCase;
 final class ActivityDetailParserLinksTest extends TestCase
 {
     private const string PAGE_SHELL = <<<'HTML'
-    <html><body>
-    <h1>Curso de prueba</h1>
-    %s
-    </body></html>
-    HTML;
+        <html><body>
+        <h1>Curso de prueba</h1>
+        %s
+        </body></html>
+        HTML;
 
     public function testDropsSchemePayloadsFromEnrollmentLinks(): void
     {
@@ -26,7 +26,7 @@ final class ActivityDetailParserLinksTest extends TestCase
         $parser = new ActivityDetailParser();
 
         $data = $parser->extract(
-            sprintf(self::PAGE_SHELL, '<a class="matricula" href="javascript:alert(document.domain)">Matrícula</a>'),
+            \sprintf(self::PAGE_SHELL, '<a class="matricula" href="javascript:alert(document.domain)">Matrícula</a>'),
             'https://extension.uned.es/actividad/idactividad/1',
         );
 
@@ -38,13 +38,13 @@ final class ActivityDetailParserLinksTest extends TestCase
         $parser = new ActivityDetailParser();
 
         $data = $parser->extract(
-            sprintf(self::PAGE_SHELL, '<a class="matricula" href="https://plataforma.uned.es/inscripcion/1">Matrícula</a>'),
+            \sprintf(self::PAGE_SHELL, '<a class="matricula" href="https://plataforma.uned.es/inscripcion/1">Matrícula</a>'),
             'https://extension.uned.es/actividad/idactividad/1',
         );
         self::assertSame('https://plataforma.uned.es/inscripcion/1', $data['enrollmentLink'] ?? null);
 
         $data = $parser->extract(
-            sprintf(self::PAGE_SHELL, '<a class="matricula" href="/inscripcion/idactividad/2">Matrícula</a>'),
+            \sprintf(self::PAGE_SHELL, '<a class="matricula" href="/inscripcion/idactividad/2">Matrícula</a>'),
             'https://extension.uned.es/actividad/idactividad/2',
         );
         self::assertSame('https://extension.uned.es/inscripcion/idactividad/2', $data['enrollmentLink'] ?? null);
