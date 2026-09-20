@@ -32,22 +32,29 @@ final class RateLimiterMiddleware
 
     public function __invoke(Request $request, RequestHandler $handler): Response
     {
-        $identifier = $this->getIdentifier($request);
-        $key = self::STORAGE_KEY_PREFIX . $identifier;
+        // Account every request against its IP bucket and, when a bearer is
+        // presented, an additional token bucket. The IP bucket always applies,
+        // so rotating forged bearer strings can no longer open fresh,
+        // unlimited buckets (audit fix: rate limit bypass).
+        $buckets = [];
 
-        [$count, $resetAt] = $this->getRateLimitData($key);
+        foreach ($this->getBucketKeys($request) as $key) {
+            [$count, $resetAt] = $this->getRateLimitData(self::STORAGE_KEY_PREFIX . $key);
 
-        // Check if limit exceeded
-        if ($count >= $this->requestsPerWindow) {
-            return $this->createRateLimitResponse(
-                $this->requestsPerWindow,
-                $count,
-                $resetAt
-            );
+            if ($count >= $this->requestsPerWindow) {
+                return $this->createRateLimitResponse(
+                    $this->requestsPerWindow,
+                    $count,
+                    $resetAt
+                );
+            }
+
+            $buckets[] = ['key' => self::STORAGE_KEY_PREFIX . $key, 'count' => $count, 'resetAt' => $resetAt];
         }
 
-        // Increment counter
-        $this->incrementCounter($key, $resetAt);
+        foreach ($buckets as $bucket) {
+            $this->incrementCounter($bucket['key'], $bucket['resetAt']);
+        }
 
         // Add rate limit headers to response
         $response = $handler->handle($request);
@@ -55,24 +62,32 @@ final class RateLimiterMiddleware
         return $this->addRateLimitHeaders(
             $response,
             $this->requestsPerWindow,
-            $count + 1,
-            $resetAt
+            $buckets[0]['count'] + 1,
+            $buckets[0]['resetAt']
         );
     }
 
     /**
-     * Get identifier for rate limiting (IP or token).
+     * Bucket keys: the client IP always applies; a bearer string adds a
+     * second bucket keyed by a bounded hash of the presented value.
+     *
+     * @return array<int, string>
      */
-    private function getIdentifier(Request $request): string
+    private function getBucketKeys(Request $request): array
     {
-        // Check for API token first
+        $keys = ['ip:' . $this->getClientIp($request)];
+
         $token = $this->extractToken($request);
 
-        if ($token !== null) {
-            return 'token:' . $token;
+        if ($token !== null && $token !== '') {
+            $keys[] = 'token:' . substr(hash('sha256', $token), 0, 32);
         }
 
-        // Fall back to IP address
+        return $keys;
+    }
+
+    private function getClientIp(Request $request): string
+    {
         $serverParams = $request->getServerParams();
         $ip = $serverParams['REMOTE_ADDR']
             ?? $serverParams['HTTP_X_FORWARDED_FOR']
@@ -83,7 +98,7 @@ final class RateLimiterMiddleware
             $ip = trim(explode(',', (string) $ip)[0]);
         }
 
-        return 'ip:' . $ip;
+        return (string) $ip;
     }
 
     /**
