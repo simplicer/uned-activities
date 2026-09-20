@@ -29,19 +29,31 @@ Guía de operaciones para el mantenimiento diario de UNED Activities Finder.
 
 ### Las actividades no se actualizan
 
-1. Verificar que el discover job se está ejecutando:
+El harvest se ejecuta en el servicio `harvester` del stack: `harvest-loop.sh`
+duerme hasta las 03:00 UTC, lanza `harvest.php` (con reintentos) y a
+continuación el digest de notificaciones (desactivable con `DIGEST_ENABLED=false`).
+
+1. Estado y logs del servicio (los logs van a stdout, formato Loki):
    ```bash
-   docker compose exec php cat /var/log/cron.log
+   docker service ps <stack>_harvester
+   docker service logs --tail 200 <stack>_harvester
    ```
 
-2. Ejecutar manualmente:
+2. Comprobar la última actualización del catálogo:
+   ```bash
+   docker exec <db-container> psql -U postgres -d uned_activities \
+     -c "SELECT MAX(updated_at) FROM activities;"
+   ```
+
+3. Si el servicio reinicia en bucle (`crash loop`), verificar que la imagen
+   desplegada contiene la versión actual de `harvest-loop.sh` compatible con
+   Alpine/BusyBox: el script usa `date -u +%H` (BusyBox), no `date -d` (GNU).
+   Reconstruir y subir la imagen con `infra/scripts/build-images.sh <version> --push`
+   y redesplegar el stack. Ver `doc/runbooks/deployment-swarm.md`.
+
+4. Descubrimiento manual:
    ```bash
    make discover
-   ```
-
-3. Verificar logs de errores:
-   ```bash
-   docker compose logs -f php
    ```
 
 ### Las notificaciones no se envían

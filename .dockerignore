@@ -3,8 +3,13 @@ vendor/
 infra/volumes/
 infra/backups/
 *.log
-.env
+**/.env
+**/.env.*
 .env.local
+infra/env/local.env
+infra/env/*.local
+web/auth-session.json
+.claude/
 .DS_Store
 node_modules/
 web/node_modules/
