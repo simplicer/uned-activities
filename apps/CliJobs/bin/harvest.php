@@ -81,6 +81,18 @@ final class HarvestCommand extends Command
         $io->text('New: ' . count($discoverResult->newActivities));
         $io->text('Existing: ' . count($discoverResult->existingActivities));
 
+        if (count($discoverResult->discovered) === 0) {
+            // Zero discovery means the scraper can no longer read the source:
+            // treat it as a failure so the harvest loop retries and operators see it.
+            $logger->error('Harvest discovered 0 activities', [
+                'index_url' => $_ENV['UNED_INDEX_URL'] ?? 'https://extension.uned.es/',
+                'max_pages' => $maxPages,
+            ]);
+            $io->error('Discovery returned 0 activities. Source page or selectors may have changed.');
+
+            return Command::FAILURE;
+        }
+
         if ($dryRun) {
             $io->success('Dry run complete.');
 
