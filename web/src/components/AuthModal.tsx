@@ -21,7 +21,17 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
   const [authMode, setAuthMode] = useState<'magic' | 'password'>('magic');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [pendingToken, setPendingToken] = useState<string | null>(null);
   const navigate = useNavigate();
+
+  // A token in the URL is only a proposal, never a sign-in command: the user
+  // must confirm it. Otherwise anyone could force a victim's browser to adopt
+  // an attacker-owned session by sending a crafted /?token=<attacker-token> link.
+  const clearTokenFromUrl = useCallback(() => {
+    const url = new URL(window.location.href);
+    url.searchParams.delete('token');
+    window.history.replaceState({}, '', url.toString());
+  }, []);
 
   const handleVerifyToken = useCallback(async (token: string) => {
     setIsSubmitting(true);
@@ -39,15 +49,27 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
     }
   }, [navigate, onClose, t, verifyToken]);
 
-  // Check for token in URL on mount
+  // Detect a token in the URL on mount and stage it for confirmation
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const token = params.get('token');
 
     if (token) {
-      handleVerifyToken(token);
+      setPendingToken(token);
     }
-  }, [handleVerifyToken]);
+  }, []);
+
+  const handleConfirmToken = useCallback(async () => {
+    if (pendingToken === null) return;
+    await handleVerifyToken(pendingToken);
+    setPendingToken(null);
+  }, [handleVerifyToken, pendingToken]);
+
+  const handleCancelToken = useCallback(() => {
+    clearTokenFromUrl();
+    setPendingToken(null);
+    onClose();
+  }, [clearTokenFromUrl, onClose]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -81,6 +103,8 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
   };
 
   const handleClose = useCallback(() => {
+    clearTokenFromUrl();
+    setPendingToken(null);
     onClose();
     setMagicLinkSent(false);
     setEmail('');
@@ -115,6 +139,34 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
         </button>
 
         <div className="p-8">
+          {/* Magic-link confirmation step (never auto-verify a URL token) */}
+          {pendingToken !== null ? (
+            <div className="text-center">
+              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Mail className="w-8 h-8 text-primary" />
+              </div>
+              <h2 className="text-2xl font-bold text-foreground">
+                {t('auth.confirmLinkTitle', 'Sign in with this emailed link?')}
+              </h2>
+              <p className="text-muted-foreground mt-2 mb-8">
+                {t('auth.confirmLinkBody', 'Only confirm if you requested this link or trust the person who sent it.')}
+              </p>
+              <button
+                onClick={handleConfirmToken}
+                disabled={isSubmitting}
+                className="w-full py-3 bg-primary text-primary-foreground rounded-xl font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50"
+              >
+                {isSubmitting ? t('auth.signingIn', 'Signing in…') : t('auth.confirmLinkButton', 'Yes, sign in')}
+              </button>
+              <button
+                onClick={handleCancelToken}
+                className="w-full py-3 mt-3 text-muted-foreground hover:text-foreground transition-colors"
+              >
+                {t('cancel')}
+              </button>
+            </div>
+          ) : (
+          <>
           {/* Header */}
           <div className="text-center mb-8">
             <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -242,6 +294,8 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
               {t('privacyPolicy')}
             </a>
           </div>
+          </>
+          )}
         </div>
       </div>
     </div>

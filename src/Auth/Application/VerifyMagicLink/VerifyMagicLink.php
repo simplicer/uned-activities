@@ -67,8 +67,18 @@ final readonly class VerifyMagicLink
             );
         }
 
-        // Mark token as used
-        $this->tokenRepository->markAsUsed($token);
+        // Consume the token atomically (UPDATE ... WHERE used_at IS NULL) and
+        // fail closed when the consume reports zero affected rows: a replayed
+        // or concurrently double-submitted token must never authenticate.
+        $consumed = $this->tokenRepository->markAsUsed($token);
+
+        if (!$consumed) {
+            return new VerifyMagicLinkResult(
+                success: false,
+                user: null,
+                error: 'Token has already been used',
+            );
+        }
 
         // Find or create user
         $user = $this->userRepository->findByEmail($magicLink->email);
