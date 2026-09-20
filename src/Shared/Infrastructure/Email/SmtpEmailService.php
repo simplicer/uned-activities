@@ -241,6 +241,12 @@ final class SmtpEmailService
             default => 'Hay cambios nuevos.',
         };
 
+        // Title and URL are harvested from third-party pages: escape for the
+        // HTML email context (element text and href attribute) so hostile
+        // markup in the source page can never render in a recipient's client.
+        $safeTitle = htmlspecialchars($activityTitle, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $safeUrl = htmlspecialchars($activityUrl, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+
         return <<<HTML
             <!DOCTYPE html>
             <html>
@@ -259,10 +265,10 @@ final class SmtpEmailService
                     <h2 style="color: #008C45;">Lexemas</h2>
                     <p>Hola,</p>
                     <p>$reason</p>
-                    <p><strong>$activityTitle</strong></p>
-                    <p><a href="$activityUrl" class="button">Ver actividad</a></p>
+                    <p><strong>$safeTitle</strong></p>
+                    <p><a href="$safeUrl" class="button">Ver actividad</a></p>
                     <p>O copia y pega este enlace en tu navegador:</p>
-                    <p style="word-break: break-all; color: #666;">$activityUrl</p>
+                    <p style="word-break: break-all; color: #666;">$safeUrl</p>
                     <div class="footer">
                         <p>&copy; 2026 <a href="https://simplicer.com" style="color: #008C45;">Simplicer SL</a></p>
                     </div>
