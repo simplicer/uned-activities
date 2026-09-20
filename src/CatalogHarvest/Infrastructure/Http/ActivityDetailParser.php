@@ -204,10 +204,10 @@ final class ActivityDetailParser implements HtmlContentExtractor
                 $href = $node->getAttribute('href');
 
                 if ($href !== '') {
-                    if (!str_starts_with($href, 'http')) {
-                        $href = 'https://extension.uned.es' . (str_starts_with($href, '/') ? '' : '/') . $href;
+                    $normalized = self::normalizeHttpUrl($href);
+                    if ($normalized !== null) {
+                        $sections['calendarUrl'] = $normalized;
                     }
-                    $sections['calendarUrl'] = $href;
                 }
             }
         }
@@ -859,6 +859,32 @@ final class ActivityDetailParser implements HtmlContentExtractor
         return null; // Unknown
     }
 
+    /**
+     * Accept only http(s) URLs for anything surfaced to catalog consumers.
+     * Relative paths are absolutized against the UNED site; scheme-like
+     * payloads (javascript:, data:, ...) are dropped entirely so a hostile
+     * page can never plant a script URL in the catalog.
+     */
+    private static function normalizeHttpUrl(string $url): ?string
+    {
+        if (preg_match('#^[a-zA-Z][a-zA-Z0-9+.\-]*:#', $url) === 1) {
+            $scheme = strtolower((string) (parse_url($url, PHP_URL_SCHEME) ?? ''));
+            $host = strtolower((string) (parse_url($url, PHP_URL_HOST) ?? ''));
+
+            if (in_array($scheme, ['http', 'https'], true) && $host !== '') {
+                return $url;
+            }
+
+            return null;
+        }
+
+        if (str_starts_with($url, '/')) {
+            return 'https://extension.uned.es' . $url;
+        }
+
+        return 'https://extension.uned.es/' . $url;
+    }
+
     private function extractEnrollmentLink(DOMXPath $xpath): ?string
     {
         $nodes = $xpath->query("//a[@class='matricula' or contains(@href, 'inscripcion') or contains(@href, 'matricula') or contains(., 'Matrícula') or contains(., 'Matricula') or contains(., 'Inscripción') or contains(., 'Inscripcion')]");
@@ -870,11 +896,7 @@ final class ActivityDetailParser implements HtmlContentExtractor
                 $href = $node->getAttribute('href');
 
                 if ($href !== '') {
-                    if (str_starts_with($href, '/')) {
-                        return 'https://extension.uned.es' . $href;
-                    }
-
-                    return $href;
+                    return self::normalizeHttpUrl($href);
                 }
             }
         }
@@ -1276,12 +1298,9 @@ final class ActivityDetailParser implements HtmlContentExtractor
                     $url = trim($node->value);
 
                     if ($url !== '') {
-                        // Convert relative URLs to absolute
-                        if (!str_starts_with($url, 'http')) {
-                            $url = 'https://extension.uned.es' . (str_starts_with($url, '/') ? '' : '/') . $url;
-                        }
+                        $normalized = self::normalizeHttpUrl($url);
 
-                        return $url;
+                        return $normalized;
                     }
                 }
             }

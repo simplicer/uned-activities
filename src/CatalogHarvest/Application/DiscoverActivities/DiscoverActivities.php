@@ -19,6 +19,7 @@ use Ramsey\Uuid\Uuid;
 final readonly class DiscoverActivities
 {
     private const string UNED_BASE_URL = 'https://extension.uned.es';
+    private const string UNED_HOST = 'extension.uned.es';
 
     public function __construct(
         private HtmlFetcher $htmlFetcher,
@@ -139,8 +140,12 @@ final readonly class DiscoverActivities
                     continue;
                 }
 
-                // Build absolute URL
+                // Build absolute URL (null when the href is not a UNED http(s) URL)
                 $url = $this->buildAbsoluteUrl($href, $pageUrl);
+
+                if ($url === null) {
+                    continue;
+                }
 
                 // Extract activity ID from URL or data attribute
                 $unedId = $node->getAttribute('data-id');
@@ -205,10 +210,20 @@ final readonly class DiscoverActivities
     /**
      * Build absolute URL from relative URL.
      */
-    private function buildAbsoluteUrl(string $href, string $baseUrl): string
+    private function buildAbsoluteUrl(string $href, string $baseUrl): ?string
     {
-        if (str_starts_with($href, 'http')) {
-            return $href;
+        // Absolute URLs are stored in activities.url and later refetched by the
+        // harvester: only http(s) on the UNED crawl host may pass (SSRF guard).
+        // Scheme-like hrefs (javascript:, data:, mailto:, ...) never resolve.
+        if (preg_match('#^[a-zA-Z][a-zA-Z0-9+.\-]*:#', $href) === 1) {
+            $scheme = strtolower((string) (parse_url($href, PHP_URL_SCHEME) ?? ''));
+            $host = strtolower((string) (parse_url($href, PHP_URL_HOST) ?? ''));
+
+            if (in_array($scheme, ['http', 'https'], true) && $host === self::UNED_HOST) {
+                return $href;
+            }
+
+            return null;
         }
 
         if (str_starts_with($href, '/')) {
@@ -335,6 +350,13 @@ final readonly class DiscoverActivities
      */
     private function isValidActivityUrl(string $url): bool
     {
+        $scheme = strtolower((string) (parse_url($url, PHP_URL_SCHEME) ?? ''));
+        $host = strtolower((string) (parse_url($url, PHP_URL_HOST) ?? ''));
+
+        if (!in_array($scheme, ['http', 'https'], true) || $host !== self::UNED_HOST) {
+            return false;
+        }
+
         return str_contains($url, '/calendario/idactividad/')
             || str_contains($url, '/actividad/idactividad/')
             || str_contains($url, '/curso/')

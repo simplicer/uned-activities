@@ -6,6 +6,7 @@ import { Activity } from '@/lib/api/activities';
 import { Link } from 'react-router-dom';
 import { MapPin, Calendar, Star } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { safeHttpUrl } from '@/lib/safeUrl';
 
 interface ActivityCardProps {
   activity: Activity;
@@ -88,10 +89,10 @@ export function ActivityCard({ activity, isFavorite, onToggleFavorite }: Activit
         {/* Card Header */}
         <div className="card-header pb-3">
           <div className="flex items-start gap-4 mb-3">
-            {activity.imageUrl && (
+            {safeHttpUrl(activity.imageUrl) && (
               <div className="flex-shrink-0 rounded-lg overflow-hidden border border-border w-28 h-20">
                 <img
-                  src={activity.imageUrl}
+                  src={safeHttpUrl(activity.imageUrl) ?? undefined}
                   alt={activity.title || t('activity.noTitle')}
                   className="w-full h-full object-cover"
                   loading="lazy"

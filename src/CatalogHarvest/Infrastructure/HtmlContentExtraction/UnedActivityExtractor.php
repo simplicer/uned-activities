@@ -207,7 +207,18 @@ final readonly class UnedActivityExtractor implements HtmlContentExtractor
             $node = $nodes->item(0);
 
             if ($node instanceof \DOMElement) {
-                return $node->getAttribute('href');
+                $href = $node->getAttribute('href');
+
+                // Surface only http(s) URLs to catalog consumers (XSS guard).
+                if (preg_match('#^https?://#i', $href) === 1) {
+                    return $href;
+                }
+
+                if (str_starts_with($href, '/')) {
+                    return 'https://extension.uned.es' . $href;
+                }
+
+                return null;
             }
         }
 

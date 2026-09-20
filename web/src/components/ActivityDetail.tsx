@@ -11,6 +11,7 @@ import { useTranslation } from 'react-i18next';
 import { useCallback, useEffect } from 'react';
 import { useAuth } from '@/contexts/useAuth';
 import { addFavorite, getFavoriteIds, getFavorites, removeFavorite, updateFavorite } from '@/lib/api/profile';
+import { safeHref, safeHttpUrl } from '@/lib/safeUrl';
 
 export function ActivityDetailPage() {
   const { t, i18n } = useTranslation();
@@ -260,9 +261,11 @@ export function ActivityDetailPage() {
     return `${value.toLocaleString(localeCode, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}${symbol}`;
   };
 
-  const imageUrl = toStringOrNull(activity.imageUrl);
-  const activityUrl = toStringOrNull(activity.url);
-  const enrollmentLink = toStringOrNull(activity.enrollmentLink);
+  // Harvested fields are never trusted at render time (audit hardening):
+  // only http(s) URLs are renderable, mailto:/tel: only for contact hrefs.
+  const imageUrl = safeHttpUrl(toStringOrNull(activity.imageUrl));
+  const activityUrl = safeHttpUrl(toStringOrNull(activity.url));
+  const enrollmentLink = safeHref(toStringOrNull(activity.enrollmentLink));
   const startDate = toStringOrNull(activity.startDate);
   const endDate = toStringOrNull(activity.endDate);
   const updatedAt = toStringOrNull(activity.updatedAt);
@@ -270,7 +273,7 @@ export function ActivityDetailPage() {
     ? activity.requirements as Record<string, unknown>
     : null;
   const requirementValue = (key: string): unknown => (requirements ? requirements[key] : null);
-  const calendarUrl = toStringOrNull(requirementValue('calendarUrl'));
+  const calendarUrl = safeHttpUrl(toStringOrNull(requirementValue('calendarUrl')));
   const contactInfo = requirementValue('contact');
   const contactText = typeof contactInfo === 'object' && contactInfo !== null
     ? toStringOrNull((contactInfo as Record<string, unknown>).text)
