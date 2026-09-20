@@ -17,7 +17,9 @@ use UserProfile\Domain\ValueObject\UserId;
  */
 final readonly class DigestJob
 {
-    private const string NOTIFICATION_TYPE = 'new_activity_match';
+    // Must match the type Notification::forNewActivity() writes, otherwise
+    // the dedupe predicate never suppresses and every run duplicates rows.
+    private const string NOTIFICATION_TYPE = 'new_activity';
 
     public function __construct(
         private SavedSearchRepository $searchRepository,

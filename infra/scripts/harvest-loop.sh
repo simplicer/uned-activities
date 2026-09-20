@@ -77,7 +77,19 @@ main() {
         log_message "INFO" "Next harvest run in ${sleep_seconds}s at ${HARVEST_RUN_TIME_UTC:-03:00} UTC"
         sleep "$sleep_seconds"
 
-        retry_harvest || log_message "ERROR" "Giving up on this cycle"
+        if retry_harvest; then
+            # Notifications digest runs right after a successful harvest so
+            # saved-search owners learn about fresh activities. The digest job
+            # is otherwise never scheduled in the stack (audit finding
+            # Notifications.DigestJob:unscheduled-digest).
+            if [ "${DIGEST_ENABLED:-true}" != "false" ]; then
+                log_message "INFO" "Running notifications digest"
+                php /app/apps/CliJobs/bin/digest.php >> "$LOG_FILE" 2>&1 \
+                    || log_message "ERROR" "Digest failed (non-fatal)"
+            fi
+        else
+            log_message "ERROR" "Giving up on this cycle"
+        fi
     done
 }
 
