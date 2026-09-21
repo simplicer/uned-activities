@@ -184,8 +184,15 @@ services:
       REDIS_HOST: tasks.redis
       REDIS_PORT: "6379"
       REDIS_PASSWORD: ${REDIS_PASSWORD:-changeme}
+
+      # El harvest necesita salida a Internet (extension.uned.es). La red
+      # `backend` es internal: true (sin DNS externo); dokploy-network es la
+      # misma salida que ya usa el backend. Sin labels de Traefik, el servicio
+      # no queda expuesto.
+      DIGEST_ENABLED: ${DIGEST_ENABLED:-true}
     networks:
       - backend
+      - traefik-public
     deploy:
       replicas: 1
       placement:
