@@ -160,6 +160,22 @@ final class InMemoryActivityRepository implements ActivityRepository
     }
 
     #[\Override]
+    public function closePastActivities(): int
+    {
+        $closed = 0;
+        $cutoff = new \DateTimeImmutable('-1 day');
+
+        foreach ($this->activities as $activity) {
+            if ($activity->status === 'active' && $activity->endDate !== null && $activity->endDate < $cutoff) {
+                $this->activities[$activity->id->toString()] = $activity->withStatus('closed');
+                $closed++;
+            }
+        }
+
+        return $closed;
+    }
+
+    #[\Override]
     public function listCenters(): array
     {
         $counts = [];

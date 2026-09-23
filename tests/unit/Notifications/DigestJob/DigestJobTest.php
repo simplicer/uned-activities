@@ -154,6 +154,12 @@ final class SingleActivityRepository implements ActivityRepository
     {
         return [];
     }
+
+    #[\Override]
+    public function closePastActivities(): int
+    {
+        return 0;
+    }
 }
 
 final class InMemoryNotificationRepository implements NotificationRepository

@@ -97,4 +97,10 @@ interface ActivityRepository
      * @return array<int, array{name: string, count: int}>
      */
     public function listCenters(): array;
+
+    /**
+     * Mark finished activities as closed so they stop appearing in the
+     * active catalog. Returns the number of rows transitioned.
+     */
+    public function closePastActivities(): int;
 }

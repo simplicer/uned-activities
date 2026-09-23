@@ -248,6 +248,48 @@ final readonly class Activity
     }
 
     /**
+     * Lifecycle transition: mark a finished activity as closed.
+     */
+    public function withStatus(string $status): self
+    {
+        return new self(
+            id: $this->id,
+            unedId: $this->unedId,
+            url: $this->url,
+            createdAt: $this->createdAt,
+            updatedAt: new \DateTimeImmutable(),
+            hash: $this->hash,
+            status: $status,
+            title: $this->title,
+            description: $this->description,
+            startDate: $this->startDate,
+            endDate: $this->endDate,
+            modality: $this->modality,
+            center: $this->center,
+            typology: $this->typology,
+            area: $this->area,
+            priceAmount: $this->priceAmount,
+            priceCurrency: $this->priceCurrency,
+            isFree: $this->isFree,
+            enrollmentOpen: false,
+            enrollmentStartDate: $this->enrollmentStartDate,
+            enrollmentEndDate: $this->enrollmentEndDate,
+            enrollmentLink: $this->enrollmentLink,
+            credits: $this->credits,
+            hasLive: $this->hasLive,
+            hasRecorded: $this->hasRecorded,
+            pricingTable: $this->pricingTable,
+            staff: $this->staff,
+            sessions: $this->sessions,
+            targetAudience: $this->targetAudience,
+            requirements: $this->requirements,
+            locationDetails: $this->locationDetails,
+            scheduleDetails: $this->scheduleDetails,
+            imageUrl: $this->imageUrl,
+        );
+    }
+
+    /**
      * Check if activity has changed compared to another hash.
      */
     public function hasChanged(string $newHash): bool

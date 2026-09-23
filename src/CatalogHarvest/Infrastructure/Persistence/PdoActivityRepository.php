@@ -408,6 +408,19 @@ final readonly class PdoActivityRepository implements ActivityRepository
     }
 
     #[\Override]
+    public function closePastActivities(): int
+    {
+        // One-day grace period so activities ending today stay visible.
+        $stmt = $this->connection->prepare(
+            "UPDATE " . self::TABLE . " SET status = 'closed', updated_at = NOW()
+              WHERE status = 'active' AND end_date IS NOT NULL AND end_date < NOW() - INTERVAL '1 day'"
+        );
+        $stmt->execute();
+
+        return $stmt->rowCount();
+    }
+
+    #[\Override]
     public function listCenters(): array
     {
         $stmt = $this->connection->prepare(

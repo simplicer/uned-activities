@@ -30,6 +30,22 @@ final class InMemoryActivityRepositoryTest extends TestCase
         self::assertTrue($repository->existsByUnedId('55045'));
     }
 
+    public function testClosePastActivitiesMarksFinishedOnesClosed(): void
+    {
+        $repository = new InMemoryActivityRepository();
+
+        $finished = Activity::create(ActivityId::generate(), '100', 'https://extension.uned.es/actividad/idactividad/100', 'Pasada');
+        $ongoing = Activity::create(ActivityId::generate(), '200', 'https://extension.uned.es/actividad/idactividad/200', 'En curso');
+        $repository->save($finished->withRefreshData(null, null, null, new \DateTimeImmutable('-10 days'), null, null, null, null, null, null, false, null, null, null, null, 'hash-1'));
+        $repository->save($ongoing->withRefreshData(null, null, null, new \DateTimeImmutable('+10 days'), null, null, null, null, null, null, false, null, null, null, null, 'hash-2'));
+
+        $closed = $repository->closePastActivities();
+
+        self::assertSame(1, $closed, 'only the finished activity is closed');
+        self::assertSame('closed', $repository->findById($finished->id)->status);
+        self::assertSame('active', $repository->findById($ongoing->id)->status);
+    }
+
     public function testSaveWithChangedUrlUpdatesExistingRowInsteadOfDuplicating(): void
     {
         // Regression: doc/todo-fixes.md "URL Changes for Existing uned_id".

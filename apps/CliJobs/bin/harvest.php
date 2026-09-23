@@ -99,6 +99,12 @@ final class HarvestCommand extends Command
             return Command::SUCCESS;
         }
 
+        // Lifecycle: close activities that already finished so the catalog
+        // stops surfacing stale entries (they remain stored for history).
+        $closedCount = $activityRepo->closePastActivities();
+        $io->text('Closed past activities: ' . $closedCount);
+        $logger->info('Closed past activities', ['count' => $closedCount]);
+
         $io->section('Refreshing activities');
 
         $aiParser = null;
