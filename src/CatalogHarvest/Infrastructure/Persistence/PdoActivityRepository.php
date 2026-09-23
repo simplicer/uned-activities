@@ -315,7 +315,7 @@ final readonly class PdoActivityRepository implements ActivityRepository
             $sql .= ' WHERE ' . $where;
         }
 
-        $sql .= ' ' . self::orderByClause(isset($filters['sort']) && is_string($filters['sort']) ? $filters['sort'] : null)
+        $sql .= ' ' . self::orderByClause(isset($filters['sort']) && \is_string($filters['sort']) ? $filters['sort'] : null)
             . ' LIMIT ' . $perPage . ' OFFSET ' . $offset;
 
         $stmt = $this->connection->prepare($sql);

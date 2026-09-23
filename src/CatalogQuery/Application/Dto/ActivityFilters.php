@@ -74,7 +74,7 @@ final readonly class ActivityFilters
             startDateTo: $startDateTo,
             search: isset($params['search']) && \is_string($params['search']) ? trim($params['search']) : null,
             enrollmentOpenOnly: ($params['enrollmentOpenOnly'] ?? null) === 'true',
-            sort: in_array($sort, self::SORT_OPTIONS, true) ? $sort : null,
+            sort: \in_array($sort, self::SORT_OPTIONS, true) ? $sort : null,
         );
     }
 

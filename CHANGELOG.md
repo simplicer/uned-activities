@@ -6,6 +6,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.4.1] - 2026-09-23
+
+### Added
+
+- `sort` query parameter on GET /v1/activities: cercania (default, closest to today with undated last), fecha_asc/desc, precio_asc/desc; sort selector in the web catalog.
+- Enrollment-open filter (enrollmentOpenOnly=true) with a "solo inscripciones abiertas" toggle in the sidebar.
+- Date-range filtering UI: quick presets (this week / this month / next 3 months) plus from/to calendar inputs.
+- Harvest now closes past activities (status=closed) at the start of every run, so finished activities stop crowding the catalog.
+
+### Fixed
+
+- Magic-link emails: the SMTP environment (host, port, user, from) is now injected in production and send failures are logged as structured errors instead of disappearing behind the anti-enumeration 200 response.
+
+### Changed
+
+- Complete filters i18n section added for all six languages (the sidebar previously rendered raw translation keys).
+
+
 ## [1.1.12] - 2026-09-20
 
 ### Security
