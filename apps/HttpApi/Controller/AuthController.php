@@ -10,6 +10,7 @@ use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Shared\Infrastructure\Auth\JwtService;
 use UserProfile\Domain\UserDataStorage\UserRepository;
+use Shared\Infrastructure\Logging\LoggerFactory;
 
 /**
  * Authentication controller for magic link auth.
@@ -72,8 +73,13 @@ final readonly class AuthController
 
             return $response->withStatus(400)->withHeader('Content-Type', 'application/json');
         } catch (\Exception $e) {
-            // Log error but don't expose it
-            error_log('Magic link request failed: ' . $e->getMessage());
+            // Structured, greppable failure signal (SMTP auth/config problems
+            // were previously invisible here) while keeping the response
+            // identical to prevent email enumeration.
+            LoggerFactory::create('auth')->error('Magic link request failed', [
+                'error' => $e->getMessage(),
+                'stage' => 'smtp_send',
+            ]);
 
             $response->getBody()->write(json_encode([
                 'message' => 'If the email exists, a magic link has been sent',

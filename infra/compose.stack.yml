@@ -90,7 +90,15 @@ services:
       RATE_WINDOW: "60"
 
       JWT_SECRET: ${JWT_SECRET}
+
+      # SMTP: rellenar en el panel de Dokploy (sin SMTP_USER el envío falla
+      # con 530 Authentication Required, p.ej. en Gmail).
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
       SMTP_PASSWORD: ${SMTP_PASSWORD}
+      SMTP_FROM_EMAIL: ${SMTP_FROM_EMAIL:-}
+      SMTP_FROM_NAME: ${SMTP_FROM_NAME:-Lexemas}
 
       FRONTEND_URL: https://lexemas.com
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-https://lexemas.com,https://www.lexemas.com}
