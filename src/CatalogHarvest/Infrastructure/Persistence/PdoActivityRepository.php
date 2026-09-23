@@ -315,7 +315,8 @@ final readonly class PdoActivityRepository implements ActivityRepository
             $sql .= ' WHERE ' . $where;
         }
 
-        $sql .= ' ORDER BY start_date ASC, created_at DESC LIMIT ' . $perPage . ' OFFSET ' . $offset;
+        $sql .= ' ' . self::orderByClause(isset($filters['sort']) && is_string($filters['sort']) ? $filters['sort'] : null)
+            . ' LIMIT ' . $perPage . ' OFFSET ' . $offset;
 
         $stmt = $this->connection->prepare($sql);
         $stmt->execute($params);
@@ -327,6 +328,25 @@ final readonly class PdoActivityRepository implements ActivityRepository
         }
 
         return $activities;
+    }
+
+    /**
+     * ORDER BY clause for the whitelisted sort options.
+     *
+     * cercania (default): dated activities closest to today first — upcoming
+     * ones approach from the future, ongoing ones sit at day zero — with
+     * undated activities last. Raw input never reaches this clause.
+     */
+    public static function orderByClause(?string $sort): string
+    {
+        return match ($sort) {
+            'fecha_asc' => 'ORDER BY start_date ASC NULLS LAST, created_at DESC',
+            'fecha_desc' => 'ORDER BY start_date DESC NULLS LAST, created_at DESC',
+            'precio_asc' => 'ORDER BY price_amount ASC NULLS LAST, created_at DESC',
+            'precio_desc' => 'ORDER BY price_amount DESC NULLS LAST, created_at DESC',
+            default => 'ORDER BY (CASE WHEN start_date IS NULL THEN 1 ELSE 0 END) ASC,'
+                . ' ABS(start_date::date - CURRENT_DATE) ASC, created_at DESC',
+        };
     }
 
     #[\Override]

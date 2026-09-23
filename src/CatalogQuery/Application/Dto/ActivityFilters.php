@@ -22,8 +22,13 @@ final readonly class ActivityFilters
         public ?\DateTimeImmutable $startDateFrom,
         public ?\DateTimeImmutable $startDateTo,
         public ?string $search,
+        public ?bool $enrollmentOpenOnly = null,
+        public ?string $sort = null,
     ) {
     }
+
+    /** Allowed sort options; anything else falls back to the repository default. */
+    public const array SORT_OPTIONS = ['cercania', 'fecha_asc', 'fecha_desc', 'precio_asc', 'precio_desc'];
 
     public static function create(array $params): self
     {
@@ -53,6 +58,8 @@ final readonly class ActivityFilters
             $maxPrice = (int) round(((float) $params['maxPrice']) * 100);
         }
 
+        $sort = isset($params['sort']) && \is_string($params['sort']) ? $params['sort'] : null;
+
         return new self(
             center: isset($params['center']) && \is_string($params['center']) ? trim($params['center']) : null,
             typology: isset($params['typology']) && \is_string($params['typology']) ? trim($params['typology']) : null,
@@ -66,6 +73,8 @@ final readonly class ActivityFilters
             startDateFrom: $startDateFrom,
             startDateTo: $startDateTo,
             search: isset($params['search']) && \is_string($params['search']) ? trim($params['search']) : null,
+            enrollmentOpenOnly: ($params['enrollmentOpenOnly'] ?? null) === 'true',
+            sort: in_array($sort, self::SORT_OPTIONS, true) ? $sort : null,
         );
     }
 
@@ -82,7 +91,8 @@ final readonly class ActivityFilters
             || $this->maxPrice !== null
             || $this->startDateFrom instanceof \DateTimeImmutable
             || $this->startDateTo instanceof \DateTimeImmutable
-            || $this->search !== null;
+            || $this->search !== null
+            || $this->enrollmentOpenOnly !== null;
     }
 
     /**
@@ -138,6 +148,14 @@ final readonly class ActivityFilters
 
         if ($this->search !== null) {
             $filters['search'] = $this->search;
+        }
+
+        if ($this->enrollmentOpenOnly === true) {
+            $filters['enrollmentOpenOnly'] = true;
+        }
+
+        if ($this->sort !== null) {
+            $filters['sort'] = $this->sort;
         }
 
         return $filters;

@@ -110,6 +110,11 @@ final class ActivityFilterBuilder
             $conditions[] = 'credits > 0';
         }
 
+        // Enrollment-open-only filter (checkbox "solo inscripciones abiertas")
+        if (isset($filters['enrollmentOpenOnly']) && $filters['enrollmentOpenOnly'] === true) {
+            $conditions[] = 'enrollment_open = true';
+        }
+
         // Only show active activities
         $conditions[] = 'status = :status';
         $params['status'] = 'active';

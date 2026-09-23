@@ -26,7 +26,7 @@ final readonly class ListActivities
         $perPage = $this->normalizePerPage($perPage);
         $page = max(1, $page);
 
-        $filterArray = $this->filtersToArray($filters);
+        $filterArray = $filters->toRepositoryFilters();
         $activities = $this->repository->findByFilters($filterArray, $page, $perPage);
         $total = $this->repository->countByFilters($filterArray);
         $totalPages = (int) ceil($total / $perPage);
@@ -49,21 +49,4 @@ final readonly class ListActivities
         return max(1, min($perPage, self::MAX_PER_PAGE));
     }
 
-    private function filtersToArray(ActivityFilters $filters): array
-    {
-        return array_filter([
-            'center' => $filters->center,
-            'typology' => $filters->typology,
-            'area' => $filters->area,
-            'modality' => $filters->modality,
-            'freeOnly' => $filters->freeOnly === true ? true : null,
-            'deliveryMode' => $filters->deliveryMode,
-            'withCredits' => $filters->withCredits === true ? true : null,
-            'minPrice' => $filters->minPrice,
-            'maxPrice' => $filters->maxPrice,
-            'startDateFrom' => $filters->startDateFrom,
-            'startDateTo' => $filters->startDateTo,
-            'search' => $filters->search,
-        ], fn ($v): bool => $v !== null);
-    }
 }

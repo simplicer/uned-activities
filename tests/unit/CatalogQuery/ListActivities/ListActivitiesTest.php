@@ -40,13 +40,13 @@ final class ListActivitiesTest extends TestCase
         $this->repository
             ->expects($this->once())
             ->method('findByFilters')
-            ->with([], 1, 20)
+            ->with(['freeOnly' => false, 'withCredits' => false], 1, 20)
             ->willReturn($activities);
 
         $this->repository
             ->expects($this->once())
             ->method('countByFilters')
-            ->with([])
+            ->with(['freeOnly' => false, 'withCredits' => false])
             ->willReturn(2);
 
         // Act
