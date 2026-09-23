@@ -4,7 +4,7 @@
 
 import { type ActivityFilters, getCenters, type CenterOption } from '@/lib/api/activities';
 import { centerCommunityMap, communityOrder } from '@/data/centerCommunities';
-import { X, Filter, SlidersHorizontal, ChevronDown, ChevronUp, Search, MapPin, Video, GraduationCap, Gift } from 'lucide-react';
+import { X, Filter, SlidersHorizontal, ChevronDown, ChevronUp, Search, MapPin, Video, GraduationCap, Gift, CalendarDays, TicketCheck } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
@@ -163,6 +163,8 @@ export function FilterSidebar({ filters, onFiltersChange, isOpen, onToggle }: Fi
       ['search', filters.search],
       ['startDateFrom', filters.startDateFrom],
       ['startDateTo', filters.startDateTo],
+      ['enrollmentOpenOnly', filters.enrollmentOpenOnly],
+      ['sort', filters.sort && filters.sort !== 'cercania' ? filters.sort : undefined],
     ];
 
     return entries.filter(([, value]) => value !== undefined && value !== null && value !== '').length;
@@ -322,6 +324,61 @@ export function FilterSidebar({ filters, onFiltersChange, isOpen, onToggle }: Fi
                   </optgroup>
                 ))}
               </select>
+            </FilterSection>
+
+            {/* Fechas: presets rápidos + rango con calendario */}
+            <FilterSection title={t('filters.dates')} icon={<CalendarDays className="w-4 h-4 text-muted-foreground" />}>
+              <div className="flex flex-wrap gap-2 mb-3">
+                {[
+                  { key: 'week', labelKey: 'filters.presetWeek', days: 7 },
+                  { key: 'month', labelKey: 'filters.presetMonth', days: 30 },
+                  { key: 'quarter', labelKey: 'filters.presetThreeMonths', days: 90 },
+                ].map((preset) => (
+                  <button
+                    key={preset.key}
+                    type="button"
+                    onClick={() => {
+                      const from = new Date();
+                      const to = new Date();
+                      to.setDate(to.getDate() + preset.days);
+                      const iso = (d: Date) => d.toISOString().slice(0, 10);
+                      const next = { ...localFilters, startDateFrom: iso(from), startDateTo: iso(to) };
+                      setLocalFilters(next);
+                      onFiltersChange(next);
+                    }}
+                    className="text-xs px-3 py-1.5 rounded-full border border-border hover:border-primary hover:text-primary transition-colors"
+                  >
+                    {t(preset.labelKey)}
+                  </button>
+                ))}
+              </div>
+              <label className="block text-xs text-muted-foreground mb-1">{t('filters.dateFrom')}</label>
+              <input
+                type="date"
+                value={localFilters.startDateFrom || ''}
+                onChange={(e) => handleChange('startDateFrom', e.target.value)}
+                className="w-full text-sm rounded-lg border border-border bg-background px-3 py-2 mb-3"
+              />
+              <label className="block text-xs text-muted-foreground mb-1">{t('filters.dateTo')}</label>
+              <input
+                type="date"
+                value={localFilters.startDateTo || ''}
+                onChange={(e) => handleChange('startDateTo', e.target.value)}
+                className="w-full text-sm rounded-lg border border-border bg-background px-3 py-2"
+              />
+            </FilterSection>
+
+            {/* Solo inscripciones abiertas */}
+            <FilterSection title={t('filters.enrollment')} icon={<TicketCheck className="w-4 h-4 text-muted-foreground" />}>
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={localFilters.enrollmentOpenOnly === true}
+                  onChange={(e) => handleChange('enrollmentOpenOnly', e.target.checked ? true : undefined)}
+                  className="w-4 h-4 accent-primary"
+                />
+                <span className="text-sm font-medium">{t('filters.enrollmentOpenOnly')}</span>
+              </label>
             </FilterSection>
 
             {/* Price - Free only checkbox */}

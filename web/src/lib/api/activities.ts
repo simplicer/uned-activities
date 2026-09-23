@@ -97,9 +97,20 @@ export interface ActivityFilters {
   startDateFrom?: string;
   startDateTo?: string;
   search?: string;
+  enrollmentOpenOnly?: boolean;
+  sort?: string;
   page?: number;
   perPage?: number;
 }
+
+/** Sort options accepted by GET /v1/activities (mirrors backend whitelist). */
+export const SORT_OPTIONS = [
+  { value: 'cercania', labelKey: 'filters.sortCercania' },
+  { value: 'fecha_asc', labelKey: 'filters.sortFechaAsc' },
+  { value: 'fecha_desc', labelKey: 'filters.sortFechaDesc' },
+  { value: 'precio_asc', labelKey: 'filters.sortPrecioAsc' },
+  { value: 'precio_desc', labelKey: 'filters.sortPrecioDesc' },
+] as const;
 
 export interface ActivityListResponse {
   data: Activity[];
@@ -137,6 +148,8 @@ export async function getActivities(
   if (filters.startDateFrom) params.append('startDateFrom', filters.startDateFrom);
   if (filters.startDateTo) params.append('startDateTo', filters.startDateTo);
   if (filters.search) params.append('search', filters.search);
+  if (filters.enrollmentOpenOnly) params.append('enrollmentOpenOnly', 'true');
+  if (filters.sort) params.append('sort', filters.sort);
   params.append('page', (filters.page || 1).toString());
   params.append('perPage', (filters.perPage || 20).toString());
 

@@ -4,6 +4,7 @@
 
 import { useEffect, useState } from 'react';
 import { FilterSidebar } from '@/components/FilterSidebar';
+import { SORT_OPTIONS } from '@/lib/api/activities';
 import { ActivityList } from '@/components/ActivityList';
 import { Pagination } from '@/components/Pagination';
 import type { ActivityFilters } from '@/lib/api/activities';
@@ -77,6 +78,22 @@ export function ActivityListPage({ isFilterOpen, onToggleFilter }: ActivityListP
 
       {/* Main Content */}
       <div className="flex-1 min-w-0">
+        <div className="flex items-center justify-end mb-4">
+          <label className="text-sm text-muted-foreground mr-2 whitespace-nowrap">
+            {t('filters.sort')}
+          </label>
+          <select
+            value={filters.sort || 'cercania'}
+            onChange={(e) => setFilters({ ...filters, sort: e.target.value, page: 1 })}
+            className="text-sm rounded-lg border border-border bg-background px-3 py-2"
+          >
+            {SORT_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {t(option.labelKey)}
+              </option>
+            ))}
+          </select>
+        </div>
         <ActivityList filters={debouncedFilters} />
 
         {/* Pagination */}
