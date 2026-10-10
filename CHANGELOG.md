@@ -6,6 +6,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.5.0] - 2026-10-10
+
+### Added
+
+- Enrollment closure tracking: migration 002 adds activities.enrollment_closed_at (backfilled from enrollment_end_date / end_date / now) and every refresh records the first closed observation, clearing it if enrollment reopens.
+- The daily harvest now removes from the catalog (status=closed) any activity whose enrollment has been closed for more than 3 months, as requested.
+
+
 ## [1.4.1] - 2026-09-23
 
 ### Added

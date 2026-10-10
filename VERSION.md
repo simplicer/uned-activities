@@ -1,6 +1,6 @@
 # Version Management
 
-## Current Version: 1.4.2
+## Current Version: 1.5.0
 
 ### Semantic Versioning Strategy
 - MAJOR: Breaking changes

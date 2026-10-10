@@ -37,7 +37,7 @@ services:
 
   # Backend PHP API
   backend:
-    image: ${REGISTRY_HOST:-registry.storage.simplicer.com}/${REGISTRY_NAMESPACE:-lexemas}/uned-activities:${VERSION:-1.4.2}
+    image: ${REGISTRY_HOST:-registry.storage.simplicer.com}/${REGISTRY_NAMESPACE:-lexemas}/uned-activities:${VERSION:-1.5.0}
     restart: unless-stopped
     environment:
       - APP_ENV=production
@@ -74,7 +74,7 @@ services:
 
   # Harvest scheduler
   harvester:
-    image: ${REGISTRY_HOST:-registry.storage.simplicer.com}/${REGISTRY_NAMESPACE:-lexemas}/uned-activities:${VERSION:-1.4.2}
+    image: ${REGISTRY_HOST:-registry.storage.simplicer.com}/${REGISTRY_NAMESPACE:-lexemas}/uned-activities:${VERSION:-1.5.0}
     restart: unless-stopped
     environment:
       - APP_ENV=production

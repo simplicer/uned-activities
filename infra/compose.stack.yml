@@ -62,7 +62,7 @@ services:
           memory: 256M
 
   backend:
-    image: registry.storage.simplicer.com/lexemas/uned-activities:1.4.2
+    image: registry.storage.simplicer.com/lexemas/uned-activities:1.5.0
     # Auto-migrate on container start so "paste stack and deploy" works in Dokploy without SSH.
     command:
       - sh
@@ -73,7 +73,7 @@ services:
     environment:
       APP_ENV: production
       APP_DEBUG: "false"
-      APP_VERSION: "1.4.2"
+      APP_VERSION: "1.5.0"
 
       # Swarm DNS (estable; no depende del nombre del stack)
       DB_HOST: tasks.db
@@ -155,7 +155,7 @@ services:
         - "traefik.http.services.uned-app.loadbalancer.server.port=8080"
 
         # Middlewares
-        - "traefik.http.middlewares.api-headers.headers.customresponseheaders.X-API-Version=1.4.2"
+        - "traefik.http.middlewares.api-headers.headers.customresponseheaders.X-API-Version=1.5.0"
         - "traefik.http.middlewares.rate-limit.ratelimit.average=100"
         - "traefik.http.middlewares.rate-limit.ratelimit.burst=50"
         - "traefik.http.middlewares.www-redirect.redirectregex.regex=^https://www\\.(.+)"
@@ -173,7 +173,7 @@ services:
         - "traefik.http.middlewares.compression.compress=true"
 
   harvester:
-    image: registry.storage.simplicer.com/lexemas/uned-activities:1.4.2
+    image: registry.storage.simplicer.com/lexemas/uned-activities:1.5.0
     # Ensure schema exists before the loop starts (same reason as backend).
     command:
       - sh
