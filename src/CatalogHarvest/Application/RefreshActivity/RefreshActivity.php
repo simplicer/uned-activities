@@ -91,6 +91,7 @@ final readonly class RefreshActivity
             priceCurrency: $data['priceCurrency'] ?? null,
             isFree: $data['isFree'] ?? false,
             enrollmentOpen: $data['enrollmentOpen'] ?? null,
+            enrollmentCurrentlyOpen: isset($data['enrollmentOpen']) ? (bool) $data['enrollmentOpen'] : null,
             enrollmentStartDate: $data['enrollmentStartDate'] ?? null,
             enrollmentEndDate: $data['enrollmentEndDate'] ?? null,
             enrollmentLink: $enrollmentLink,

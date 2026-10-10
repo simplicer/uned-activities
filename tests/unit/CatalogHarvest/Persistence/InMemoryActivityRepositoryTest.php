@@ -46,6 +46,26 @@ final class InMemoryActivityRepositoryTest extends TestCase
         self::assertSame('active', $repository->findById($ongoing->id)->status);
     }
 
+    public function testClosesActivitiesWithEnrollmentClosedForMoreThanThreeMonths(): void
+    {
+        $repository = new InMemoryActivityRepository();
+
+        $now = new \DateTimeImmutable();
+        $longClosed = Activity::fromPersistence(ActivityId::generate(), '300', 'https://extension.uned.es/actividad/idactividad/300', $now, $now, 'h1', 'active', isFree: false, enrollmentOpen: false, enrollmentClosedAt: new \DateTimeImmutable('-4 months'), title: 'Cerrada hace 4 meses');
+        $recentlyClosed = Activity::fromPersistence(ActivityId::generate(), '400', 'https://extension.uned.es/actividad/idactividad/400', $now, $now, 'h2', 'active', isFree: false, enrollmentOpen: false, enrollmentClosedAt: new \DateTimeImmutable('-1 month'), title: 'Cerrada hace 1 mes');
+        $open = Activity::fromPersistence(ActivityId::generate(), '500', 'https://extension.uned.es/actividad/idactividad/500', $now, $now, 'h3', 'active', isFree: false, enrollmentOpen: true, title: 'Abierta');
+        $repository->save($longClosed);
+        $repository->save($recentlyClosed);
+        $repository->save($open);
+
+        $closed = $repository->closePastActivities();
+
+        self::assertSame(1, $closed, 'only enrollments closed more than 3 months ago are closed');
+        self::assertSame('closed', $repository->findById($longClosed->id)->status);
+        self::assertSame('active', $repository->findById($recentlyClosed->id)->status);
+        self::assertSame('active', $repository->findById($open->id)->status);
+    }
+
     public function testSaveWithChangedUrlUpdatesExistingRowInsteadOfDuplicating(): void
     {
         // Regression: doc/todo-fixes.md "URL Changes for Existing uned_id".

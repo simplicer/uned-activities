@@ -147,7 +147,7 @@ final readonly class PdoActivityRepository implements ActivityRepository
                 :created_at, :updated_at, :hash, :status,
                 :credits, :has_live, :has_recorded,
                 :pricing_table, :staff, :sessions, :target_audience, :requirements,
-                :location_details, :schedule_details, :image_url
+                :location_details, :schedule_details, :image_url, :enrollment_closed_at
             )'
         );
 
@@ -185,6 +185,7 @@ final readonly class PdoActivityRepository implements ActivityRepository
             'location_details' => $activity->locationDetails !== null ? json_encode($activity->locationDetails, JSON_THROW_ON_ERROR) : null,
             'schedule_details' => $activity->scheduleDetails !== null ? json_encode($activity->scheduleDetails, JSON_THROW_ON_ERROR) : null,
             'image_url' => $activity->imageUrl,
+            'enrollment_closed_at' => $activity->enrollmentClosedAt?->format('Y-m-d H:i:s'),
         ]);
     }
 
@@ -220,6 +221,7 @@ final readonly class PdoActivityRepository implements ActivityRepository
                 location_details = :location_details,
                 schedule_details = :schedule_details,
                 image_url = :image_url,
+                enrollment_closed_at = :enrollment_closed_at,
                 url = :url
             WHERE uned_id = :uned_id'
         );
@@ -253,6 +255,7 @@ final readonly class PdoActivityRepository implements ActivityRepository
             'location_details' => $activity->locationDetails !== null ? json_encode($activity->locationDetails, JSON_THROW_ON_ERROR) : null,
             'schedule_details' => $activity->scheduleDetails !== null ? json_encode($activity->scheduleDetails, JSON_THROW_ON_ERROR) : null,
             'image_url' => $activity->imageUrl,
+            'enrollment_closed_at' => $activity->enrollmentClosedAt?->format('Y-m-d H:i:s'),
             'url' => $activity->url,
             'uned_id' => $activity->unedId,
         ]);
@@ -295,6 +298,9 @@ final readonly class PdoActivityRepository implements ActivityRepository
             isset($row['location_details']) ? json_decode($row['location_details'], true) : null,
             isset($row['schedule_details']) ? json_decode($row['schedule_details'], true) : null,
             $row['image_url'] ?? null,
+            isset($row['enrollment_closed_at'])
+                ? new \DateTimeImmutable($row['enrollment_closed_at'])
+                : null,
         );
     }
 
@@ -413,7 +419,11 @@ final readonly class PdoActivityRepository implements ActivityRepository
         // One-day grace period so activities ending today stay visible.
         $stmt = $this->connection->prepare(
             "UPDATE " . self::TABLE . " SET status = 'closed', updated_at = NOW()
-              WHERE status = 'active' AND end_date IS NOT NULL AND end_date < NOW() - INTERVAL '1 day'"
+              WHERE status = 'active' AND (
+                (end_date IS NOT NULL AND end_date < NOW() - INTERVAL '1 day')
+                OR (enrollment_open = false AND enrollment_closed_at IS NOT NULL
+                    AND enrollment_closed_at < NOW() - INTERVAL '3 months')
+              )"
         );
         $stmt->execute();
 

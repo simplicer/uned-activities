@@ -51,6 +51,7 @@ final readonly class Activity
         public ?array $locationDetails,// Location details: {venue, address, city, timezone}
         public ?array $scheduleDetails,// Schedule details: {timeStart, timeEnd, timezone}
         public ?string $imageUrl,      // Header image URL
+        public ?\DateTimeImmutable $enrollmentClosedAt = null, // When enrollment was observed closed
     ) {
     }
 
@@ -140,6 +141,7 @@ final readonly class Activity
         ?array $locationDetails = null,
         ?array $scheduleDetails = null,
         ?string $imageUrl = null,
+        ?\DateTimeImmutable $enrollmentClosedAt = null,
     ): self {
         return new self(
             id: $id,
@@ -175,6 +177,7 @@ final readonly class Activity
             locationDetails: $locationDetails,
             scheduleDetails: $scheduleDetails,
             imageUrl: $imageUrl,
+            enrollmentClosedAt: $enrollmentClosedAt,
         );
     }
 
@@ -209,6 +212,7 @@ final readonly class Activity
         ?array $locationDetails = null,
         ?array $scheduleDetails = null,
         ?string $imageUrl = null,
+        ?bool $enrollmentCurrentlyOpen = null,
     ): self {
         return new self(
             id: $this->id,
@@ -244,6 +248,13 @@ final readonly class Activity
             locationDetails: $locationDetails ?? $this->locationDetails,
             scheduleDetails: $scheduleDetails ?? $this->scheduleDetails,
             imageUrl: $imageUrl ?? $this->imageUrl,
+            // First observation of a closed enrollment starts the 3-month
+            // clock; a reopening clears it; no information preserves it.
+            enrollmentClosedAt: $enrollmentCurrentlyOpen === true
+                ? null
+                : ($enrollmentCurrentlyOpen === false
+                    ? ($this->enrollmentClosedAt ?? new \DateTimeImmutable())
+                    : $this->enrollmentClosedAt),
         );
     }
 
@@ -286,6 +297,7 @@ final readonly class Activity
             locationDetails: $this->locationDetails,
             scheduleDetails: $this->scheduleDetails,
             imageUrl: $this->imageUrl,
+            enrollmentClosedAt: $this->enrollmentClosedAt,
         );
     }
 

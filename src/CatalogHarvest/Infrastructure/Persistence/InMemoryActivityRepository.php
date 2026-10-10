@@ -163,10 +163,16 @@ final class InMemoryActivityRepository implements ActivityRepository
     public function closePastActivities(): int
     {
         $closed = 0;
-        $cutoff = new \DateTimeImmutable('-1 day');
+        $endedCutoff = new \DateTimeImmutable('-1 day');
+        $enrollmentCutoff = new \DateTimeImmutable('-3 months');
 
         foreach ($this->activities as $activity) {
-            if ($activity->status === 'active' && $activity->endDate !== null && $activity->endDate < $cutoff) {
+            $ended = $activity->endDate !== null && $activity->endDate < $endedCutoff;
+            $enrollmentLongClosed = $activity->enrollmentOpen === false
+                && $activity->enrollmentClosedAt !== null
+                && $activity->enrollmentClosedAt < $enrollmentCutoff;
+
+            if ($activity->status === 'active' && ($ended || $enrollmentLongClosed)) {
                 $this->activities[$activity->id->toString()] = $activity->withStatus('closed');
                 $closed++;
             }
