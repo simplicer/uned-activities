@@ -191,7 +191,7 @@
   "filters": {
     "title": "Filtros",
     "clear": "Limpar",
-    "active": "{count} filtro(s) activo(s)",
+    "active": "{{count}} filtro(s) activo(s)",
     "searchPlaceholder": "Buscar actividades…",
     "searchApply": "Buscar",
     "modality": "Modalidade",

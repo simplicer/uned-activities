@@ -90,7 +90,7 @@ export function ActivityCard({ activity, isFavorite, onToggleFavorite }: Activit
         <div className="card-header pb-3">
           <div className="flex items-start gap-4 mb-3">
             {safeHttpUrl(activity.imageUrl) && (
-              <div className="flex-shrink-0 rounded-lg overflow-hidden border border-border w-28 h-20">
+              <div className="flex-shrink-0 rounded-lg overflow-hidden border border-border w-28 h-20 bg-white">
                 <img
                   src={safeHttpUrl(activity.imageUrl) ?? undefined}
                   alt={activity.title || t('activity.noTitle')}

@@ -27,18 +27,22 @@ class ProfileRoutes
         FavoriteRepository $favoriteRepository,
         NotificationRepository $notificationRepository,
     ): void {
+        // NOTE: Slim binds route closures to the DI container when the app is
+        // created from one (AppFactory::createFromContainer), so $this inside
+        // a route closure is the container. Helpers are therefore static and
+        // called via self:: — never $this->.
         // Get current user profile (nginx rewrites /v1/profile -> /v1/profile)
         $app->get('/v1/profile', function (Request $request, Response $response) use ($userRepository): \Psr\Http\Message\ResponseInterface|\Psr\Http\Message\MessageInterface {
-            $userId = $this->getUserIdFromRequest($request);
+            $userId = self::getUserIdFromRequest($request);
 
             if (!$userId instanceof \UserProfile\Domain\ValueObject\UserId) {
-                return $this->unauthorizedResponse($response);
+                return self::unauthorizedResponse($response);
             }
 
             $user = $userRepository->findById($userId);
 
             if (!$user instanceof \UserProfile\Domain\Entity\User) {
-                return $this->notFoundResponse($response, 'User not found');
+                return self::notFoundResponse($response, 'User not found');
             }
 
             $data = [
@@ -56,16 +60,16 @@ class ProfileRoutes
 
         // Update user profile
         $app->put('/v1/profile', function (Request $request, Response $response) use ($userRepository): \Psr\Http\Message\ResponseInterface|\Psr\Http\Message\MessageInterface {
-            $userId = $this->getUserIdFromRequest($request);
+            $userId = self::getUserIdFromRequest($request);
 
             if (!$userId instanceof \UserProfile\Domain\ValueObject\UserId) {
-                return $this->unauthorizedResponse($response);
+                return self::unauthorizedResponse($response);
             }
 
             $user = $userRepository->findById($userId);
 
             if (!$user instanceof \UserProfile\Domain\Entity\User) {
-                return $this->notFoundResponse($response, 'User not found');
+                return self::notFoundResponse($response, 'User not found');
             }
 
             $body = $request->getParsedBody();
@@ -88,10 +92,10 @@ class ProfileRoutes
 
         // Get saved searches
         $app->get('/v1/profile/saved-searches', function (Request $request, Response $response) use ($searchRepository): \Psr\Http\Message\ResponseInterface|\Psr\Http\Message\MessageInterface {
-            $userId = $this->getUserIdFromRequest($request);
+            $userId = self::getUserIdFromRequest($request);
 
             if (!$userId instanceof \UserProfile\Domain\ValueObject\UserId) {
-                return $this->unauthorizedResponse($response);
+                return self::unauthorizedResponse($response);
             }
 
             $searches = $searchRepository->findByUserId($userId);
@@ -111,10 +115,10 @@ class ProfileRoutes
 
         // Create saved search
         $app->post('/v1/profile/saved-searches', function (Request $request, Response $response) use ($searchRepository): \Psr\Http\Message\ResponseInterface|\Psr\Http\Message\MessageInterface {
-            $userId = $this->getUserIdFromRequest($request);
+            $userId = self::getUserIdFromRequest($request);
 
             if (!$userId instanceof \UserProfile\Domain\ValueObject\UserId) {
-                return $this->unauthorizedResponse($response);
+                return self::unauthorizedResponse($response);
             }
 
             $body = $request->getParsedBody();
@@ -153,17 +157,17 @@ class ProfileRoutes
 
         // Delete saved search
         $app->delete('/v1/profile/saved-searches/{id}', function (Request $request, Response $response, array $args) use ($searchRepository): \Psr\Http\Message\ResponseInterface|\Psr\Http\Message\MessageInterface {
-            $userId = $this->getUserIdFromRequest($request);
+            $userId = self::getUserIdFromRequest($request);
             $id = (string) ($args['id'] ?? '');
 
             if (!$userId instanceof \UserProfile\Domain\ValueObject\UserId) {
-                return $this->unauthorizedResponse($response);
+                return self::unauthorizedResponse($response);
             }
 
             $search = $searchRepository->findById($id);
 
             if (!$search instanceof \UserProfile\Domain\Entity\SavedSearch || !$search->userId->equals($userId)) {
-                return $this->notFoundResponse($response, 'Saved search not found');
+                return self::notFoundResponse($response, 'Saved search not found');
             }
 
             $useCase = new SaveSearch($searchRepository);
@@ -176,10 +180,10 @@ class ProfileRoutes
 
         // Update password
         $app->put('/v1/profile/password', function (Request $request, Response $response) use ($userRepository): \Psr\Http\Message\ResponseInterface|\Psr\Http\Message\MessageInterface {
-            $userId = $this->getUserIdFromRequest($request);
+            $userId = self::getUserIdFromRequest($request);
 
             if (!$userId instanceof \UserProfile\Domain\ValueObject\UserId) {
-                return $this->unauthorizedResponse($response);
+                return self::unauthorizedResponse($response);
             }
 
             $body = $request->getParsedBody();
@@ -187,7 +191,7 @@ class ProfileRoutes
 
             $password = \is_array($body) ? (string) ($body['password'] ?? '') : '';
 
-            if (!$this->isValidPassword($password)) {
+            if (!self::isValidPassword($password)) {
                 $response->getBody()->write(json_encode([
                     'error' => 'validation_error',
                     'message' => 'La contraseña no cumple los requisitos',
@@ -206,10 +210,10 @@ class ProfileRoutes
 
         // Delete account
         $app->delete('/v1/profile', function (Request $request, Response $response) use ($userRepository): \Psr\Http\Message\ResponseInterface|\Psr\Http\Message\MessageInterface {
-            $userId = $this->getUserIdFromRequest($request);
+            $userId = self::getUserIdFromRequest($request);
 
             if (!$userId instanceof \UserProfile\Domain\ValueObject\UserId) {
-                return $this->unauthorizedResponse($response);
+                return self::unauthorizedResponse($response);
             }
 
             $userRepository->deleteById($userId);
@@ -221,10 +225,10 @@ class ProfileRoutes
 
         // Get favorite activity IDs
         $app->get('/v1/profile/favorites/ids', function (Request $request, Response $response) use ($favoriteRepository): \Psr\Http\Message\ResponseInterface|\Psr\Http\Message\MessageInterface {
-            $userId = $this->getUserIdFromRequest($request);
+            $userId = self::getUserIdFromRequest($request);
 
             if (!$userId instanceof \UserProfile\Domain\ValueObject\UserId) {
-                return $this->unauthorizedResponse($response);
+                return self::unauthorizedResponse($response);
             }
 
             $ids = $favoriteRepository->findIdsByUserId($userId);
@@ -235,10 +239,10 @@ class ProfileRoutes
 
         // Get favorite activities
         $app->get('/v1/profile/favorites', function (Request $request, Response $response) use ($favoriteRepository): \Psr\Http\Message\ResponseInterface|\Psr\Http\Message\MessageInterface {
-            $userId = $this->getUserIdFromRequest($request);
+            $userId = self::getUserIdFromRequest($request);
 
             if (!$userId instanceof \UserProfile\Domain\ValueObject\UserId) {
-                return $this->unauthorizedResponse($response);
+                return self::unauthorizedResponse($response);
             }
 
             $favorites = $favoriteRepository->findDetailedByUserId($userId);
@@ -249,10 +253,10 @@ class ProfileRoutes
 
         // Add favorite activity
         $app->post('/v1/profile/favorites', function (Request $request, Response $response) use ($favoriteRepository): \Psr\Http\Message\ResponseInterface|\Psr\Http\Message\MessageInterface {
-            $userId = $this->getUserIdFromRequest($request);
+            $userId = self::getUserIdFromRequest($request);
 
             if (!$userId instanceof \UserProfile\Domain\ValueObject\UserId) {
-                return $this->unauthorizedResponse($response);
+                return self::unauthorizedResponse($response);
             }
 
             $body = $request->getParsedBody();
@@ -278,11 +282,11 @@ class ProfileRoutes
 
         // Remove favorite activity
         $app->delete('/v1/profile/favorites/{activityId}', function (Request $request, Response $response, array $args) use ($favoriteRepository): \Psr\Http\Message\ResponseInterface|\Psr\Http\Message\MessageInterface {
-            $userId = $this->getUserIdFromRequest($request);
+            $userId = self::getUserIdFromRequest($request);
             $activityId = (string) ($args['activityId'] ?? '');
 
             if (!$userId instanceof \UserProfile\Domain\ValueObject\UserId) {
-                return $this->unauthorizedResponse($response);
+                return self::unauthorizedResponse($response);
             }
 
             $favoriteRepository->remove($userId, $activityId);
@@ -294,11 +298,11 @@ class ProfileRoutes
 
         // Update favorite metadata
         $app->put('/v1/profile/favorites/{activityId}', function (Request $request, Response $response, array $args) use ($favoriteRepository): \Psr\Http\Message\ResponseInterface|\Psr\Http\Message\MessageInterface {
-            $userId = $this->getUserIdFromRequest($request);
+            $userId = self::getUserIdFromRequest($request);
             $activityId = (string) ($args['activityId'] ?? '');
 
             if (!$userId instanceof \UserProfile\Domain\ValueObject\UserId) {
-                return $this->unauthorizedResponse($response);
+                return self::unauthorizedResponse($response);
             }
 
             $body = $request->getParsedBody();
@@ -348,10 +352,10 @@ class ProfileRoutes
 
         // Get notifications
         $app->get('/v1/profile/notifications', function (Request $request, Response $response) use ($notificationRepository): \Psr\Http\Message\ResponseInterface|\Psr\Http\Message\MessageInterface {
-            $userId = $this->getUserIdFromRequest($request);
+            $userId = self::getUserIdFromRequest($request);
 
             if (!$userId instanceof \UserProfile\Domain\ValueObject\UserId) {
-                return $this->unauthorizedResponse($response);
+                return self::unauthorizedResponse($response);
             }
 
             $notifications = $notificationRepository->findByUserId($userId, 50, 0);
@@ -372,18 +376,18 @@ class ProfileRoutes
 
         // Mark notification as read
         $app->post('/v1/profile/notifications/{id}/read', function (Request $request, Response $response, array $args) use ($notificationRepository): \Psr\Http\Message\ResponseInterface|\Psr\Http\Message\MessageInterface {
-            $userId = $this->getUserIdFromRequest($request);
+            $userId = self::getUserIdFromRequest($request);
             $id = (string) ($args['id'] ?? '');
 
             if (!$userId instanceof \UserProfile\Domain\ValueObject\UserId) {
-                return $this->unauthorizedResponse($response);
+                return self::unauthorizedResponse($response);
             }
 
             $notificationId = NotificationId::fromString($id);
             $updated = $notificationRepository->markAsReadForUser($notificationId, $userId);
 
             if ($updated === 0) {
-                return $this->notFoundResponse($response, 'Notification not found');
+                return self::notFoundResponse($response, 'Notification not found');
             }
 
             $response->getBody()->write(json_encode(['data' => ['updated' => true]], JSON_THROW_ON_ERROR));
@@ -392,7 +396,7 @@ class ProfileRoutes
         });
     }
 
-    private function getUserIdFromRequest(Request $request): ?UserId
+    private static function getUserIdFromRequest(Request $request): ?UserId
     {
         $userId = $request->getAttribute('auth_user_id');
 
@@ -403,7 +407,7 @@ class ProfileRoutes
         return UserId::fromString($userId);
     }
 
-    private function unauthorizedResponse(Response $response): Response
+    private static function unauthorizedResponse(Response $response): Response
     {
         $response->getBody()->write(json_encode([
             'error' => 'unauthorized',
@@ -413,7 +417,7 @@ class ProfileRoutes
         return $response->withStatus(401)->withHeader('Content-Type', 'application/json');
     }
 
-    private function notFoundResponse(Response $response, string $message): Response
+    private static function notFoundResponse(Response $response, string $message): Response
     {
         $response->getBody()->write(json_encode([
             'error' => 'not_found',
@@ -423,7 +427,7 @@ class ProfileRoutes
         return $response->withStatus(404)->withHeader('Content-Type', 'application/json');
     }
 
-    private function isValidPassword(string $password): bool
+    private static function isValidPassword(string $password): bool
     {
         $length = mb_strlen($password);
 

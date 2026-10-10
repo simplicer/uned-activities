@@ -192,7 +192,7 @@
   "filters": {
     "title": "Filters",
     "clear": "Clear",
-    "active": "{count} active filter(s)",
+    "active": "{{count}} active filter(s)",
     "searchPlaceholder": "Search activities…",
     "searchApply": "Search",
     "modality": "Modality",

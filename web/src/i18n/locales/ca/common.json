@@ -191,7 +191,7 @@
   "filters": {
     "title": "Filtres",
     "clear": "Netegar",
-    "active": "{count} filtre(s) actiu(s)",
+    "active": "{{count}} filtre(s) actiu(s)",
     "searchPlaceholder": "Cercar activitats…",
     "searchApply": "Cercar",
     "modality": "Modalitat",

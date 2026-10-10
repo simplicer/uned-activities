@@ -191,7 +191,7 @@
   "filters": {
     "title": "Iragazkiak",
     "clear": "Garbitu",
-    "active": "iragazki aktibo {count}",
+    "active": "iragazki aktibo {{count}}",
     "searchPlaceholder": "Bilatu jarduerak…",
     "searchApply": "Bilatu",
     "modality": "Modalitatea",

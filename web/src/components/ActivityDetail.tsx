@@ -325,7 +325,7 @@ export function ActivityDetailPage() {
             <img
               src={imageUrl}
               alt={renderText(activity.title) || 'Imagen de la actividad'}
-              className="absolute inset-0 w-full h-full object-cover"
+              className="absolute inset-0 w-full h-full object-contain bg-white"
               loading="lazy"
             />
             <div className="absolute inset-0 bg-black/45" />
