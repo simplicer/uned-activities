@@ -6,6 +6,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.5.1] - 2026-10-24
+
+### Changed
+
+- Rebuilt on the patched PHP 8.4.27 base (CVE-2026-109618, CVE-2026-109619). No application changes.
+- Moved the frontend build stage from Node 20 to Node 22 (CVE-2026-111497, Node2Shell: the flaw is in the Brotli decoder of Node.js and Bun; Node 20 receives no fix and 22.23.4 is the first release of the 22.x line that carries it). The stage builds the frontend and does not serve traffic. No application changes.
+
 ## [1.5.0] - 2026-10-10
 
 ### Added
